@@ -2,7 +2,7 @@ name: Lai Long Desk scan
 
 on:
   schedule:
-    - cron: "17 */2 * * *"   # every 2 hours (UTC); GitHub may delay scheduled runs a little
+    - cron: "17 * * * *"     # every hour (UTC); GitHub may delay scheduled runs a little
   workflow_dispatch: {}       # "Run workflow" button for a manual scan
   push:
     branches: [main]
@@ -37,6 +37,9 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
         run: python -m pipeline.run
+      - name: News desk data (prices, headlines, calendar)
+        continue-on-error: true
+        run: python -m pipeline.news_desk
       - name: Save signal journal
         run: |
           git config user.name "lai-long-desk-bot"

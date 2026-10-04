@@ -1,6 +1,6 @@
 # Lai Long Desk Terminal
 
-## 👉 [MỞ TERMINAL](https://lehoanglong2452004-eng.github.io/lai-long-desk/) · [MIDOTI DEPTH](https://lehoanglong2452004-eng.github.io/lai-long-desk/depth/)
+## 👉 [MỞ TERMINAL](https://lehoanglong2452004-eng.github.io/lai-long-desk/) · [TIN TỨC](https://lehoanglong2452004-eng.github.io/lai-long-desk/news/) · [MIDOTI DEPTH](https://lehoanglong2452004-eng.github.io/lai-long-desk/depth/)
 
 Hệ thống cá nhân quét **crypto, forex và hàng hóa phái sinh** để tìm cơ hội ít người chú ý, chấm điểm từng cơ hội và hiển thị trên một trang web dạng terminal. Hệ thống **không bao giờ tự đặt lệnh**: bạn luôn là người quyết định.
 
@@ -9,7 +9,7 @@ Phương châm: **sống sót trước, kiếm vàng sau.** Mọi tín hiệu đ
 ## Cách hệ thống chạy
 
 ```
-GitHub Actions (mỗi 2 giờ, miễn phí)
+GitHub Actions (mỗi giờ, miễn phí)
   1. Lấy dữ liệu miễn phí  ->  2. Tìm mẫu hình  ->  3. Lọc vĩ mô + đám đông  ->  4. Chấm điểm
   5. Backtest lại đúng quy tắc đó trên dữ liệu quá khứ (sau chi phí)
   6. Ghi nhật ký tín hiệu A/B và tự chấm kết quả thật

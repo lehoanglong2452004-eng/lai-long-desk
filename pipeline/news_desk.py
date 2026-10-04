@@ -1,0 +1,263 @@
+"""Data for the Lai Long Desk news page (site/news): quotes, futures curves, crypto,
+international headlines (title + link only) and the economic calendar.
+
+Run:  python -m pipeline.news_desk     -> writes site/news/data.json
+"""
+import datetime as dt
+import email.utils
+import json
+import os
+import re
+import time
+import urllib.parse
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
+from .sources import ERRORS, _get, _safe
+
+ROOT = Path(__file__).resolve().parent.parent
+OUT = Path(os.environ.get("LLD_NEWS_OUT") or ROOT / "site" / "news" / "data.json")
+
+INDICES = [("^GSPC", "S&P 500", "US"), ("^NDX", "Nasdaq 100", "US"), ("^DJI", "Dow Jones", "US"),
+           ("^RUT", "Russell 2000", "US"), ("^VIX", "VIX", "CBOE"), ("^N225", "Nikkei 225", "JP"),
+           ("^STOXX50E", "Euro Stoxx 50", "EU"), ("^FTSE", "FTSE 100", "UK")]
+STOCKS = [("NVDA", "Nvidia"), ("AAPL", "Apple"), ("GOOGL", "Alphabet"), ("MSFT", "Microsoft"),
+          ("AMZN", "Amazon"), ("META", "Meta Platforms"), ("AVGO", "Broadcom")]
+FOREX = [("EUR/USD", "EURUSD=X", 4), ("USD/JPY", "JPY=X", 2), ("GBP/USD", "GBPUSD=X", 4), ("USD/CNY", "CNY=X", 4),
+         ("AUD/USD", "AUDUSD=X", 4), ("USD/CAD", "CAD=X", 4), ("USD/CHF", "CHF=X", 4), ("USD/HKD", "HKD=X", 4),
+         ("USD/SGD", "SGD=X", 4), ("NZD/USD", "NZDUSD=X", 4)]
+# root, exchange suffix, listed months, decimals, unit, names
+FUTURES = [
+    ("CL", "NYM", "FGHJKMNQUVXZ", 2, "USD/bbl", "Dầu thô WTI", "WTI Crude Oil"),
+    ("BZ", "NYM", "FGHJKMNQUVXZ", 2, "USD/bbl", "Dầu Brent", "Brent Crude Oil"),
+    ("NG", "NYM", "FGHJKMNQUVXZ", 3, "USD/MMBtu", "Khí tự nhiên", "Natural Gas"),
+    ("GC", "CMX", "GJMQVZ", 1, "USD/oz", "Vàng", "Gold"),
+    ("SI", "CMX", "FHKNUZ", 3, "USD/oz", "Bạc", "Silver"),
+    ("HG", "CMX", "HKNUZ", 4, "USD/lb", "Đồng", "Copper"),
+    ("PL", "NYM", "FJNV", 1, "USD/oz", "Bạch kim", "Platinum"),
+    ("ZC", "CBT", "HKNUZ", 2, "USc/bu", "Ngô", "Corn"),
+    ("ZS", "CBT", "FHKNQUX", 2, "USc/bu", "Đậu tương", "Soybeans"),
+]
+MONTHS = "FGHJKMNQUVXZ"
+MONTH_NAME = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+# Public RSS feeds. Only headline, link, source and time are kept; every item links to the publisher.
+FEEDS = [
+    ("CNBC", "https://www.cnbc.com/id/100003114/device/rss/rss.html"),
+    ("CNBC", "https://www.cnbc.com/id/20910258/device/rss/rss.html"),
+    ("Bloomberg", "https://feeds.bloomberg.com/markets/news.rss"),
+    ("MarketWatch", "https://feeds.content.dowjones.io/public/rss/mw_topstories"),
+    ("Investing.com", "https://www.investing.com/rss/news.rss"),
+    ("Seeking Alpha", "https://seekingalpha.com/market_currents.xml"),
+    ("Nasdaq", "https://www.nasdaq.com/feed/rssoutbound?category=Markets"),
+    ("ForexLive", "https://www.forexlive.com/feed/news"),
+    ("OilPrice", "https://oilprice.com/rss/main"),
+    ("Mining.com", "https://www.mining.com/feed/"),
+    ("CoinDesk", "https://www.coindesk.com/arc/outboundfeeds/rss/"),
+    ("Cointelegraph", "https://cointelegraph.com/rss"),
+    ("Decrypt", "https://decrypt.co/feed"),
+    ("Federal Reserve", "https://www.federalreserve.gov/feeds/press_all.xml"),
+    ("ECB", "https://www.ecb.europa.eu/rss/press.html"),
+]
+TOPICS = {
+    "macro": r"\b(fed|fomc|powell|inflation|cpi|pce|gdp|payroll|jobs|unemployment|rate (cut|hike)s?|interest rates?|central bank|ecb|boj|boe|treasur(y|ies)|yields?|recession|tariffs?)\b",
+    "stocks": r"\b(stocks?|shares|equit(y|ies)|s&p|nasdaq|dow|earnings|ipo|wall street)\b",
+    "forex": r"\b(dollar|euro|yen|sterling|pound|yuan|forex|fx|currenc(y|ies)|dxy)\b",
+    "crypto": r"\b(bitcoin|btc|ether(eum)?|crypto|stablecoin|token|blockchain|solana|xrp|defi)\b",
+    "energy": r"\b(oil|crude|brent|wti|opec|natural gas|lng|gasoline|energy)\b",
+    "metals": r"\b(gold|silver|copper|platinum|palladium|metals?|mining)\b",
+}
+CRYPTO_SOURCES = {"CoinDesk", "Cointelegraph", "Decrypt"}
+STABLE = {"tether", "usd-coin", "ethena-usde", "dai", "usds", "first-digital-usd", "paypal-usd", "true-usd",
+          "usd1-wlfi", "frax", "ripple-usd", "falcon-finance", "global-dollar", "binance-bridged-usdt-bnb-smart-chain"}
+RETENTION_MS = 8 * 3600 * 1000
+PAUSE = 0.2  # seconds between contract lookups, to stay polite with Yahoo
+
+
+def yahoo_quote(ticker):
+    """Latest price, change vs previous close and session volume from Yahoo's chart metadata."""
+    def run():
+        t = urllib.parse.quote(ticker)
+        raw = _get(f"https://query1.finance.yahoo.com/v8/finance/chart/{t}?range=5d&interval=1d", retries=2)
+        res = json.loads(raw)["chart"]["result"][0]
+        m = res["meta"]
+        closes = [c for c in res["indicators"]["quote"][0].get("close") or [] if c is not None]
+        price = m.get("regularMarketPrice") or (closes[-1] if closes else None)
+        prev = closes[-2] if len(closes) >= 2 else m.get("chartPreviousClose")
+        if price is None:
+            return None
+        return {"price": price, "changePct": (price - prev) / prev * 100 if prev else None,
+                "volume": m.get("regularMarketVolume")}
+
+    return _safe(f"yahoo quote {ticker}", run, None)
+
+
+def quotes():
+    idx = []
+    for tk, label, sub in INDICES:
+        q = yahoo_quote(tk)
+        if q:
+            idx.append({"id": f"idx:{tk}", "label": label, "sub": sub, **{k: q[k] for k in ("price", "changePct")}})
+    stk = []
+    for tk, name in STOCKS:
+        q = yahoo_quote(tk)
+        if q:
+            stk.append({"id": f"stk:{tk}", "label": tk, "sub": name, "price": q["price"], "changePct": q["changePct"],
+                        "volume": q["volume"], "marketCap": None})
+    fx = []
+    for label, tk, d in FOREX:
+        q = yahoo_quote(tk)
+        if q:
+            fx.append({"id": f"fx:{label}", "label": label, "sub": "", "price": q["price"],
+                       "changePct": q["changePct"], "decimals": d})
+    q = yahoo_quote("DX-Y.NYB")
+    if q:
+        fx.append({"id": "fx:DXY", "label": "DXY", "sub": "US Dollar Index", "price": q["price"],
+                   "changePct": q["changePct"], "decimals": 2})
+    return idx, stk, fx
+
+
+def futures_curves(now=None):
+    now = now or dt.datetime.now(dt.timezone.utc)
+    out = []
+    for root, ex, listed, dec, unit, vi, en in FUTURES:
+        cands = []
+        y, m = now.year, now.month  # month index 1..12, start from the current month
+        while len(cands) < 6 and y < now.year + 3:
+            code = MONTHS[m - 1]
+            if code in listed:
+                cands.append((f"{root}{code}{y % 100:02d}.{ex}", f"{MONTH_NAME[m - 1]} {y}"))
+            m += 1
+            if m > 12:
+                m, y = 1, y + 1
+        got = []
+        for sym, label in cands:
+            q = yahoo_quote(sym)
+            if q and q["price"]:
+                got.append({"symbol": sym, "code": label, "price": q["price"], "changePct": q["changePct"],
+                            "volume": q["volume"] or 0})
+            time.sleep(PAUSE)
+        if not got:
+            continue
+        # the most active contract leads; show it and the two expiries after it
+        a = max(range(len(got)), key=lambda i: got[i]["volume"])
+        cs = got[a:a + 3]
+        structure, spread = None, None
+        if len(cs) >= 2:
+            diffs = [cs[i + 1]["price"] - cs[i]["price"] for i in range(len(cs) - 1)]
+            structure = "contango" if all(d > 0 for d in diffs) else "backwardation" if all(d < 0 for d in diffs) else "mixed"
+            spread = (cs[-1]["price"] - cs[0]["price"]) / cs[0]["price"] * 100
+        out.append({"root": root, "label": {"vi": vi, "en": en}, "unit": unit, "decimals": dec,
+                    "contracts": cs, "structure": structure, "spreadPct": spread})
+    return out
+
+
+def crypto():
+    def run():
+        rows = json.loads(_get("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc"
+                               "&per_page=80&page=1&sparkline=false"))
+        out = []
+        for c in rows:
+            if c["id"] in STABLE or (re.search(r"usd|eur", c["symbol"], re.I) and abs((c["current_price"] or 0) - 1) < 0.05):
+                continue
+            out.append({"id": f"cry:{c['id']}", "label": c["symbol"].upper(), "sub": c["name"],
+                        "price": c["current_price"], "changePct": c["price_change_percentage_24h"],
+                        "volume": c["total_volume"], "marketCap": c["market_cap"]})
+        return out[:50]
+
+    return _safe("coingecko", run, [])
+
+
+def _text(el, *names):
+    for n in names:
+        x = el.find(n)
+        if x is not None:
+            return (x.text or x.get("href") or "").strip()
+    return ""
+
+
+def _when(s):
+    if not s:
+        return None
+    try:
+        return int(email.utils.parsedate_to_datetime(s).timestamp() * 1000)
+    except (TypeError, ValueError):
+        pass
+    try:
+        return int(dt.datetime.fromisoformat(s.replace("Z", "+00:00")).timestamp() * 1000)
+    except ValueError:
+        return None
+
+
+def parse_feed(source, xml_text):
+    root = ET.fromstring(xml_text)
+    atom = "{http://www.w3.org/2005/Atom}"
+    items = root.findall(".//item") or root.findall(f".//{atom}entry")
+    out = []
+    for it in items:
+        title = re.sub(r"\s+", " ", _text(it, "title", f"{atom}title"))
+        link = _text(it, "link", f"{atom}link")
+        when = _when(_text(it, "pubDate", f"{atom}published", f"{atom}updated",
+                           "{http://purl.org/dc/elements/1.1/}date"))
+        if not title or not link.startswith("http") or not when:
+            continue
+        low = title.lower()
+        topics = [k for k, rx in TOPICS.items() if re.search(rx, low)]
+        if source in CRYPTO_SOURCES and "crypto" not in topics:
+            topics.insert(0, "crypto")
+        out.append({"title": title, "link": link, "source": source, "summary": None, "published": when, "topics": topics})
+    return out
+
+
+def news(now_ms):
+    seen, out = set(), []
+    for source, url in FEEDS:
+        for n in _safe(f"rss {source}", lambda: parse_feed(source, _get(url, retries=2)), []):
+            key = re.sub(r"\W+", "", n["title"].lower())[:80]
+            if key in seen or now_ms - n["published"] > RETENTION_MS or n["published"] > now_ms + 600000:
+                continue
+            seen.add(key)
+            out.append(n)
+    out.sort(key=lambda n: -n["published"])
+    return out[:150]
+
+
+def calendar():
+    """This week's events from the Forex Factory public weekly export."""
+    def run():
+        rows = json.loads(_get("https://nfs.faireconomy.media/ff_calendar_thisweek.json"))
+        imp = {"High": 3, "Medium": 2, "Low": 1}
+        out = []
+        for r in rows:
+            if r.get("impact") not in imp:
+                continue
+            when = _when(r.get("date"))
+            if when:
+                out.append({"date": when, "country": r.get("country", ""), "title": r.get("title", ""),
+                            "impact": imp[r["impact"]], "actual": r.get("actual", "") or "",
+                            "forecast": r.get("forecast", "") or "", "previous": r.get("previous", "") or ""})
+        return sorted(out, key=lambda r: r["date"])
+
+    return _safe("calendar", run, [])
+
+
+def main():
+    t0 = time.time()
+    now_ms = int(time.time() * 1000)
+    idx, stk, fx = quotes()
+    data = {
+        "generatedAt": now_ms, "sample": False,
+        "indices": idx, "stocks": stk, "forex": fx, "crypto": crypto(),
+        "futures": futures_curves(), "news": news(now_ms), "calendar": calendar(), "views": [],
+    }
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")))
+    print(f"news desk: indices={len(idx)} stocks={len(stk)} fx={len(fx)} crypto={len(data['crypto'])} "
+          f"futures={len(data['futures'])} news={len(data['news'])} calendar={len(data['calendar'])} "
+          f"errors={len(ERRORS)} in {time.time() - t0:.0f}s")
+    for e in ERRORS:
+        print("  ", e)
+
+
+if __name__ == "__main__":
+    main()
