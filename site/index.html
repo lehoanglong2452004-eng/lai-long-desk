@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Lai Long Desk Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="logo">龍</span> LAI LONG DESK <span class="dim">▸ TERMINAL</span></div>
+  <div class="top-right">
+    <span id="clock" class="dim"></span>
+    <span id="age" class="pill"></span>
+    <button id="lang" class="btn" title="Language">EN</button>
+  </div>
+</header>
+
+<div id="strip" class="strip"></div>
+
+<main class="grid">
+  <section class="panel span2" id="p-setups">
+    <div class="ph"><h2 data-i18n="setups">CƠ HỘI GIAO DỊCH</h2>
+      <div class="tabs" id="cls-tabs"></div>
+      <label class="chk"><input type="checkbox" id="show-c"> <span data-i18n="showC">hiện hạng C</span></label>
+    </div>
+    <div class="scroll"><table id="t-setups"></table></div>
+    <p class="hint" data-i18n="setupsHint"></p>
+  </section>
+
+  <section class="panel" id="p-macro">
+    <div class="ph"><h2 data-i18n="macro">VĨ MÔ · LÃI SUẤT · USD</h2></div>
+    <div id="macro"></div>
+  </section>
+
+  <section class="panel" id="p-survival">
+    <div class="ph"><h2 data-i18n="survival">SỐNG SÓT · HIỆU QUẢ SAU CHI PHÍ</h2></div>
+    <div id="survival"></div>
+    <canvas id="equity" height="140"></canvas>
+    <p class="hint" data-i18n="equityHint"></p>
+  </section>
+
+  <section class="panel" id="p-radar">
+    <div class="ph"><h2 data-i18n="radar">RADAR KHỐI LƯỢNG BẤT THƯỜNG</h2></div>
+    <div class="scroll"><table id="t-radar"></table></div>
+    <p class="hint" data-i18n="radarHint"></p>
+  </section>
+
+  <section class="panel" id="p-crowd">
+    <div class="ph"><h2 data-i18n="crowd">CRYPTO · ĐÁM ĐÔNG (FUNDING)</h2></div>
+    <div class="scroll"><table id="t-crowd"></table></div>
+    <p class="hint" data-i18n="crowdHint"></p>
+  </section>
+
+  <section class="panel" id="p-cot">
+    <div class="ph"><h2 data-i18n="cot">VỊ THẾ ĐẦU CƠ (CFTC COT)</h2></div>
+    <div class="scroll"><table id="t-cot"></table></div>
+    <p class="hint" data-i18n="cotHint"></p>
+  </section>
+
+  <section class="panel span2" id="p-journal">
+    <div class="ph"><h2 data-i18n="journal">NHẬT KÝ TÍN HIỆU (THEO DÕI THẬT)</h2></div>
+    <div class="scroll"><table id="t-journal"></table></div>
+  </section>
+
+  <section class="panel span3" id="p-backtest">
+    <div class="ph"><h2 data-i18n="backtest">BACKTEST TỪNG LOẠI TÍN HIỆU</h2></div>
+    <div class="scroll"><table id="t-backtest"></table></div>
+  </section>
+
+  <section class="panel span3" id="p-market">
+    <div class="ph"><h2 data-i18n="market">BẢNG THỊ TRƯỜNG</h2>
+      <input id="q" class="search" placeholder="search…"></div>
+    <div class="scroll tall"><table id="t-market"></table></div>
+  </section>
+</main>
+
+<div id="drawer" class="drawer hidden" role="dialog" aria-modal="true">
+  <div class="drawer-box">
+    <button class="btn close" id="drawer-close">✕</button>
+    <div id="drawer-body"></div>
+  </div>
+</div>
+
+<footer class="foot">
+  <p data-i18n="footer"></p>
+  <p id="errors" class="dim"></p>
+</footer>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+{
+  "crypto": {
+    "top_n": 40,
+    "quote": "USDT",
+    "exclude": ["USDC", "FDUSD", "TUSD", "USDP", "DAI", "EUR", "BUSD", "USD1", "PAXG", "WBTC", "WBETH", "BFUSD", "XUSD", "USDE"]
+  },
+  "forex": [
+    {"symbol": "EURUSD", "yahoo": "EURUSD=X", "volume_proxy": "6E=F", "usd_beta": -1},
+    {"symbol": "GBPUSD", "yahoo": "GBPUSD=X", "volume_proxy": "6B=F", "usd_beta": -1},
+    {"symbol": "AUDUSD", "yahoo": "AUDUSD=X", "volume_proxy": "6A=F", "usd_beta": -1},
+    {"symbol": "NZDUSD", "yahoo": "NZDUSD=X", "volume_proxy": "6N=F", "usd_beta": -1},
+    {"symbol": "USDJPY", "yahoo": "JPY=X", "volume_proxy": "6J=F", "usd_beta": 1},
+    {"symbol": "USDCAD", "yahoo": "CAD=X", "volume_proxy": "6C=F", "usd_beta": 1},
+    {"symbol": "USDCHF", "yahoo": "CHF=X", "volume_proxy": "6S=F", "usd_beta": 1}
+  ],
+  "commodities": [
+    {"symbol": "GOLD", "yahoo": "GC=F", "usd_beta": -1, "cot": "088691"},
+    {"symbol": "SILVER", "yahoo": "SI=F", "usd_beta": -1, "cot": "084691"},
+    {"symbol": "PLATINUM", "yahoo": "PL=F", "usd_beta": -1, "cot": "076651"},
+    {"symbol": "COPPER", "yahoo": "HG=F", "usd_beta": -1, "cot": "085692"},
+    {"symbol": "WTI", "yahoo": "CL=F", "usd_beta": -0.5, "cot": "067651"},
+    {"symbol": "BRENT", "yahoo": "BZ=F", "usd_beta": -0.5},
+    {"symbol": "NATGAS", "yahoo": "NG=F", "usd_beta": 0, "cot": "023651"},
+    {"symbol": "CORN", "yahoo": "ZC=F", "usd_beta": -0.5, "cot": "002602"},
+    {"symbol": "WHEAT", "yahoo": "ZW=F", "usd_beta": -0.5, "cot": "001602"},
+    {"symbol": "SOYBEAN", "yahoo": "ZS=F", "usd_beta": -0.5, "cot": "005602"},
+    {"symbol": "COFFEE", "yahoo": "KC=F", "usd_beta": -0.5, "cot": "083731"},
+    {"symbol": "SUGAR", "yahoo": "SB=F", "usd_beta": -0.5, "cot": "080732"},
+    {"symbol": "COCOA", "yahoo": "CC=F", "usd_beta": -0.5, "cot": "073732"}
+  ],
+  "forex_cot": {"EURUSD": "099741", "GBPUSD": "096742", "AUDUSD": "232741", "NZDUSD": "112741",
+                "USDJPY": "097741", "USDCAD": "090741", "USDCHF": "092741"},
+  "crypto_usd_beta": -1,
+  "costs_roundtrip_pct": {"crypto": 0.20, "forex": 0.03, "commodity": 0.08},
+  "signal_rules": {
+    "min_rr": 2.0,
+    "max_hold_bars": 20,
+    "grade_a": 70,
+    "grade_b": 55,
+    "rvol_spike": 2.0,
+    "rvol_quiet": 2.5
+  }
+}
