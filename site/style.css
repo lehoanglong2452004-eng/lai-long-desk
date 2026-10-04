@@ -31,6 +31,7 @@ body { font: 13px/1.45 "JetBrains Mono", ui-monospace, Menlo, Consolas, monospac
 .pill.stale { border-color: var(--red); color: var(--red); }
 .btn { background: transparent; color: var(--amber); border: 1px solid var(--amber); border-radius: 4px;
   font: inherit; padding: 3px 10px; cursor: pointer; }
+.btn { text-decoration: none; }
 .btn:hover { background: var(--amber); color: #000; }
 
 .strip { display: flex; gap: 22px; overflow-x: auto; padding: 8px 16px; border-bottom: 1px solid var(--line);

@@ -1,6 +1,6 @@
 # Lai Long Desk Terminal
 
-## 👉 [MỞ TERMINAL](https://lehoanglong2452004-eng.github.io/lai-long-desk/)
+## 👉 [MỞ TERMINAL](https://lehoanglong2452004-eng.github.io/lai-long-desk/) · [MIDOTI DEPTH](https://lehoanglong2452004-eng.github.io/lai-long-desk/depth/)
 
 Hệ thống cá nhân quét **crypto, forex và hàng hóa phái sinh** để tìm cơ hội ít người chú ý, chấm điểm từng cơ hội và hiển thị trên một trang web dạng terminal. Hệ thống **không bao giờ tự đặt lệnh**: bạn luôn là người quyết định.
 

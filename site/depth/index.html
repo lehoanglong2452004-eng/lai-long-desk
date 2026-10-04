@@ -1,0 +1,782 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>MIDOTI Depth</title>
+<style>*{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+<meta name="color-scheme" content="dark">
+<style>
+/* Layout: thanh công cụ (tab chế độ · mã · khung · mất cân bằng · cài đặt) · canvas (biểu đồ | DOM | lệnh khớp | profile phiên | trục giá; bên dưới là bảng phụ và trục thời gian) · bảng điều khiển nổi góc trái */
+:root{
+  color-scheme:dark;
+  --bg:#05070a; --panel:#0c1016; --line:#1b222d; --ink:#dfe5ee; --muted:#7f8a9c;
+  --buy:#22c96b; --sell:#ef4444; --dia:#22e3ff; --warn:#ffb020;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font:13px/1.4 var(--sans);display:flex;flex-direction:column;overflow:hidden}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:7px 12px;padding:7px 12px;background:var(--panel);border-bottom:1px solid var(--line)}
+.brand{font-weight:800;letter-spacing:.02em;color:var(--dia);margin-right:2px;white-space:nowrap}
+.brand span{color:var(--ink);font-weight:500;opacity:.7}
+.bar label{display:inline-flex;align-items:center;gap:6px;color:var(--muted);white-space:nowrap}
+select,input[type=text],button{font:inherit;color:var(--ink);background:#111722;border:1px solid var(--line);border-radius:6px;padding:5px 8px}
+input[type=text]{width:118px;text-transform:uppercase}
+input[type=range]{width:76px;accent-color:var(--dia)}
+input[type=color]{width:26px;height:26px;padding:1px;border:1px solid var(--line);border-radius:5px;background:#111722;cursor:pointer}
+#cust{display:inline-flex;gap:4px}
+button{cursor:pointer}
+button[aria-pressed="true"]{background:#16303a;border-color:var(--dia);color:var(--dia)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--dia);outline-offset:1px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{border:0;border-radius:0;border-right:1px solid var(--line);padding:5px 9px;font:600 12px var(--mono)}
+.seg button:last-child{border-right:0}
+#modes button{font:700 12.5px var(--sans);padding:5px 12px}
+#modes button[aria-pressed="true"]{background:var(--dia);color:#04121a}
+.imb{display:inline-flex;align-items:center;gap:7px;color:var(--muted);font-size:12px;white-space:nowrap}
+.imbbar{width:120px;height:9px;border-radius:5px;background:var(--sell);overflow:hidden;border:1px solid #000}
+.imbbar i{display:block;height:100%;width:50%;background:var(--buy);transition:width .4s}
+.imb b{font:700 12px var(--mono);min-width:44px}
+#menu{font-size:15px;line-height:1;padding:5px 10px}
+.pill{margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);font:600 12px var(--mono);white-space:nowrap}
+.pill i{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.pill.live i{background:var(--buy)} .pill.demo i{background:var(--warn)}
+.more{display:none;flex-basis:100%;flex-wrap:wrap;align-items:center;gap:7px 12px;padding-top:7px;border-top:1px solid var(--line)}
+.bar.open .more{display:flex}
+.stage{display:flex;flex:1;min-height:0}.cw{position:relative;flex:1;min-width:0}
+.tools{flex:0 0 38px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;scrollbar-width:none}
+.tools button{width:30px;height:30px;padding:0;display:grid;place-items:center;flex:0 0 auto}
+.tools svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.tools hr{width:22px;border:0;border-top:1px solid var(--line);margin:2px 0}
+.tools input[type=color]{width:30px;height:30px;flex:0 0 auto}
+.tools .arm{background:#3a1010;border-color:var(--sell);color:#ff9b9b}
+.notein{position:absolute;width:170px;z-index:3;text-transform:none!important}
+.seg select{border:0;border-radius:0;background:#111722;font:600 12px var(--mono);padding:5px 6px}
+.seg select.on{background:#16303a;color:var(--dia)}
+canvas{display:block;width:100%;height:100%;cursor:crosshair;touch-action:none}
+.dash{position:absolute;top:26px;left:10px;width:290px;background:rgba(5,7,10,.86);border:1px solid var(--line);border-radius:6px;padding:2px;font-size:12px;pointer-events:auto;cursor:pointer}
+.dash .r{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin-bottom:2px}
+.dash .r:last-child{margin-bottom:0}
+.dash .c{padding:4px 3px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dash .s5{grid-column:span 5;white-space:normal}.dash .s2{grid-column:span 2}.dash .s3{grid-column:span 3}
+.dash .big{font:800 18px/1.1 var(--sans);padding:8px 4px 2px}
+.dash .mono{font-family:var(--mono);font-size:11.5px}
+.dash .b{font-weight:700}
+.dash.mini{width:auto;min-width:128px}.dash.mini .r:not(.v){display:none}.dash.mini .big{font-size:13px;padding:6px 9px}.dash.mini .r{margin:0}
+.note{position:absolute;left:50%;bottom:150px;transform:translateX(-50%);max-width:min(560px,90%);background:#1a1407;border:1px solid var(--warn);color:#ffe2a8;padding:8px 12px;border-radius:6px;font-size:12.5px;text-align:center}
+/* bố cục điện thoại: lớp .m do script gắn vào body khi màn hình hẹp hoặc thiết bị cảm ứng */
+body.m .bar{gap:6px 8px;padding:6px 10px;padding-top:calc(6px + env(safe-area-inset-top,0px));padding-left:calc(10px + env(safe-area-inset-left,0px));padding-right:calc(10px + env(safe-area-inset-right,0px))}
+body.m .brand span{display:none}body.m .bar label{font-size:12px}
+body.m #modes{order:40;flex:1 1 100%}body.m #modes button{flex:1}
+body.m #menu{order:3;padding:6px 10px}
+body.m .pill{order:2;margin-left:auto;padding:5px 8px}body.m .pill span{display:none}body.m .bar.open .pill span{display:inline;font-size:10.5px}
+body.m #tfs{order:50;flex-basis:100%;overflow-x:auto;scrollbar-width:none}body.m #tfs::-webkit-scrollbar{display:none}body.m #tfs button{flex:1 0 auto;padding:7px 10px}
+body.m .imb{order:55;flex-basis:100%}body.m .imbbar{flex:1}
+body.m .more{order:60;gap:7px 10px;max-height:42vh;overflow-y:auto}
+body.m input[type=text]{width:88px}body.m input[type=range]{width:90px}body.m select,body.m button{padding:6px 8px}
+body.m .dash{top:24px;left:6px;width:210px;font-size:11px}body.m .dash .big{font-size:15px}
+body.m .dash.mini{width:auto;min-width:118px}body.m .dash.mini .big{font-size:12.5px;padding:6px 8px}
+body.m .note{bottom:110px;font-size:12px}
+@media (orientation:landscape){body.m #modes{order:1;flex:0 0 auto}body.m #tfs{order:1;flex-basis:auto;flex:1 1 160px}body.m .imb{order:1;flex:0 1 150px}}
+body[data-mode=fp] #dash:not(.dock){display:none!important}
+#exBtn{font-weight:700;white-space:nowrap;border-color:#2a3a4a}
+.pk{position:fixed;inset:0;z-index:20;background:rgba(2,4,7,.78);display:grid;place-items:center;padding:12px}
+.pk[hidden]{display:none}
+.pkb{width:min(600px,100%);max-height:min(680px,94vh);display:flex;flex-direction:column;gap:10px;background:var(--panel);border:1px solid #263142;border-radius:10px;padding:16px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.pkb h2{margin:0;font:800 17px var(--sans);text-wrap:balance}.pkb h2 span{color:var(--dia)}
+.pkb p{margin:0;color:var(--muted);font-size:12.5px}
+.pkmsg{background:#1a1407;border:1px solid var(--warn);color:#ffe2a8!important;padding:7px 10px;border-radius:6px}
+.pkex{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pkex button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:9px 11px;text-align:left;border-radius:8px}
+.pkex button b{font:700 14px var(--sans)}.pkex button small{color:var(--muted);font-size:11px}
+.pkex button[aria-pressed="true"] small{color:var(--dia)}
+.pkrow{display:flex;gap:8px;align-items:center}.pkrow input{flex:1;width:auto;min-width:0;padding:7px 9px}
+.pkrow .seg button:disabled{opacity:.35;cursor:not-allowed}
+.pklist{flex:1;min-height:120px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;background:#080b11;display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));align-content:start;gap:4px;padding:6px}
+.pklist button{border:1px solid transparent;background:transparent;text-align:left;font:600 12.5px var(--mono);padding:6px 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pklist button:hover{background:#111722}
+.pklist button[aria-pressed="true"]{background:#16303a;border-color:var(--dia);color:var(--dia)}
+.pke{grid-column:1/-1;color:var(--muted);padding:14px 8px;font-size:12.5px}
+.pkfoot{display:flex;align-items:center;gap:8px}.pkfoot span{flex:1;min-width:0;font:600 12px var(--mono);color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#pkGo{background:var(--dia);color:#04121a;border-color:var(--dia);font-weight:800;padding:7px 16px}
+@media (max-width:520px){.pkex{grid-template-columns:repeat(2,1fr)}.pkb{padding:12px}}
+.dash.dock{top:auto;left:auto;right:0;bottom:0;border-radius:0;border:0;border-left:1px solid var(--line);border-top:1px solid var(--line);background:#070a0f;display:grid;grid-template-columns:176px minmax(0,1fr);gap:10px;padding:6px 8px;cursor:default;overflow:hidden;font-size:11.5px}
+.dash.dock[hidden]{display:none}
+.dk{display:flex;flex-direction:column;gap:4px;min-width:0}
+.dk .h{display:flex;justify-content:space-between;font:700 10px var(--mono);color:var(--muted);letter-spacing:.04em}
+.dk .vd{font:800 15px/1.15 var(--sans);text-align:center;padding:5px 4px;border-radius:3px}
+.dk .vd small{display:block;font:500 10.5px var(--sans);opacity:.9;margin-top:1px}
+.dk .ch{display:grid;grid-template-columns:repeat(5,1fr);gap:2px}
+.dk .ch div{text-align:center;padding:3px 0;border-radius:2px;overflow:hidden}
+.dk .ch b{display:block;font-size:9.5px}.dk .ch i{display:block;font:normal 10.5px var(--mono)}
+.dk .pr{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;white-space:nowrap;min-height:17px}
+.dk .pr span{color:var(--muted);flex:0 0 66px;font-family:var(--sans)}
+.dk .pr .imbbar{flex:1;width:auto;height:7px}.dk .pr b{min-width:38px;text-align:right}
+.dk .pr em{font-style:normal}.dk .g{color:#5fe39a}.dk .rd{color:#ff7b7b}
+</style>
+
+<div class="bar" id="bar">
+  <div class="brand">MIDOTI ◆ <span>Depth</span></div>
+  <div class="seg" id="modes" role="group" aria-label="Chế độ xem">
+    <button data-mode="heat">Heatmap</button><button data-mode="fp">Footprint</button><button data-mode="candle">Nến</button>
+  </div>
+  <button id="exBtn" title="Đổi sàn, loại thị trường hoặc mã" aria-haspopup="dialog">Chọn sàn ▾</button>
+  <label>Mã <input type="text" id="sym" value="BTCUSDT" spellcheck="false" aria-label="Mã giao dịch theo cách viết của sàn đang chọn"></label>
+  <div class="seg" id="tfs" role="group" aria-label="Khung thời gian"></div>
+  <div class="imb" id="imb" title="Tỷ lệ mua chủ động so với bán chủ động trong 60 giây gần nhất"><span>Mất cân bằng</span><div class="imbbar"><i id="imbB"></i></div><b id="imbT">0%</b></div>
+  <button id="menu" aria-expanded="false" aria-label="Mở hoặc đóng cài đặt" title="Cài đặt">☰</button>
+  <div class="pill" id="pill"><i></i><span id="pillTxt">Đang khởi động</span></div>
+  <div class="more" id="more">
+    <label data-m="candle">Kiểu <select id="type"><option value="candle">Nến</option><option value="ha">Heikin Ashi</option><option value="ohlc">Thanh OHLC</option><option value="line">Đường</option><option value="area">Vùng</option></select></label>
+    <label data-m="candle fp">Profile <select id="vp"><option value="visible">Vùng nhìn thấy</option><option value="day">Theo ngày</option><option value="off">Tắt</option></select></label>
+    <label>Tầng giá <select id="bk"><option value="0.2">Rất mịn</option><option value="0.5">Mịn</option><option value="1" selected>Tự động</option><option value="2">Thô</option><option value="5">Rất thô</option></select></label>
+    <label data-m="heat candle">Màu <select id="pal"><option value="bookmap">Bookmap</option><option value="bmwhite">Bookmap sáng</option><option value="teal">Xanh mòng két</option><option value="split">Mua xanh · Bán đỏ</option><option value="inferno">Nhiệt</option><option value="rainbow">Cầu vồng</option><option value="mono">Đơn sắc</option><option value="custom">Tự chọn</option></select><span id="cust" hidden><input type="color" id="c1" value="#1a5a8c" title="Thanh khoản thấp" aria-label="Màu thanh khoản thấp"><input type="color" id="c2" value="#ffe600" title="Thanh khoản trung bình" aria-label="Màu thanh khoản trung bình"><input type="color" id="c3" value="#ff2a00" title="Thanh khoản cao" aria-label="Màu thanh khoản cao"></span></label>
+    <label data-m="heat candle">Tương phản <input type="range" id="contrast" min="0.4" max="3" step="0.1" value="1"></label>
+    <label data-m="heat candle">Lọc chấm <input type="range" id="bubmin" min="0" max="3" step="0.1" value="1"></label>
+    <label>Lệnh khớp <select id="tapeMin"><option value="all">Tất cả</option><option value="big" selected>Lớn</option><option value="huge">Rất lớn</option></select></label>
+    <button id="tHeat" data-m="heat candle" aria-pressed="true">Heatmap</button>
+    <button id="tExt" data-m="heat" aria-pressed="true" title="Phủ sổ lệnh hiện tại lên phần quá khứ chưa được ghi">Phủ quá khứ</button>
+    <button id="tBub" data-m="heat candle" aria-pressed="true">Volume dots</button>
+    <button id="tTape" aria-pressed="true" title="Bảng lệnh khớp cạnh cột DOM">Bảng lệnh khớp</button>
+    <button id="tNum" aria-pressed="true" title="Khối lượng và giá trị tiền của các tường lệnh">Số liệu</button>
+    <button id="tWall" aria-pressed="true" title="Đánh dấu các mức lệnh chờ lớn bất thường và thời gian chúng tồn tại">Tường lớn</button>
+    <button id="tIce" aria-pressed="true" title="Đánh dấu mức giá bị khớp nhiều hơn hẳn lệnh chờ hiển thị (ước lượng)">Iceberg</button>
+    <button id="tMid" aria-pressed="true">Lớp MIDOTI</button>
+    <button id="tDraw" aria-pressed="true" title="Hiện hoặc ẩn thanh công cụ vẽ bên trái">Công cụ vẽ</button>
+    <button id="tFollow" aria-pressed="true">Tự căn</button>
+    <button id="tEco" aria-pressed="false" title="Nhận sổ lệnh chậm hơn và vẽ thưa hơn để tiết kiệm pin, dữ liệu mạng">Tiết kiệm</button>
+    <button id="tWake" aria-pressed="false" title="Không để màn hình tự tắt khi đang xem">Giữ màn hình sáng</button>
+  </div>
+</div>
+<div class="stage">
+  <div class="tools" id="tools" role="toolbar" aria-label="Công cụ vẽ"></div>
+  <div class="cw" id="stage">
+    <canvas id="cv" aria-label="Biểu đồ MIDOTI Depth"></canvas>
+    <div class="dash" id="dash" hidden></div>
+    <input type="text" class="notein" id="noteIn" maxlength="80" placeholder="Ghi chú rồi nhấn Enter" hidden>
+    <div class="note" id="note" hidden></div>
+  </div>
+</div>
+
+<div class="pk" id="pk" hidden><div class="pkb" role="dialog" aria-modal="true" aria-labelledby="pkT">
+  <h2 id="pkT"><span>MIDOTI ◆</span> Chọn nguồn dữ liệu</h2>
+  <p>Chọn sàn cung cấp sổ lệnh và lệnh khớp. Mọi chỉ báo và công cụ của MIDOTI chạy giống nhau trên sàn nào cũng vậy.</p>
+  <p class="pkmsg" id="pkMsg" hidden></p>
+  <div class="pkex" id="pkEx" role="group" aria-label="Sàn"></div>
+  <div class="pkrow"><div class="seg" id="pkMk" role="group" aria-label="Loại thị trường"><button data-mk="fut">Futures</button><button data-mk="spot">Spot</button></div><input type="text" id="pkQ" placeholder="Tìm mã, ví dụ BTC" spellcheck="false" aria-label="Tìm mã"></div>
+  <div class="pklist" id="pkList"></div>
+  <div class="pkfoot"><span id="pkSel"></span><button id="pkX">Đóng</button><button id="pkGo">Vào chart</button></div>
+</div></div>
+
+<script>
+(()=>{
+"use strict";
+const $=id=>document.getElementById(id);
+const cv=$('cv'),ctx=cv.getContext('2d'),stage=$('stage');
+const C={bg:'#05070a',line:'#1b222d',ink:'#dfe5ee',muted:'#7f8a9c',buy:'#22c96b',sell:'#ef4444',bid:'#19b56b',ask:'#e5484d',dia:'#22e3ff',vwap:'#ffc233',op:'#ff8a3d',mlp:'#c77dff',lvl:'#8a93a6',warn:'#ffb020',vp:'#1aa7c4',poc:'#ff3df2',neu:'#5e6676'};
+const MONO='ui-monospace,Menlo,Consolas,monospace',TAU=6.2832;
+const TFALL=[1000,5000,15000,60000,300000,900000,1800000,3600000,14400000,86400000],TFP=[300000,900000,3600000];
+const TFL={1000:'1s',5000:'5s',15000:'15s',60000:'M1',300000:'M5',900000:'M15',1800000:'M30',3600000:'H1',14400000:'H4',86400000:'D1'};
+const IV={60000:'1m',300000:'5m',900000:'15m',1800000:'30m',3600000:'1h',14400000:'4h',86400000:'1d'};
+const BKM={1000:1,5000:1,15000:1,60000:1,300000:2,900000:4,1800000:4,3600000:10,14400000:20,86400000:40};
+const S={src:'live',ex:'binance',mkt:'fut',syms:{},sym:'BTCUSDT',mode:'heat',tf:300000,type:'candle',vp:'visible',bkMul:1,contrast:1,bubMin:1,eco:false,wake:false,pal:'bookmap',c1:'#1a5a8c',c2:'#ffe600',c3:'#ff2a00',
+  heat:true,ext:true,num:true,bub:true,mid:true,tape:true,wall:true,ice:true,tapeMin:'big',tapeW:210,domW:86,panel:true,follow:true,colPx:3,offset:0,rowPx:3,fpRow:15,draw:true,dcol:'#ffd54a'};
+const MOBILE=window.matchMedia('(max-width:760px)').matches||window.matchMedia('(pointer:coarse)').matches;
+const KEYS=['ex','mkt','syms','sym','mode','tf','type','vp','bkMul','contrast','bubMin','pal','c1','c2','c3','heat','ext','num','bub','mid','tape','wall','ice','tapeMin','tapeW','domW','panel','eco','draw','dcol'];
+S.eco=MOBILE;S.tape=!MOBILE;S.panel=!MOBILE;S.draw=!MOBILE;
+try{const o=JSON.parse(localStorage.getItem('midoti-depth-v10')||'null');if(o)for(const k of KEYS)if(k in o&&typeof o[k]===typeof S[k])S[k]=o[k]}catch(e){}
+if(!['heat','fp','candle'].includes(S.mode))S.mode='heat';if(!TFALL.includes(S.tf))S.tf=300000;
+
+const save=()=>{try{const o={};for(const k of KEYS)o[k]=S[k];localStorage.setItem('midoti-depth-v10',JSON.stringify(o))}catch(e){}};
+const R=420,SPAN=2*R+1,MAXCOLS=3200,ZERO=new Float32Array(SPAN);
+const isBar=()=>S.tf>=60000;
+
+// ───────────── trạng thái ─────────────
+let bk=1,cols=[],bids=new Map(),asks=new Map(),last=NaN,bestBid=NaN,bestAsk=NaN,cur=null,sess=newSess(),bars=[],bigT=[],histT=[],tsz=[];
+let tape=[],secs=[],tickTr=new Map(),iceRec=new Map(),iceList=[],walls=new Map(),liveFrom=Infinity,fpInfo='';
+let hs=[],sweeps=[],run=null,stash=null,dataKey='',hb=null,retry=0;
+let ind={adx:NaN,dip:0,dim:0,adxPrev:NaN,rvol:NaN},sc={floor:0,cap:1,bub:1,big:1,t75:0},view={c:NaN,px:4},mouse=null,live=false,gen=0,socks=[],timers=[],gotTrade=false,startedAt=0,L={};
+function newSess(){return{op:NaN,pdh:NaN,pdl:NaN,mlp:NaN,pv:0,vv:0,cvd:0,vol:0,vp:new Map(),poc:NaN,pocV:0}}
+const mid=()=>isFinite(bestBid)&&isFinite(bestAsk)?(bestBid+bestAsk)/2:last;
+function niceStep(x){const p=Math.pow(10,Math.floor(Math.log10(x))),m=x/p;return (m<1.5?1:m<3.5?2:m<7.5?5:10)*p}
+const bkm=()=>S.mode==='heat'?1:BKM[S.tf];
+function setBucket(price){bk=niceStep(price*0.00006)*bkm()*S.bkMul;if(!(bk>0))bk=1}
+const dec=()=>{const b=bk/(bkm()*S.bkMul>=1?bkm()*S.bkMul:1);return b>=1?0:Math.min(8,Math.ceil(-Math.log10(b)))};
+const fP=p=>isFinite(p)?p.toLocaleString('en-US',{minimumFractionDigits:dec(),maximumFractionDigits:dec()}):'—';
+const fQ=q=>!isFinite(q)?'—':Math.abs(q)>=1e6?(q/1e6).toFixed(2)+'M':Math.abs(q)>=1e4?(q/1e3).toFixed(1)+'K':Math.abs(q)>=100?q.toFixed(0):Math.abs(q)>=1?q.toFixed(1):q.toFixed(3);
+const fC=q=>{const a=Math.abs(q);return a>=1e6?(q/1e6).toFixed(1)+'M':a>=1e4?(q/1e3).toFixed(0)+'K':a>=1e3?(q/1e3).toFixed(1)+'K':a>=100?q.toFixed(0):a>=10?q.toFixed(1):a>=1?q.toFixed(2):a>0?q.toFixed(3):'0'};
+const fM=v=>!isFinite(v)?'—':(v<0?'-':'')+'$'+(Math.abs(v)>=1e9?(Math.abs(v)/1e9).toFixed(2)+'B':Math.abs(v)>=1e6?(Math.abs(v)/1e6).toFixed(2)+'M':Math.abs(v)>=1e3?(Math.abs(v)/1e3).toFixed(1)+'K':Math.abs(v).toFixed(0));
+const p2=n=>String(n).padStart(2,'0');
+const fHMS=t=>{const d=new Date(t);return p2(d.getHours())+':'+p2(d.getMinutes())+':'+p2(d.getSeconds())};
+function fT(t,full){const d=new Date(t);if(S.tf>=864e5)return p2(d.getDate())+'/'+p2(d.getMonth()+1)+(full?'/'+d.getFullYear():'');const hm=p2(d.getHours())+':'+p2(d.getMinutes());return S.tf<60000?hm+':'+p2(d.getSeconds()):(full||S.tf>=3600000)?p2(d.getDate())+'/'+p2(d.getMonth()+1)+' '+hm:hm}
+const fAge=ms=>ms<60000?Math.round(ms/1000)+'s':ms<3600000?Math.round(ms/60000)+'p':(ms/3600000).toFixed(1)+'g';
+
+// bảng màu heatmap
+const hex=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+function mkLUT(st){const a=new Uint8Array(256*3);for(let i=0;i<256;i++){const t=i/255;let k=1;while(k<st.length-1&&st[k][0]<t)k++;const A=st[k-1],B=st[k],u=Math.max(0,Math.min(1,(t-A[0])/(B[0]-A[0]||1)));for(let j=0;j<3;j++)a[i*3+j]=Math.round(A[j+1]+(B[j+1]-A[j+1])*u)}return a}
+const PAL={
+  bookmap:[[0,2,7,20],[.12,5,22,52],[.3,10,48,104],[.48,20,92,172],[.62,58,158,222],[.74,250,214,70],[.86,247,128,22],[1,214,24,16]],
+  bmwhite:[[0,2,7,20],[.14,6,30,66],[.34,14,78,140],[.52,60,150,210],[.68,232,244,250],[.8,255,236,60],[.9,255,140,0],[1,228,22,10]],
+  teal:[[0,0,0,0],[.1,2,28,34],[.3,0,84,94],[.5,8,150,158],[.66,214,224,224],[.78,255,230,0],[.9,255,138,0],[1,255,42,0]],
+  inferno:[[0,0,0,0],[.15,40,11,84],[.35,101,21,110],[.55,188,55,84],[.75,249,142,9],[.9,252,220,80],[1,255,255,230]],
+  rainbow:[[0,0,0,0],[.12,10,20,90],[.3,0,90,220],[.48,0,200,200],[.64,40,210,60],[.8,250,230,0],[.92,255,120,0],[1,255,20,20]],
+  mono:[[0,0,0,0],[.2,40,46,56],[.6,150,160,175],[1,255,255,255]],
+  splitBid:[[0,2,8,6],[.12,4,40,26],[.35,10,120,70],[.6,30,200,120],[.82,150,245,190],[1,240,255,245]],
+  splitAsk:[[0,8,2,2],[.12,60,6,10],[.35,170,20,24],[.6,255,70,30],[.82,255,170,40],[1,255,245,170]]};
+let LUT=mkLUT(PAL.bookmap),LUTA=LUT,split=false;
+function setPalette(){const v=S.pal;split=v==='split';if(split){LUT=mkLUT(PAL.splitBid);LUTA=mkLUT(PAL.splitAsk)}
+  else if(v==='custom'){const a=hex(S.c1),b=hex(S.c2),c=hex(S.c3);LUT=LUTA=mkLUT([[0,a[0]*.08,a[1]*.08,a[2]*.08],[.14,a[0]*.3,a[1]*.3,a[2]*.3],[.45,...a],[.75,...b],[1,...c]])}
+  else LUT=LUTA=mkLUT(PAL[v]||PAL.bookmap)}
+
+// ───────────── chỉ số ─────────────
+function adxCalc(a){const n=a.length,ad=new Array(n).fill(NaN),dir=new Array(n).fill(1);let tr=0,pd=0,md=0,adx=0,dp=0,dm=0;
+  for(let i=1;i<n;i++){const x=a[i],q=a[i-1],t=Math.max(x.h-x.l,Math.abs(x.h-q.c),Math.abs(x.l-q.c)),up=x.h-q.h,dn=q.l-x.l,p=up>dn&&up>0?up:0,m=dn>up&&dn>0?dn:0;
+    tr=tr-tr/14+t;pd=pd-pd/14+p;md=md-md/14+m;dp=tr?100*pd/tr:0;dm=tr?100*md/tr:0;const dx=100*Math.abs(dp-dm)/((dp+dm)||1);adx=i<=14?(adx*(i-1)+dx)/i:adx+(dx-adx)/14;if(i>=14)ad[i]=adx;dir[i]=dp>=dm?1:-1}
+  return{ad,dir,dp,dm}}
+function computeInd(){let a;
+  if(isBar())a=cols.slice(-400).map(c=>({h:c.h,l:c.l,c:c.c,v:c.bv+c.sv}));
+  else{a=[];let cb=null;for(const x of bars){const t=Math.floor(x.t/300000);if(!cb||cb.k!==t){cb={k:t,h:x.h,l:x.l,c:x.c,v:x.v};a.push(cb)}else{if(x.h>cb.h)cb.h=x.h;if(x.l<cb.l)cb.l=x.l;cb.c=x.c;cb.v+=x.v}}}
+  const n=a.length;if(n<20)return;const r=adxCalc(a);ind.adx=r.ad[n-1];ind.adxPrev=r.ad[Math.max(0,n-4)];ind.dip=r.dp;ind.dim=r.dm;
+  let s=0,k=0;for(let i=Math.max(0,n-22);i<n-2;i++){s+=a[i].v;k++}ind.rvol=k&&s?a[n-2].v/(s/k):NaN;
+  const lc=cols[cols.length-1];if(lc&&!lc.hist){lc.adx=ind.adx;lc.dir=r.dp>=r.dm?1:-1}}
+function recalc(){const n=cols.length;if(!n)return;const vals=[];let seen=0;
+  for(let j=hs.length-1;j>=0&&seen<90;j--){seen++;const d=hs[j].d;for(let i=R-220;i<=R+220;i+=2){const v=d[i];if(v>0)vals.push(v)}}
+  if(vals.length>60){vals.sort((x,y)=>x-y);sc.floor=vals[Math.floor(vals.length*.35)];sc.cap=Math.max(vals[Math.floor(vals.length*.997)],sc.floor*1.5)}
+  if(tsz.length>30){const s=tsz.slice().sort((x,y)=>x-y);sc.big=s[Math.floor(s.length*.93)]||1;sc.t75=s[Math.floor(s.length*.75)]||0}
+  if(!isBar()){const vv=[];for(let j=Math.max(0,n-400);j<n;j++){const c=cols[j];if(c.hist)continue;const t=c.bv+c.sv;if(t>0)vv.push(t)}if(vv.length>10){vv.sort((x,y)=>x-y);sc.bub=vv[Math.floor(vv.length*.95)]||1}}
+  // delta cộng dồn theo ngày cho bảng footprint
+  let day=-1,cd=0;for(const c of cols){const d=Math.floor(c.t/864e5);if(d!==day){day=d;cd=0}cd+=c.bv-c.sv;c.cd=cd}
+  // thanh mất cân bằng: 60 giây gần nhất
+  const now=Math.floor(Date.now()/1000);let b=0,s=0;for(const e of secs)if(now-e.k<60){b+=e.b;s+=e.s}
+  const pct=b+s>0?b/(b+s)*100:50;$('imbB').style.width=pct.toFixed(1)+'%';const d=pct*2-100;$('imbT').textContent=(d>=0?'+':'')+d.toFixed(0)+'%';$('imbT').style.color=d>=8?C.buy:d<=-8?C.sell:C.muted}
+
+// ───────────── sổ lệnh và lệnh khớp ─────────────
+function applyLevels(map,arr){for(let i=0;i<arr.length;i++){const p=+arr[i][0],q=+arr[i][1];if(q===0)map.delete(p);else map.set(p,q)}}
+function refreshBest(){let b=-Infinity,a=Infinity;for(const p of bids.keys())if(p>b)b=p;for(const p of asks.keys())if(p<a)a=p;
+  if(b>=a&&isFinite(last)){for(const p of bids.keys())if(p>last)bids.delete(p);for(const p of asks.keys())if(p<last)asks.delete(p);b=-Infinity;a=Infinity;for(const p of bids.keys())if(p>b)b=p;for(const p of asks.keys())if(p<a)a=p}
+  bestBid=isFinite(b)?b:NaN;bestAsk=isFinite(a)?a:NaN}
+function prune(){const m=mid();if(!isFinite(m))return;const lo=m*.9,hi=m*1.1;for(const p of bids.keys())if(p<lo)bids.delete(p);for(const p of asks.keys())if(p>hi)asks.delete(p)}
+function vpAdd(i,qb,qs){let e=sess.vp.get(i);if(!e){e=[0,0];sess.vp.set(i,e)}e[0]+=qb;e[1]+=qs;const t=e[0]+e[1];if(t>sess.pocV){sess.pocV=t;sess.poc=i}}
+function fpAddTo(c,k,qb,qs){if(!c.fp)c.fp=new Map();let e=c.fp.get(k);if(!e){e=[0,0];c.fp.set(k,e)}e[0]+=qs;e[1]+=qb}
+function onTrade(p,q,sellAgg,ts){gotTrade=true;last=p;ts=ts||Date.now();const qb=sellAgg?0:q,qs=sellAgg?q:0,k=Math.round(p/bk);
+  sess.cvd+=qb-qs;sess.pv+=p*q;sess.vv+=q;sess.vol+=q;vpAdd(k,qb,qs);
+  const t0=Math.floor(ts/60000)*60000;let b=bars[bars.length-1];if(!b||b.t!==t0){b={t:t0,o:p,h:p,l:p,c:p,v:0};bars.push(b);if(bars.length>1700)bars.shift()}
+  if(p>b.h)b.h=p;if(p<b.l)b.l=p;b.c=p;b.v+=q;
+  const c=cols[cols.length-1];if(c&&!c.hist){if(p>c.h)c.h=p;if(p<c.l)c.l=p;c.c=p;c.bv+=qb;c.sv+=qs;c.bpv+=p*qb;c.spv+=p*qs;if(S.mode==='fp')fpAddTo(c,k,qb,qs)}
+  tsz.push(q);if(tsz.length>800)tsz.splice(0,200);
+  tape.push({t:ts,p,q,s:sellAgg});if(tape.length>2600)tape.splice(0,600);
+  const sk=Math.floor(ts/1000);let se=secs[secs.length-1];if(!se||se.k!==sk){se={k:sk,b:0,s:0,pv:0,n:0};secs.push(se);if(secs.length>7300)secs.splice(0,600)}se.b+=qb;se.s+=qs;se.pv+=p*q;se.n++;
+  if(run&&run.s===sellAgg&&Math.abs(ts-run.t)<=3){if(k!==run.k1){run.n++;run.k1=k}run.q+=q;run.p1=p}else{if(run&&run.n>=3&&run.q>=sc.big*2){sweeps.push(run);if(sweeps.length>300)sweeps.splice(0,100)}run={t:ts,s:sellAgg,n:1,k1:k,q,p0:p,p1:p}}
+  let tt=tickTr.get(k);if(!tt){tt=[0,0];tickTr.set(k,tt)}tt[0]+=qb;tt[1]+=qs;
+  if(q>=sc.big){bigT.push({t:ts,p,q,s:sellAgg});if(bigT.length>4000)bigT.splice(0,800)}}
+function tick(tt){const m=mid();if(!isFinite(m))return;const now=tt||Date.now(),t0=Math.floor(now/S.tf)*S.tf;{let c=cols[cols.length-1];
+  if(!c||c.hist||c.t<t0){const p=isFinite(last)?last:m;c={t:t0,base:Math.round(m/bk)-R,d:ZERO,o:p,h:p,l:p,c:p,bv:0,sv:0,bpv:0,spv:0,vwap:NaN,adx:ind.adx,dir:ind.dip>=ind.dim?1:-1,hist:false,n:0};cols.push(c);if(cols.length>MAXCOLS)cols.shift()}}
+  const prev=cur,base=Math.round(m/bk)-R,b=new Float32Array(SPAN),a=new Float32Array(SPAN);let bs=0,as=0;const lim=m*.005;
+  for(const [p,q] of bids){const i=Math.round(p/bk)-base;if(i>=0&&i<SPAN)b[i]+=q;if(m-p<=lim)bs+=q}
+  for(const [p,q] of asks){const i=Math.round(p/bk)-base;if(i>=0&&i<SPAN)a[i]+=q;if(p-m<=lim)as+=q}
+  cur={base,b,a,imb:(bs-as)/((bs+as)||1)};
+  // ghi một lát sổ lệnh mỗi nhịp, độc lập với khung thời gian; lát cũ được gộp đôi dần để giữ được lâu
+  {const d=new Float32Array(SPAN);for(let i=0;i<SPAN;i++)d[i]=b[i]+a[i];const ls=hs[hs.length-1];if(ls&&now-ls.t<4000)ls.dur=Math.max(1,now-ls.t);hs.push({t:now,dur:1000,base,d,bb:bestBid,ba:bestAsk});
+    if(hs.length>5400){const out=[];for(let i=0;i<2700;i+=2){const x=hs[i],z=hs[i+1];if(z.t-x.t-x.dur>50){out.push(x,z);continue}const dd=new Float32Array(SPAN),o=z.base-x.base,w=x.dur+z.dur;for(let j=0;j<SPAN;j++){const jj=j+o,xv=jj>=0&&jj<SPAN?x.d[jj]:z.d[j];dd[j]=(xv*x.dur+z.d[j]*z.dur)/w}out.push({t:x.t,dur:z.t+z.dur-x.t,base:z.base,d:dd,bb:z.bb,ba:z.ba})}hs=out.concat(hs.slice(2700))}}
+  const c=cols[cols.length-1];c.vwap=sess.vv&&S.tf<864e5?sess.pv/sess.vv:NaN;
+  // iceberg (ước lượng): khối lượng khớp tại một mức vượt xa lệnh chờ hiển thị mà mức đó vẫn còn lệnh
+  if(prev){for(const [k,v] of tickTr){for(const side of [0,1]){const ex=v[side===0?1:0];if(!(ex>0))continue;// side 0: bán chủ động ăn vào bid; side 1: mua chủ động ăn vào ask
+        const ip=k-prev.base,ic=k-base,disp=ip>=0&&ip<SPAN?(side===0?prev.b[ip]:prev.a[ip]):0,still=ic>=0&&ic<SPAN?(side===0?b[ic]:a[ic]):0,key=k*2+side;
+        let r=iceRec.get(key);if(!r||now-r.last>20000){r={ex:0,disp:Math.max(disp,1e-9),t0:now};iceRec.set(key,r)}r.ex+=ex;r.last=now;if(disp>r.disp)r.disp=disp;
+        if(disp>0&&r.ex>=4*r.disp&&r.ex>=sc.big*8&&still>0&&!(iceList.length&&now-iceList[iceList.length-1].t<8000)){iceList.push({t:now,p:k*bk,q:r.ex,disp:r.disp,s:side});if(iceList.length>400)iceList.splice(0,100);r.ex=0;r.disp=Infinity}}}
+    if(iceRec.size>400)for(const [k,r] of iceRec)if(now-r.last>20000)iceRec.delete(k)}
+  tickTr.clear();
+  // theo dõi tường lệnh lớn
+  const thr=sc.cap*.8;if(thr>0){const seen=new Set();for(let i=R-320;i<=R+320;i++){const vb=b[i],va=a[i];if(vb>=thr||va>=thr){const key=base+i;seen.add(key);if(!walls.has(key))walls.set(key,{t0:now,s:vb>=va?0:1})}}
+    for(const key of walls.keys())if(!seen.has(key)){const i=key-base;if(i<0||i>=SPAN||Math.max(b[i],a[i])<thr*.5)walls.delete(key)}}}
+
+// ───────────── dựng dữ liệu nền từ nến ─────────────
+function seedSession(k1,kd){const day=Math.floor(Date.now()/864e5)*864e5,td=kd[kd.length-1],pv=kd[kd.length-2];
+  sess.op=+td[1];if(pv){sess.pdh=+pv[2];sess.pdl=+pv[3];sess.mlp=(sess.pdh+sess.pdl)/2}
+  for(const k of k1){const t=+k[0],o=+k[1],h=+k[2],l=+k[3],c=+k[4],v=+k[5],tb=isFinite(+k[9])?+k[9]:v/2,bar={t,o,h,l,c,v,tb,q:+k[7]||0,vw:NaN};bars.push(bar);
+    if(t>=day&&v>0){sess.pv+=(h+l+c)/3*v;sess.vv+=v;sess.cvd+=2*tb-v;sess.vol+=v;bar.vw=sess.pv/sess.vv;const i0=Math.round(l/bk),i1=Math.round(h/bk),n=i1-i0+1;for(let i=i0;i<=i1;i++)vpAdd(i,tb/n,(v-tb)/n)}}}
+function colsFromK(kl){const a=kl.map(k=>({t:+k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4],v:+k[5],tb:+k[9]})),r=adxCalc(a);let day=-1,pv=0,vv=0;
+  cols=a.map((x,i)=>{const d=Math.floor(x.t/864e5);if(d!==day){day=d;pv=0;vv=0}pv+=(x.h+x.l+x.c)/3*x.v;vv+=x.v;const tb=isFinite(x.tb)?x.tb:x.v/2;
+    return{t:x.t,base:Math.round(x.c/bk)-R,d:ZERO,o:x.o,h:x.h,l:x.l,c:x.c,bv:tb,sv:x.v-tb,bpv:0,spv:0,vwap:S.tf<864e5&&vv?pv/vv:NaN,adx:r.ad[i],dir:r.dir[i],hist:true,n:0}});
+  const lc=cols[cols.length-1];if(lc&&lc.t===Math.floor(Date.now()/S.tf)*S.tf){lc.hist=false;lc.d=new Float32Array(SPAN)}}
+function aggK(tf){const out=[];let c=null;for(const b of bars){const t=Math.floor(b.t/tf)*tf,tb=isFinite(b.tb)?b.tb:b.v/2;if(!c||c[0]!==t){c=[t,b.o,b.h,b.l,b.c,b.v,0,b.q||0,0,tb];out.push(c)}else{if(b.h>c[2])c[2]=b.h;if(b.l<c[3])c[3]=b.l;c[4]=b.c;c[5]+=b.v;c[9]+=tb}}return out}
+function colsFromBars(){const k=Math.max(1,Math.round(60000/S.tf)),nb=Math.min(bars.length,Math.ceil(1200/k)),out=[];
+  for(let bi=bars.length-nb;bi<bars.length;bi++){const b=bars[bi];if(!b)continue;const tb=isFinite(b.tb)?b.tb:b.v/2;
+    for(let i=0;i<k;i++){const t=b.t+i*S.tf;if(t>Date.now())break;const o=b.o+(b.c-b.o)*i/k,c=b.o+(b.c-b.o)*(i+1)/k;
+      out.push({t,base:Math.round(c/bk)-R,d:ZERO,o,h:Math.max(o,c),l:Math.min(o,c),c,bv:tb/k,sv:(b.v-tb)/k,bpv:0,spv:0,vwap:b.vw,adx:NaN,dir:1,hist:true,n:0})}}
+  cols=out}
+function buildHist(){histT=[];const now=Date.now(),add=(arr,iv,lab,from,to)=>{const vs=arr.filter(b=>b.t>=from&&b.t<to&&b.v>0).map(b=>b.v).sort((x,y)=>x-y);if(vs.length<20)return;const th=vs[Math.floor(vs.length*.9)];
+    for(const b of arr){if(b.t<from||b.t>=to||b.v<th)continue;const tb=isFinite(b.tb)?b.tb:b.v/2,pr=b.q>0?b.q/b.v:(b.h+b.l+b.c)/3;histT.push({t:b.t+iv/2,p:pr,q:b.v,d:2*tb-b.v,s:tb<b.v/2,r:b.v/th,lab})}};
+  const demoTf=false,first=demoTf||!bars.length?now:bars[0].t;
+  if(S.tf>60000)add(cols.map(c=>({t:c.t,h:c.h,l:c.l,c:c.c,v:c.bv+c.sv,tb:c.bv,q:0})),S.tf,TFL[S.tf],-Infinity,S.tf>9e5?now:first);
+  if(S.tf<=9e5)add(bars,60000,'1 phút',first,now-60000);histT.sort((x,y)=>x.t-y.t)}
+const colAt=T=>{const n=cols.length;if(!n)return null;const t0=Math.floor(T/S.tf)*S.tf,c=cols[n-1-Math.round((cols[n-1].t-t0)/S.tf)];return c&&c.t===t0?c:null};
+// tải lịch sử lệnh khớp cho footprint: đi lùi từng trang 1.000 lệnh
+async function loadFp(g,rest,sym,fut){const max=fut?45:60,sleep=ms=>new Promise(r=>setTimeout(r,ms));let from=null;fpInfo='Đang tải lịch sử lệnh khớp…';
+  for(let w=0;w<30&&!isFinite(liveFrom);w++)await sleep(100);
+  for(let pg=0;pg<max;pg++){if(g!==gen||S.mode!=='fp')return;let arr;
+    try{arr=await fetch(rest+'/aggTrades?symbol='+sym+'&limit=1000'+(from!==null?'&fromId='+from:'')).then(r=>{if(!r.ok)throw 0;return r.json()})}catch(e){break}
+    if(g!==gen)return;if(!arr||!arr.length)break;
+    for(const t of arr){if(t.T>=liveFrom)continue;const c=colAt(t.T);if(c){const q=+t.q;fpAddTo(c,Math.round(+t.p/bk),t.m?0:q,t.m?q:0)}}
+    const old=arr[0].T;let n=0;for(let i=cols.length-1;i>=0&&cols[i].t>=old;i--){cols[i].fpOk=true;n++}
+    fpInfo='Lịch sử footprint: '+n+' nến';from=arr[0].a-1000;if(from<0||n>=160)break;await sleep(fut?260:130)}
+  setTimeout(()=>{if(g===gen)fpInfo=''},6000)}
+
+// ───────────── kết nối ─────────────
+function stop(){gen++;live=false;socks.forEach(w=>{try{w.onclose=null;w.onerror=null;w.close()}catch(e){}});socks=[];timers.forEach(clearInterval);timers=[]}
+function reset(){cols=[];bids=new Map();asks=new Map();last=bestBid=bestAsk=NaN;cur=null;sess=newSess();bars=[];bigT=[];histT=[];tsz=[];tape=[];secs=[];tickTr=new Map();iceRec=new Map();iceList=[];walls=new Map();liveFrom=Infinity;fpInfo='';hs=[];sweeps=[];run=null;hb=null;
+  ind={adx:NaN,dip:0,dim:0,adxPrev:NaN,rvol:NaN};sc={floor:0,cap:1,bub:1,big:1,t75:0};view={c:NaN,px:4};S.offset=0;gotTrade=false;vpc=null}
+function setStatus(k,t){$('pill').className='pill '+k;$('pillTxt').textContent=t}
+function note(t,ms){const n=$('note');if(!t){n.hidden=true;return}n.textContent=t;n.hidden=false;setTimeout(()=>{n.hidden=true},ms||9000)}
+function loops(g){startedAt=Date.now();let warned=false;
+  loadShapes();timers.push(setInterval(()=>{if(g===gen)tick()},1000),
+    setInterval(()=>{if(g!==gen)return;if(S.src!=='demo'){trimBook();refreshBest()}recalc();computeInd();dash();
+      if(S.src!=='demo'){setStatus('live','LIVE · '+EX[S.ex].name+' · '+S.sym.toUpperCase()+' · sổ lệnh ✓ · khớp lệnh '+(gotTrade?'✓':'…'));
+        if(!gotTrade&&!warned&&Date.now()-startedAt>15000){warned=true;note('Đã nhận sổ lệnh nhưng chưa nhận được lệnh khớp từ sàn. Volume dots, footprint và nến hiện tại sẽ chưa cập nhật.',12000)}}},700),
+    setInterval(()=>{if(g===gen)prune()},20000));tick()}
+async function start(){stash=dataKey&&hs.length?{key:dataKey,bk,hs,secs,tape,bigT,iceList,tsz,sweeps}:null;stop();const g=gen;reset();note('');S.follow=true;$('tFollow').setAttribute('aria-pressed','true');S.colPx=S.mode==='fp'?(MOBILE?84:104):S.mode==='heat'?(isBar()?Math.max(8,Math.min(600,S.tf/4000)):3):isBar()?8:3;
+  if(S.src==='demo'){dataKey='';startDemo(g);return}
+  const ad=EX[S.ex]||EX.binance,mkt=ad.mk.includes(S.mkt)?S.mkt:ad.mk[0],sym=S.sym.trim().toUpperCase();
+  setStatus('','Đang kết nối '+ad.name+' · '+sym+'…');
+  const fail=(why,noRetry)=>{if(g!==gen)return;clearTimeout(to);stop();if(!noRetry&&retry<2){retry++;setStatus('','Đang thử nối lại '+ad.name+'…');const g2=gen;setTimeout(()=>{if(gen===g2)start()},1500);return}
+    retry=0;setStatus('','Mất kết nối '+ad.name);openPicker(why+' Chọn sàn khác để xem tiếp, hoặc bấm "Vào chart" để thử lại sàn này. Lưu ý sổ lệnh mỗi sàn khác nhau.')};
+  const to=setTimeout(()=>{if(g===gen&&!live)fail('Không kết nối được tới '+ad.name+' ('+sym+').',true)},15000);
+  let ready=false,rdy;const gotBook=new Promise(r=>{rdy=r});
+  const h={book(b,a,snap){if(g!==gen)return;if(snap){bids.clear();asks.clear()}applyLevels(bids,b);applyLevels(asks,a);if(snap&&!ready){ready=true;rdy()}},
+    trade(p,q,sell,ts){if(g!==gen||!live||!(q>0))return;if(!isFinite(liveFrom))liveFrom=ts;onTrade(p,q,sell,ts)},
+    closed(){if(g===gen&&live){setStatus('','Mất kết nối, đang nối lại…');setTimeout(()=>{if(g===gen)start()},2500)}},
+    err(){if(g===gen&&!live)fail('Không mở được luồng dữ liệu của '+ad.name+'.')}};
+  try{if(ad.prep)await ad.prep(mkt,sym);if(g!==gen)return;ad.open(mkt,sym,h);
+    const kq=Promise.all([getK(ad,mkt,sym,60000,1500),getK(ad,mkt,sym,864e5,3),S.tf>60000?getK(ad,mkt,sym,S.tf,1500):null]).catch(()=>null);
+    const [kk]=await Promise.all([kq,gotBook]);if(g!==gen)return;refreshBest();
+    const okK=kk&&kk[0]&&kk[0].length>5&&kk[1]&&kk[1].length;last=okK?kk[0][kk[0].length-1][4]:mid();if(!isFinite(last))throw 0;setBucket(last);
+    {const key=S.ex+'|'+mkt+'|'+sym;if(stash&&stash.key===key&&stash.bk===bk){({hs,secs,tape,bigT,iceList,tsz,sweeps}=stash)}stash=null;dataKey=key}
+    if(okK){seedSession(kk[0],kk[1]);if(isBar())colsFromK(kk[2]&&kk[2].length?kk[2]:aggK(S.tf));else colsFromBars();buildHist();computeInd()}
+    else note('Không tải được lịch sử nến từ '+ad.name+'. Chart chỉ có dữ liệu từ lúc mở; sổ lệnh và lệnh khớp vẫn chạy bình thường.',10000);
+    live=true;retry=0;clearTimeout(to);setStatus('live','LIVE · '+ad.name+' · '+sym);loops(g);
+    if(S.mode==='fp'){if(ad.fp)ad.fp(g,mkt,sym);else{fpInfo=ad.name+' không cho tải lại lịch sử lệnh khớp · footprint dày dần từ lúc mở';setTimeout(()=>{if(g===gen)fpInfo=''},9000)}}
+  }catch(e){fail('Không lấy được dữ liệu '+sym+' từ '+ad.name+'.')}}
+
+// ───────────── bộ chuyển đổi từng sàn: mỗi sàn chỉ cần nói cách lấy danh sách mã, nến, sổ lệnh và lệnh khớp ─────────────
+const jget=u=>fetch(u).then(r=>{if(!r.ok)throw new Error('http '+r.status);return r.json()});
+const K=(t,o,hi,l,c,v,q,tb)=>[+t,+o,+hi,+l,+c,+v,0,+q||0,0,tb===undefined?NaN:+tb];
+function wsOpen(u,h){const w=new WebSocket(u);socks.push(w);w.onerror=()=>h.err();w.onclose=()=>h.closed();return w}
+const keep=(w,msg,ms)=>timers.push(setInterval(()=>{if(w.readyState===1)w.send(msg)},ms));
+async function pageK(n,per,page){let out=[],cur=null;for(let i=0;i<8&&out.length<n;i++){let rows;try{rows=await page(cur)}catch(e){if(i)break;throw e}if(!rows.length)break;out=rows.concat(out);cur=rows[0][0];if(rows.length<per*.5)break}
+  const m=new Map();for(const r of out)m.set(r[0],r);return [...m.values()].sort((a,b)=>a[0]-b[0]).slice(-n)}
+async function getK(ad,mkt,sym,tf,n){let rows;if(ad.iv[tf])rows=await ad.klines(mkt,sym,tf,n);
+  else{const base=tf===1800000&&ad.iv[900000]?900000:tf===14400000&&ad.iv[3600000]?3600000:60000,src=await ad.klines(mkt,sym,base,Math.min(1500,n*tf/base));rows=[];let c=null;for(const r of src){const t=Math.floor(r[0]/tf)*tf;if(!c||c[0]!==t){c=r.slice();c[0]=t;rows.push(c)}else{if(r[2]>c[2])c[2]=r[2];if(r[3]<c[3])c[3]=r[3];c[4]=r[4];c[5]+=r[5];c[7]+=r[7];c[9]+=r[9]}}}
+  const out=[];for(const r of rows){const p=out[out.length-1];if(p){const gap=Math.round((r[0]-p[0])/tf);if(gap>1&&gap<3000)for(let i=1;i<gap;i++)out.push([p[0]+i*tf,p[4],p[4],p[4],p[4],0,0,0,0,0])}out.push(r)}return out}
+function trimBook(){const n=(EX[S.ex]||{}).trim;if(!n)return;if(bids.size>n+20){const k=[...bids.keys()].sort((a,b)=>b-a);for(let i=n;i<k.length;i++)bids.delete(k[i])}if(asks.size>n+20){const k=[...asks.keys()].sort((a,b)=>a-b);for(let i=n;i<k.length;i++)asks.delete(k[i])}}
+const EX={
+ binance:{name:'Binance',mk:['fut','spot'],iv:IV,fb:{fut:['BTCUSDT','ETHUSDT','SOLUSDT','XRPUSDT','BNBUSDT','DOGEUSDT','XAUUSDT'],spot:['BTCUSDT','ETHUSDT','SOLUSDT','XRPUSDT','BNBUSDT','DOGEUSDT','PAXGUSDT']},
+  rest:m=>m==='fut'?'https://fapi.binance.com/fapi/v1':'https://data-api.binance.vision/api/v3',
+  symbols(m){return jget(this.rest(m)+'/ticker/price').then(a=>a.map(x=>x.symbol))},
+  klines(m,s,tf,n){return jget(this.rest(m)+'/klines?symbol='+s+'&interval='+this.iv[tf]+'&limit='+Math.min(n,m==='fut'?1500:1000)).then(a=>a.map(k=>K(k[0],k[1],k[2],k[3],k[4],k[5],k[7],k[9])))},
+  // Binance Futures tách luồng từ 23/04/2026: /public cho sổ lệnh, /market cho lệnh khớp
+  open(m,sym,h){const fut=m==='fut',s=sym.toLowerCase(),dp=S.eco?(fut?'@depth@500ms':'@depth'):'@depth@100ms',buf=[];let synced=false;
+    const urls=fut?['wss://fstream.binance.com/public/stream?streams='+s+dp,'wss://fstream.binance.com/market/stream?streams='+s+'@aggTrade']:['wss://data-stream.binance.vision/stream?streams='+s+dp+'/'+s+'@aggTrade'];
+    urls.forEach(u=>{wsOpen(u,h).onmessage=e=>{const x=JSON.parse(e.data),d=x.data||x;if(d.e==='depthUpdate'){if(!synced)buf.push(d);else h.book(d.b,d.a)}else if(d.e==='aggTrade'||d.e==='trade')h.trade(+d.p,+d.q,d.m,d.T)}});
+    jget(this.rest(m)+'/depth?symbol='+sym+'&limit='+(fut?1000:5000)).then(dj=>{h.book(dj.bids,dj.asks,true);for(const d of buf)if(d.u>dj.lastUpdateId)h.book(d.b,d.a);synced=true}).catch(()=>h.err())},
+  fp(g,m,s){loadFp(g,this.rest(m),s,m==='fut')}},
+ okx:{name:'OKX',mk:['fut','spot'],iv:{60000:'1m',300000:'5m',900000:'15m',1800000:'30m',3600000:'1H',14400000:'4H',86400000:'1Dutc'},ct:{},c:1,fb:{fut:['BTC-USDT-SWAP','ETH-USDT-SWAP','SOL-USDT-SWAP','XRP-USDT-SWAP','DOGE-USDT-SWAP'],spot:['BTC-USDT','ETH-USDT','SOL-USDT','XRP-USDT','DOGE-USDT']},
+  symbols(m){return jget('https://www.okx.com/api/v5/public/instruments?instType='+(m==='fut'?'SWAP':'SPOT')).then(r=>r.data.filter(x=>x.state==='live'&&(m!=='fut'||x.ctType==='linear')).map(x=>{if(m==='fut')this.ct[x.instId]=+x.ctVal;return x.instId}))},
+  // hợp đồng SWAP của OKX tính theo "số hợp đồng": phải nhân hệ số ctVal để ra khối lượng coin
+  async prep(m,s){this.c=1;if(m!=='fut')return;if(!this.ct[s]){try{const r=await jget('https://www.okx.com/api/v5/public/instruments?instType=SWAP&instId='+s);this.ct[s]=+r.data[0].ctVal}catch(e){}}
+    if(this.ct[s]>0)this.c=this.ct[s];else note('Không lấy được hệ số hợp đồng của OKX: khối lượng đang hiển thị theo số hợp đồng, chưa quy ra coin.',10000)},
+  klines(m,s,tf,n){const u='https://www.okx.com/api/v5/market/candles?instId='+s+'&bar='+this.iv[tf]+'&limit=300',f=m==='fut';return pageK(Math.min(n,1440),300,c=>jget(u+(c?'&after='+c:'')).then(r=>r.data.map(k=>K(k[0],k[1],k[2],k[3],k[4],f?k[6]:k[5],k[7])).reverse()))},
+  open(m,s,h){const w=wsOpen('wss://ws.okx.com:8443/ws/v5/public',h),c=this.c,cv=a=>c===1?a:a.map(x=>[x[0],x[1]*c]);
+    w.onopen=()=>w.send(JSON.stringify({op:'subscribe',args:[{channel:'books',instId:s},{channel:'trades',instId:s}]}));
+    w.onmessage=e=>{if(e.data==='pong')return;const x=JSON.parse(e.data);if(x.event==='error'){h.err();return}if(!x.arg||!x.data)return;
+      if(x.arg.channel==='books')for(const d of x.data)h.book(cv(d.bids),cv(d.asks),x.action==='snapshot');else if(x.arg.channel==='trades')for(const t of x.data)h.trade(+t.px,+t.sz*c,t.side==='sell',+t.ts)};keep(w,'ping',25000)}},
+ bybit:{name:'Bybit',mk:['fut','spot'],iv:{60000:'1',300000:'5',900000:'15',1800000:'30',3600000:'60',14400000:'240',86400000:'D'},fb:{fut:['BTCUSDT','ETHUSDT','SOLUSDT','XRPUSDT','DOGEUSDT','BNBUSDT'],spot:['BTCUSDT','ETHUSDT','SOLUSDT','XRPUSDT','DOGEUSDT']},
+  cat:m=>m==='fut'?'linear':'spot',
+  symbols(m){return jget('https://api.bybit.com/v5/market/instruments-info?category='+this.cat(m)+'&limit=1000').then(r=>r.result.list.filter(x=>x.status==='Trading'&&(m!=='fut'||x.contractType==='LinearPerpetual')).map(x=>x.symbol))},
+  klines(m,s,tf,n){const u='https://api.bybit.com/v5/market/kline?category='+this.cat(m)+'&symbol='+s+'&interval='+this.iv[tf]+'&limit=1000';return pageK(n,1000,c=>jget(u+(c?'&end='+(c-1):'')).then(r=>r.result.list.map(k=>K(k[0],k[1],k[2],k[3],k[4],k[5],k[6])).reverse()))},
+  open(m,s,h){const w=wsOpen('wss://stream.bybit.com/v5/public/'+this.cat(m),h),dl=[1000,200,50];let di=0;const sub=()=>w.send(JSON.stringify({op:'subscribe',args:['orderbook.'+dl[di]+'.'+s]}));
+    w.onopen=()=>{sub();w.send(JSON.stringify({op:'subscribe',args:['publicTrade.'+s]}))};
+    w.onmessage=e=>{const x=JSON.parse(e.data);if(x.op==='subscribe'&&x.success===false){if(di<dl.length-1){di++;sub()}else h.err();return}if(!x.topic||!x.data)return;
+      if(x.topic.startsWith('orderbook'))h.book(x.data.b,x.data.a,x.type==='snapshot');else if(x.topic.startsWith('publicTrade'))for(const t of x.data)h.trade(+t.p,+t.v,t.S==='Sell',+t.T)};keep(w,'{"op":"ping"}',20000)}},
+ coinbase:{name:'Coinbase Advanced',mk:['spot'],iv:{60000:60,300000:300,900000:900,3600000:3600,86400000:86400},fb:{spot:['BTC-USD','ETH-USD','SOL-USD','XRP-USD','DOGE-USD','BTC-USDT']},
+  symbols(){return jget('https://api.exchange.coinbase.com/products').then(a=>a.filter(x=>x.status==='online'&&!x.trading_disabled).map(x=>x.id))},
+  klines(m,s,tf,n){const u='https://api.exchange.coinbase.com/products/'+s+'/candles?granularity='+this.iv[tf],iso=t=>new Date(t).toISOString();return pageK(n,300,c=>{const e=c?c-tf:Date.now();return jget(u+'&start='+iso(e-299*tf)+'&end='+iso(e)).then(a=>a.map(k=>K(k[0]*1000,k[3],k[2],k[1],k[4],k[5])).reverse())})},
+  // cùng sổ lệnh với Coinbase Advanced; trường side của lệnh khớp là phía lệnh chờ (maker)
+  open(m,s,h){const w=wsOpen('wss://ws-feed.exchange.coinbase.com',h);w.onopen=()=>w.send(JSON.stringify({type:'subscribe',product_ids:[s],channels:['level2_batch','matches','heartbeat']}));
+    w.onmessage=e=>{const x=JSON.parse(e.data);if(x.type==='snapshot')h.book(x.bids,x.asks,true);else if(x.type==='l2update'){const b=[],a=[];for(const c of x.changes)(c[0]==='buy'?b:a).push([c[1],c[2]]);h.book(b,a)}
+      else if(x.type==='match')h.trade(+x.price,+x.size,x.side==='buy',Date.parse(x.time));else if(x.type==='error')h.err()}}},
+ kraken:{name:'Kraken',mk:['spot'],trim:1000,iv:{60000:1,300000:5,900000:15,1800000:30,3600000:60,14400000:240,86400000:1440},alt:{},fb:{spot:['BTC/USD','ETH/USD','SOL/USD','XRP/USD','DOGE/USD','PAXG/USD','BTC/USDT']},
+  symbols(){return jget('https://api.kraken.com/0/public/AssetPairs').then(r=>Object.values(r.result).filter(x=>x.wsname&&(!x.status||x.status==='online')).map(x=>{const id=x.wsname.replace('XBT','BTC').replace('XDG','DOGE');this.alt[id]=x.altname;return id}))},
+  klines(m,s,tf,n){const p=this.alt[s]||s.replace('/','').replace('BTC','XBT').replace('DOGE','XDG');return jget('https://api.kraken.com/0/public/OHLC?pair='+p+'&interval='+this.iv[tf]).then(r=>{if(r.error&&r.error.length)throw new Error(r.error[0]);const k=Object.keys(r.result).find(x=>x!=='last');return r.result[k].map(a=>K(a[0]*1000,a[1],a[2],a[3],a[4],a[6])).slice(-n)})},
+  open(m,s,h){const w=wsOpen('wss://ws.kraken.com/v2',h),cv=a=>a.map(x=>[x.price,x.qty]);
+    w.onopen=()=>{w.send(JSON.stringify({method:'subscribe',params:{channel:'book',symbol:[s],depth:1000}}));w.send(JSON.stringify({method:'subscribe',params:{channel:'trade',symbol:[s],snapshot:false}}))};
+    w.onmessage=e=>{const x=JSON.parse(e.data);if(x.method==='subscribe'&&x.success===false){h.err();return}if(!x.data)return;
+      if(x.channel==='book')for(const d of x.data)h.book(cv(d.bids||[]),cv(d.asks||[]),x.type==='snapshot');else if(x.channel==='trade')for(const t of x.data)h.trade(+t.price,+t.qty,t.side==='sell',Date.parse(t.timestamp))};keep(w,'{"method":"ping"}',30000)}}};
+
+// ───────────── dữ liệu mô phỏng ─────────────
+function startDemo(g){let sd=11;const rnd=()=>{sd=(sd*16807)%2147483647;return (sd-1)/2147483646},gs=()=>{let u=0;for(let i=0;i<6;i++)u+=rnd();return u-3},hh=p=>{const x=Math.sin(p*12.9898)*43758.5453;return x-Math.floor(x)};
+  let px=84000,drift=0,burst=0;const now=Date.now();
+  const genK=(iv,n,endPx,endT)=>{const t0=Math.floor(endT/iv)*iv,s=13*Math.sqrt(iv/60000),out=[];let p=endPx;
+    for(let i=0;i<n;i++){const c=p,o=c-gs()*s-(i<n*.3?s*.12:-s*.05),h=Math.max(o,c)+Math.abs(gs())*s*.5,l=Math.min(o,c)-Math.abs(gs())*s*.5,v=(40+rnd()*80)*iv/60000*(1+Math.abs(c-o)/s),tb=v*Math.max(.2,Math.min(.8,.5+(c-o)/(s*5)));out.push([t0-i*iv,o,h,l,c,v,0,0,0,tb]);p=o}return out.reverse()};
+  const PRE=S.mode==='heat'?1800:0;setBucket(px);const k1=genK(60000,6000,px,now-PRE*1000-60000),kd=genK(864e5,3,px,now);kd[2][1]=k1[Math.max(0,k1.length-1-Math.floor((now%864e5)/60000))][1];
+  seedSession(k1,kd);last=px;
+  let wl=[];const addWall=()=>{const side=rnd()<.5?-1:1,dist=(40+rnd()*520)*Math.max(1,bk/5);wl.push({p:Math.round((px+side*dist)/10)*10,q:70+rnd()*260,life:400+rnd()*2400})};
+  for(let i=0;i<9;i++)addWall();
+  const book=()=>{bids.clear();asks.clear();const st=Math.max(1,bk),bb=Math.floor(px/st)*st,ba=bb+st,sw=1+.5*Math.sin(Date.now()/17000+px/900);
+    for(let k=0;k<1000;k++){const pb=bb-k*st,pa=ba+k*st;if(pb<=0)break;let qb=(.5+3.2*Math.pow(hh(pb),3))*(1+k/400)*sw,qa=(.5+3.2*Math.pow(hh(pa+.37),3))*(1+k/400)*(2-sw);
+      if(pb%100===0)qb+=38;else if(pb%50===0)qb+=12;if(pa%100===0)qa+=38;else if(pa%50===0)qa+=12;bids.set(pb,qb);asks.set(pa,qa)}
+    for(const w of wl){if(w.p<px)bids.set(w.p,(bids.get(w.p)||0)+w.q);else asks.set(w.p,(asks.get(w.p)||0)+w.q)}bestBid=bb;bestAsk=ba};
+  const step=tt=>{if(g!==gen)return;const T=tt||Date.now();if(rnd()<.012)drift=gs()*.9;if(rnd()<.02)burst=6+rnd()*14;burst*=.94;px+=drift*.3+gs()*(.9+burst*.16);
+    wl=wl.filter(w=>{w.life--;if(Math.abs(w.p-px)<6){onTrade(w.p,w.q*.5,w.p<px,T);return false}return w.life>0});while(wl.length<9)addWall();book();
+    const nT=Math.floor(rnd()*3+burst*.5);for(let i=0;i<nT;i++){const sell=rnd()<.5-drift*.18;let q=Math.exp(gs()*1.1-1.4);if(rnd()<.03)q*=18+rnd()*30;onTrade(sell?bestBid:bestAsk,q,sell,T)}
+    if(rnd()<.006){const sell=rnd()<.5,st=Math.max(1,bk);for(let i=0;i<4;i++)onTrade(sell?bestBid-i*st:bestAsk+i*st,1.5+rnd()*4,sell,T)}};
+  for(let i=0;i<PRE;i++){const T=now-(PRE-i)*1000;for(let k=0;k<4;k++)step(T+k*250);tick(T+999);if(i%20===19)recalc()}
+  if(isBar())colsFromK(aggK(S.tf));else colsFromBars();buildHist();
+  if(S.mode==='fp'){// footprint mẫu cho 90 nến gần nhất
+    const n=cols.length;for(let i=Math.max(0,n-90);i<n;i++){const c=cols[i],i0=Math.round(c.l/bk),i1=Math.round(c.h/bk),ws=[];let sw=0;for(let k=i0;k<=i1;k++){const w=.3+rnd()*rnd()*3;ws.push(w);sw+=w}
+      c.fp=new Map();for(let k=i0;k<=i1;k++){const f=ws[k-i0]/sw,tilt=(k-i0)/(i1-i0||1);c.fp.set(k,[c.sv*f*(.6+.8*(1-tilt)),c.bv*f*(.6+.8*tilt)])}c.fpOk=true}}
+
+  timers.push(setInterval(()=>step(),100));step();live=true;gotTrade=true;setStatus('demo','MÔ PHỎNG · dữ liệu giả');computeInd();loops(g);recalc();dash()}
+
+// ───────────── vẽ ─────────────
+function layout(){const dpr=window.devicePixelRatio||1,W=stage.clientWidth,H=stage.clientHeight;
+  if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr)}
+  ctx.setTransform(dpr,0,0,dpr,0,0);const narrow=W<=520,axisW=narrow?74:88,tapeW=S.tape?Math.max(110,Math.min(narrow?150:Math.min(460,W*.4),S.tapeW)):0,vpW=W>760||(!narrow&&!tapeW)?84:0,domW=Math.max(28,Math.min(narrow?44:260,S.domW));
+  const botH=S.mode==='fp'?(W>900?124:100):Math.max(narrow?66:W>900?124:84,Math.min(128,H*.19)),timeH=18;
+  L={W,H,axisW,vpW,domW,tapeW,botH,timeH,hw:Math.max(60,W-axisW-vpW-domW-tapeW),hh:H-botH-timeH}}
+const off=document.createElement('canvas'),octx=off.getContext('2d');
+let vpc=null;
+function chartVP(st,end){const key=st+'|'+end+'|'+S.vp+'|'+bk;if(vpc&&vpc.key===key&&Date.now()-vpc.ts<900)return vpc.g;
+  const gr=[];if(S.vp==='day'&&S.tf<864e5){let a=st,d=Math.floor(cols[st].t/864e5);for(let i=st+1;i<=end;i++){const dd=i<end?Math.floor(cols[i].t/864e5):-1;if(dd!==d){gr.push([a,i]);a=i;d=dd}}}else gr.push([st,end]);
+  const g=gr.map(([a,b])=>{const mp=new Map();let tot=0;for(let i=a;i<b;i++){const c=cols[i],v=c.bv+c.sv;if(!(v>0))continue;
+      if(c.fp&&c.fp.size){for(const [k,e] of c.fp){let x=mp.get(k);if(!x){x=[0,0];mp.set(k,x)}x[0]+=e[1];x[1]+=e[0]}}
+      else{const i0=Math.round(c.l/bk),i1=Math.round(c.h/bk),n=i1-i0+1,fb=c.bv/n,fs=c.sv/n;for(let k=i0;k<=i1;k++){let e=mp.get(k);if(!e){e=[0,0];mp.set(k,e)}e[0]+=fb;e[1]+=fs}}tot+=v}
+    const arr=[...mp.entries()].sort((x,y)=>x[0]-y[0]);if(!arr.length)return null;let pi=0,mx=0,tt=0;arr.forEach((e,i)=>{const t=e[1][0]+e[1][1];tt+=t;if(t>mx){mx=t;pi=i}});
+    let lo=pi,hi=pi,acc=mx;while(acc<.7*tt&&(lo>0||hi<arr.length-1)){const up=hi<arr.length-1?arr[hi+1][1][0]+arr[hi+1][1][1]:-1,dn=lo>0?arr[lo-1][1][0]+arr[lo-1][1][1]:-1;if(up>=dn){hi++;acc+=up}else{lo--;acc+=dn}}
+    return{a,b,arr,mx,poc:arr[pi][0],vah:arr[hi][0],val:arr[lo][0]}}).filter(Boolean);
+  vpc={key,ts:Date.now(),g};return g}
+// chấm khối lượng kiểu Bookmap: một quả cầu chia phần xanh (mua chủ động) và đỏ (bán chủ động)
+function sphere(x,y,r,fs){if(!isFinite(y)||x<-40)return;ctx.globalAlpha=.86;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fillStyle=C.buy;ctx.fill();
+  if(fs>.02){ctx.beginPath();ctx.moveTo(x,y);ctx.arc(x,y,r,-Math.PI/2,-Math.PI/2+TAU*Math.min(1,fs));ctx.closePath();ctx.fillStyle=C.sell;ctx.fill()}ctx.globalAlpha=1;
+  if(r>=4){const g=ctx.createRadialGradient(x-r*.3,y-r*.35,r*.1,x,y,r);g.addColorStop(0,'rgba(255,255,255,.28)');g.addColorStop(.6,'rgba(255,255,255,0)');g.addColorStop(1,'rgba(0,0,0,.25)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fill()}
+  ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.lineWidth=.8;ctx.strokeStyle='rgba(255,255,255,.5)';ctx.stroke()}
+let lastDraw=0;
+function draw(ts){requestAnimationFrame(draw);if(ts-lastDraw<(S.eco?140:66))return;lastDraw=ts;layout();const {W,H,axisW,vpW,domW,tapeW,botH,hw,hh}=L;ctx.fillStyle=C.bg;ctx.fillRect(0,0,W,H);
+  const m=isFinite(mid())?mid():last;if(!isFinite(m)||!cols.length){ctx.fillStyle=C.muted;ctx.font='14px system-ui,sans-serif';ctx.textAlign='center';ctx.fillText('Đang chờ dữ liệu…',W/2,H/2);ctx.textAlign='left';return}
+  const mode=S.mode,fp=mode==='fp',heatM=mode==='heat',bar=isBar(),fit=mode==='candle'&&bar,colPx=S.colPx,now=Date.now(),len=cols.length,offC=Math.max(0,Math.min(len-2,S.offset)),offI=Math.floor(offC),gapC=offC?0:(fp?20:heatM?30:48)/colPx;
+  let fr=offC-offI;if(heatM&&!offC)fr+=1-Math.max(0,Math.min(1,(now-cols[len-1].t)/S.tf));
+  const end=len-offI,rightX=hw-(gapC-fr)*colPx,N=Math.max(1,Math.min(end,Math.ceil(rightX/colPx))),st=end-N,x0=rightX-N*colPx,xL=j=>x0+j*colPx,xc=j=>x0+(j+.5)*colPx;
+  const tA=cols[st].t,xT=t=>x0+(t-tA)/S.tf*colPx,tAt=x=>tA+(x-x0)/colPx*S.tf;
+  // thang giá
+  const mi=m/bk;if(!isFinite(view.c)){view.c=mi;view.px=fp?S.fpRow:fit?2:S.rowPx}
+  if(S.follow){if(fit){let hi=-Infinity,lo=Infinity;for(let i=st;i<end;i++){const c=cols[i];if(c.h>hi)hi=c.h;if(c.l<lo)lo=c.l}if(!offC){hi=Math.max(hi,m);lo=Math.min(lo,m)}
+      const tc=(hi+lo)/2/bk,tp=Math.max(.02,Math.min(24,hh/((hi-lo)/bk*1.22+6)));view.c+=(tc-view.c)*.35;view.px+=(tp-view.px)*.35}
+    else{view.px=fp?S.fpRow:S.rowPx;const rows=hh/view.px,ref=offC?cols[end-1].c/bk:mi,dv=Math.abs(ref-view.c);if(dv>rows*.6)view.c=ref;else if(dv>rows*(fp?.3:.2))view.c+=(ref-view.c)*.12}}
+  const px=view.px,y=p=>hh/2-(p/bk-view.c)*px,bT=Math.ceil(view.c+hh/2/px)+1,bB=Math.floor(view.c-hh/2/px)-1,mg=px>=1?1:Math.ceil(1/px),Rn=Math.ceil((bT-bB+1)/mg),yTop=y((bT+.5)*bk),rh=mg*px;L.xT=xT;L.tAt=tAt;L.yOf=y;L.pAt=yy=>(view.c+(hh/2-yy)/px)*bk;
+  ctx.save();ctx.beginPath();ctx.rect(0,0,hw,hh);ctx.clip();
+  // 1. heatmap lệnh chờ. Tab Heatmap: sổ lệnh ghi theo thời gian. Tab Nến: sổ lệnh hiện tại phủ đều, không còn dải riêng sát DOM.
+  const hsIdx=[],nh=hs.length;
+  if(!fp&&Rn>0&&Rn<4000){const sx=2,wN=heatM?Math.ceil(hw/sx):1;if(off.width!==wN||off.height!==Rn){off.width=wN;off.height=Rn}
+    const on=S.heat,img=on?octx.createImageData(wN,Rn):null,pd=on?img.data:null,fl=sc.floor,cp=Math.max(sc.cap/S.contrast,fl*1.2),rg=cp-fl||1,z0=LUT[0],z1=LUT[1],z2=LUT[2];let si=0;
+    for(let j=0;j<wN;j++){let d=null,base=0,dim=1,none=false;
+      if(heatM){const t=tAt(j*sx+sx/2);hsIdx[j]=-1;
+        if(nh&&t>=hs[0].t&&t<=now){while(si<nh-1&&hs[si+1].t<=t)si++;const s=hs[si];if(t<s.t+s.dur+1500){d=s.d;base=s.base;hsIdx[j]=si}else none=true}
+        else if(t<now&&cur&&S.ext&&(!nh||t<hs[0].t)){base=cur.base;dim=.42}else none=true}
+      else{if(cur){base=cur.base;dim=.9}else none=true}
+      if(!on)continue;const div=Math.round((d?(hs[si].bb+hs[si].ba)/2:m)/bk);
+      for(let r=0;r<Rn;r++){const q=(r*wN+j)*4;let v=0;if(!none){const i0=bT-r*mg-base;for(let k=0;k<mg;k++){const i=i0-k;if(i>=0&&i<SPAN){const x=d?d[i]:cur.b[i]+cur.a[i];if(x>v)v=x}}}
+        if(v>0){const t=(v<=fl?.1*v/(fl||1):.1+.9*Math.pow(Math.min(1,(v-fl)/rg),.62))*dim,u=Math.min(255,Math.round(255*t))*3,lu=split&&bT-r*mg>div?LUTA:LUT;pd[q]=lu[u];pd[q+1]=lu[u+1];pd[q+2]=lu[u+2]}else{pd[q]=z0;pd[q+1]=z1;pd[q+2]=z2}pd[q+3]=255}}
+    if(on){octx.putImageData(img,0,0);ctx.imageSmoothingEnabled=false;ctx.drawImage(off,0,0,wN,Rn,0,yTop,heatM?wN*sx:hw,Rn*rh)}}
+  // 2. volume profile trên biểu đồ (tab Nến và Footprint)
+  const tags=[];
+  if(S.vp!=='off'&&!heatM){const g=chartVP(st,end),vis=S.vp!=='day'||S.tf>=864e5;for(const v of g){const xa=Math.max(0,xL(v.a-st)),xb=vis?hw:Math.min(hw,xL(v.b-st)),mw=vis?hw*(fp?.12:.2):Math.min((xb-xa)*.9,190),bh=Math.max(1,px-(px>3?1:0));
+      for(const [k,e] of v.arr){const yy=y((k+.5)*bk);if(yy<-px||yy>hh)continue;const t=e[0]+e[1],w=mw*t/v.mx,wb=w*e[0]/t;if(k===v.poc){ctx.fillStyle='rgba(255,61,242,.5)';ctx.fillRect(xa,yy,w,bh)}else if(fp){ctx.fillStyle='rgba(150,160,175,.22)';ctx.fillRect(xa,yy,w,bh)}else{ctx.fillStyle='rgba(60,220,140,.26)';ctx.fillRect(xa,yy,wb,bh);ctx.fillStyle='rgba(240,90,90,.26)';ctx.fillRect(xa+wb,yy,w-wb,bh)}}
+      const ln=(k,col,ds)=>{const yy=y(k*bk);ctx.strokeStyle=col;ctx.lineWidth=1;ctx.setLineDash(ds);ctx.beginPath();ctx.moveTo(xa,yy);ctx.lineTo(xb,yy);ctx.stroke();ctx.setLineDash([])};
+      ln(v.poc,'rgba(255,61,242,.9)',[]);ln(v.vah,'rgba(255,255,255,.5)',[5,4]);ln(v.val,'rgba(255,255,255,.5)',[5,4]);
+      if(vis){tags.push(['POC',v.poc*bk,C.poc]);tags.push(['VAH',v.vah*bk,'#cfd6e0']);tags.push(['VAL',v.val*bk,'#cfd6e0'])}}}
+  // 3. lớp MIDOTI
+  if(S.mid){const hl=(p,col,name,ds)=>{if(!isFinite(p))return;const yy=y(p);tags.push([name,p,col]);if(yy<0||yy>hh)return;ctx.strokeStyle=col;ctx.lineWidth=fp?1:1.5;ctx.setLineDash(ds||[]);ctx.beginPath();ctx.moveTo(0,yy);ctx.lineTo(hw,yy);ctx.stroke();ctx.setLineDash([])};
+    hl(sess.pdh,C.lvl,'PDH',[2,4]);hl(sess.pdl,C.lvl,'PDL',[2,4]);hl(sess.op,C.op,'OP');hl(sess.mlp,C.mlp,'MLP');
+    ctx.lineJoin='round';for(const ps of fp?[[C.vwap,1.4]]:[[C.bg,5],[C.vwap,2.2]]){ctx.strokeStyle=ps[0];ctx.lineWidth=ps[1];ctx.beginPath();let on=false,pd=-1;for(let j=0;j<N;j++){const c=cols[st+j],v=c.vwap,dd=Math.floor(c.t/864e5);if(!isFinite(v)){on=false;continue}const yy=y(v);if(on&&dd===pd)ctx.lineTo(xc(j),yy);else ctx.moveTo(xc(j),yy);on=true;pd=dd}ctx.stroke()}
+    const lv=cols[end-1].vwap;if(isFinite(lv))tags.push(['VWAP',lv,C.vwap])}
+  // 4. giá
+  const hollow=heatM&&colPx>20,type=heatM?(bar?'candle':'line'):S.type,bw=hollow?Math.max(1,colPx-3):heatM?Math.min(13,Math.max(1,Math.floor(colPx*.72))):Math.max(1,Math.floor(colPx*.72));
+  if(fp){// footprint: mỗi mức giá ghi Bid × Ask (bán chủ động × mua chủ động)
+    const big=colPx>=64&&px>=11,cw=colPx-12;ctx.textBaseline='middle';
+    for(let j=0;j<N;j++){const c=cols[st+j],cx=xL(j),up=c.c>=c.o,col=up?C.buy:C.sell;
+      ctx.strokeStyle=col;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cx+4.5,y(c.h));ctx.lineTo(cx+4.5,y(c.l));ctx.stroke();ctx.fillStyle=col;const yo=y(c.o),yc=y(c.c);ctx.fillRect(cx+2,Math.min(yo,yc),5,Math.max(1,Math.abs(yo-yc)));
+      if(!c.fp||!c.fp.size){ctx.globalAlpha=.25;ctx.fillRect(cx+10,Math.min(yo,yc),cw,Math.max(1,Math.abs(yo-yc)));ctx.globalAlpha=1;continue}
+      let mv=0,pk=0,pv=0;for(const [k,e] of c.fp){if(e[0]>mv)mv=e[0];if(e[1]>mv)mv=e[1];if(e[0]+e[1]>pv){pv=e[0]+e[1];pk=k}}
+      const xm=cx+10+cw/2;
+      for(const [k,e] of c.fp){const yy=y((k+.5)*bk);if(yy<-px||yy>hh)continue;const b=e[0],a=e[1],h=Math.max(1,px-1);
+        ctx.fillStyle='rgba(239,68,68,'+(.07+.55*b/mv).toFixed(3)+')';ctx.fillRect(cx+10,yy,cw/2,h);ctx.fillStyle='rgba(34,201,107,'+(.07+.55*a/mv).toFixed(3)+')';ctx.fillRect(xm,yy,cw/2,h);
+        if(big){const bd=c.fp.get(k-1),au=c.fp.get(k+1),aI=a>0&&a>=3*(bd?bd[0]:0)&&a>=mv*.12,bI=b>0&&b>=3*(au?au[1]:0)&&b>=mv*.12,ty=yy+h/2+.5;
+          ctx.font=(bI?'700 ':'')+'10.5px '+MONO;ctx.fillStyle=bI?'#ff8f8f':'#d5dbe4';ctx.textAlign='right';ctx.fillText(fC(b),xm-6,ty);
+          ctx.font=(aI?'700 ':'')+'10.5px '+MONO;ctx.fillStyle=aI?'#7df0ae':'#d5dbe4';ctx.textAlign='left';ctx.fillText(fC(a),xm+6,ty);
+          ctx.fillStyle=C.muted;ctx.textAlign='center';ctx.font='9px '+MONO;ctx.fillText('×',xm,ty)}
+        if(k===pk){ctx.strokeStyle='#f2f6fa';ctx.lineWidth=1;ctx.strokeRect(cx+10.5,yy+.5,cw-1,h-1)}}}
+    ctx.textBaseline='alphabetic';ctx.textAlign='left'}
+  else if(type==='line'||type==='area'){if(type==='area'){ctx.beginPath();for(let j=0;j<N;j++){const yy=y(cols[st+j].c);j?ctx.lineTo(xc(j),yy):ctx.moveTo(xc(j),yy)}ctx.lineTo(xc(N-1),hh);ctx.lineTo(xc(0),hh);ctx.closePath();const g=ctx.createLinearGradient(0,0,0,hh);g.addColorStop(0,'rgba(34,227,255,.28)');g.addColorStop(1,'rgba(34,227,255,0)');ctx.fillStyle=g;ctx.fill()}
+    ctx.lineJoin='round';for(const ps of heatM?[['rgba(0,0,0,.7)',2.6],['#eef3f8',1]]:[['#000',3.4],['#f2f6fa',1.4]]){ctx.strokeStyle=ps[0];ctx.lineWidth=ps[1];ctx.beginPath();for(let j=0;j<N;j++){const yy=y(cols[st+j].c);j?ctx.lineTo(xc(j),yy):ctx.moveTo(xc(j),yy)}ctx.stroke()}}
+  else{let po=NaN,pc=NaN;for(let j=0;j<N;j++){const c=cols[st+j];let o=c.o,h=c.h,l=c.l,cl=c.c;
+      if(type==='ha'){const hc=(c.o+c.h+c.l+c.c)/4,ho=isFinite(po)?(po+pc)/2:(c.o+c.c)/2;o=ho;cl=hc;h=Math.max(c.h,ho,hc);l=Math.min(c.l,ho,hc);po=ho;pc=hc}
+      const up=cl>=o,col=up?C.buy:C.sell,xx=xc(j),yo=y(o),ycl=y(cl);ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=type==='ohlc'?Math.max(1,colPx*.16):1;
+      ctx.beginPath();ctx.moveTo(xx,y(h));ctx.lineTo(xx,y(l));if(type==='ohlc'){ctx.moveTo(xx-bw/2,yo);ctx.lineTo(xx,yo);ctx.moveTo(xx,ycl);ctx.lineTo(xx+bw/2,ycl)}ctx.stroke();
+      if(type!=='ohlc'){const t=Math.min(yo,ycl),bh=Math.max(1,Math.abs(yo-ycl));if(hollow){ctx.globalAlpha=.1;ctx.fillRect(xx-bw/2,t,bw,bh);ctx.globalAlpha=.75;ctx.lineWidth=1;ctx.strokeRect(xx-bw/2+.5,t+.5,bw-1,bh);ctx.globalAlpha=1}else{ctx.fillRect(xx-bw/2,t,bw,bh);if(bw>=5){ctx.strokeStyle='rgba(0,0,0,.6)';ctx.lineWidth=1;ctx.strokeRect(xx-bw/2+.5,t+.5,bw-1,bh-1)}}}}}
+  // 4b. đường giá mua tốt nhất (xanh) và giá bán tốt nhất (đỏ) trên phần sổ lệnh đã ghi
+  if(heatM)for(const [key,col] of [['bb','#3ff08f'],['ba','#ff6b6b']]){ctx.strokeStyle=col;ctx.lineWidth=1.3;ctx.lineJoin='miter';ctx.beginPath();let on=false,py=0;for(let j=0;j<hsIdx.length;j++){const i=hsIdx[j];if(i<0){on=false;continue}const yy=y(hs[i][key]),xx=j*2+1;if(!isFinite(yy)){on=false;continue}if(on){ctx.lineTo(xx,py);ctx.lineTo(xx,yy)}else ctx.moveTo(xx,yy);py=yy;on=true}ctx.stroke()}
+  // 5. volume dots
+  hb=null;if(heatM&&secs.length){const binS=Math.max(1,Math.round(13*S.tf/1000/colPx)),mp=new Map(),kA=Math.floor(tAt(-30)/1000);for(let i=secs.length-1;i>=0;i--){const e=secs[i];if(e.k<kA)break;const id=Math.floor(e.k/binS);let g=mp.get(id);if(!g){g={id,b:0,s:0,pv:0,v:0};mp.set(id,g)}g.b+=e.b;g.s+=e.s;g.pv+=e.pv;g.v+=e.b+e.s}
+    const arr=[...mp.values()].filter(g=>g.v>0).sort((p,q)=>p.id-q.id);if(arr.length){const vs=arr.map(g=>g.v).sort((p,q)=>p-q);hb={binS,arr,ref:vs[Math.floor(vs.length*.96)]||1,t0:arr[0].id*binS*1000}}}
+  if(S.bub&&!fp){const rad=(v,ref)=>Math.min(26,1.6+7.8*Math.sqrt(v/ref)),t0=tA;
+    for(const t of histT){if(t.t<t0||t.r<S.bubMin)continue;const xx=xT(t.t);if(xx>hw)break;if(hb&&t.t>=hb.t0)break;sphere(xx,y(t.p),rad(t.r,2.6),(t.q-t.d)/2/t.q)}
+    if(heatM){if(hb){const mn=S.bubMin*hb.ref*.16;for(const g of hb.arr.slice().sort((p,q)=>q.v-p.v)){if(g.v<mn)break;sphere(xT((g.id+.5)*hb.binS*1000),y(g.pv/g.v),Math.min(24,2+9.5*Math.sqrt(g.v/hb.ref)),g.s/g.v)}}}
+    else{const mn=sc.big*S.bubMin;for(const t of bigT){if(t.t<t0||t.q<mn)continue;const xx=xT(t.t);if(xx>hw)continue;sphere(xx,y(t.p),rad(t.q,sc.big*2.2),t.s?1:0)}}}
+  // 5b. iceberg (ước lượng)
+  if(S.ice){let n=0;for(let i=iceList.length-1;i>=0&&n<24;i--){const e=iceList[i];if(e.t<tA)break;const xx=xT(e.t),yy=y(e.p);if(xx>hw||yy<0||yy>hh)continue;n++;ctx.beginPath();ctx.moveTo(xx,yy-4.5);ctx.lineTo(xx+4,yy);ctx.lineTo(xx,yy+4.5);ctx.lineTo(xx-4,yy);ctx.closePath();ctx.fillStyle=e.s===0?'rgba(34,201,107,.35)':'rgba(239,68,68,.35)';ctx.fill();ctx.lineWidth=1.1;ctx.strokeStyle=C.dia;ctx.stroke()}}
+  // mốc bắt đầu ghi sổ lệnh (chỉ ở tab Heatmap)
+  if(heatM&&nh){const xx=xT(hs[0].t);if(xx>60&&xx<hw){ctx.strokeStyle='rgba(34,227,255,.45)';ctx.setLineDash([4,4]);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(xx+.5,0);ctx.lineTo(xx+.5,hh);ctx.stroke();ctx.setLineDash([]);ctx.font='600 10px '+MONO;ctx.fillStyle=C.dia;ctx.textAlign='right';ctx.fillText('Sổ lệnh ghi thật từ đây ▸',xx-6,hh-8);ctx.textAlign='left'}}
+  if(fp&&fpInfo){ctx.font='600 11px '+MONO;ctx.fillStyle=C.dia;ctx.textAlign='right';ctx.fillText(fpInfo,hw-10,hh-10);ctx.textAlign='left'}
+  drawShapes();
+  ctx.restore();
+  // 6. DOM (sổ lệnh hiện tại)
+  const dx=hw,tx=hw+domW,vx=tx+tapeW,ax=W-axisW;ctx.fillStyle='#070a0f';ctx.fillRect(dx,0,W-dx,hh);
+  if(cur){const grp=rh>=11?1:Math.ceil(12/rh),G=grp*mg,gh=G*px,gTop=Math.floor(bT/G),Rg=gTop-Math.floor(bB/G)+2,B=new Float32Array(Rg),A=new Float32Array(Rg),Wl=S.wall?new Float64Array(Rg):null;let mx=0;
+    for(let bq=bT;bq>=bB;bq--){const i=bq-cur.base;if(i<0||i>=SPAN)continue;const g=gTop-Math.floor(bq/G);B[g]+=cur.b[i];A[g]+=cur.a[i];if(Wl){const w=walls.get(bq);if(w&&(!Wl[g]||w.t0<Wl[g]))Wl[g]=w.t0}}
+    for(let g=0;g<Rg;g++){if(B[g]>mx)mx=B[g];if(A[g]>mx)mx=A[g]}
+    const yG=g=>y(((gTop-g+1)*G-.5)*bk),bh=Math.max(1,gh-1),nums=domW>=54;ctx.save();ctx.beginPath();ctx.rect(dx,14,domW,hh-14);ctx.clip();
+    if(mx>0)for(let g=0;g<Rg;g++){const yy=yG(g);if(yy<-gh||yy>hh)continue;const v=B[g]+A[g];if(!(v>0))continue;const bid=B[g]>=A[g],wl=Wl&&Wl[g];ctx.fillStyle=bid?C.bid:C.ask;ctx.globalAlpha=wl?.95:.5;ctx.fillRect(dx+1,yy,Math.max(1,(domW-3)*Math.sqrt(v/mx)),bh);ctx.globalAlpha=1;
+        if(nums){ctx.font=(wl?'700 ':'')+'10px '+MONO;ctx.fillStyle=wl?'#fff':'#dfe6ee';ctx.textAlign='right';ctx.fillText(fC(v),dx+domW-4,yy+gh/2+3.5);ctx.textAlign='left'}}
+    ctx.restore();
+    if(S.num&&mx>0){const pick=(arr,col)=>{const idx=[];for(let g=0;g<Rg;g++){const yy=yG(g);if(arr[g]>0&&Wl&&Wl[g]&&yy>26&&yy<hh-8)idx.push(g)}idx.sort((p,q)=>arr[q]-arr[p]);const used=[];ctx.font='600 10px '+MONO;ctx.textAlign='right';
+        for(const g of idx){if(used.length>=2)break;const yy=yG(g)+gh/2;if(used.some(u=>Math.abs(u-yy)<16))continue;used.push(yy);const pr=((gTop-g+.5)*G)*bk,txt=fQ(arr[g])+' · '+fM(arr[g]*pr)+' · '+fAge(now-Wl[g]),tw=ctx.measureText(txt).width+8;ctx.fillStyle='rgba(5,7,10,.72)';ctx.fillRect(hw-tw-4,yy-7,tw,14);ctx.fillStyle=col;ctx.fillText(txt,hw-8,yy+3.5)}ctx.textAlign='left'};pick(B,'#7ee7b0');pick(A,'#ff8a82')}}
+  // 6b. bảng lệnh khớp
+  if(tapeW){ctx.fillStyle='#080b11';ctx.fillRect(tx,0,tapeW,hh);const thr=S.tapeMin==='all'?0:S.tapeMin==='huge'?sc.big:sc.t75,wT=tapeW>=178?54:0,wM=tapeW>=128,rest=tapeW-wT,xP=tx+wT+rest*(wM?.34:.52),xQ=tx+wT+rest*(wM?.62:1)-5,xM=tx+tapeW-5,rowH=15;
+    ctx.save();ctx.beginPath();ctx.rect(tx,0,tapeW,hh);ctx.clip();ctx.font='600 9.5px '+MONO;ctx.fillStyle=C.muted;ctx.textAlign='left';ctx.fillText(wT?'GIỜ':'LỆNH KHỚP',tx+5,11);ctx.textAlign='right';if(wT)ctx.fillText('GIÁ',xP,11);ctx.fillText('KL',xQ,11);if(wM)ctx.fillText('TIỀN',xM,11);
+    let r=0;const maxR=Math.floor((hh-20)/rowH);for(let i=tape.length-1;i>=0&&r<maxR;i--){const t=tape[i];if(t.q<thr)continue;const yy=18+r*rowH,bigRow=t.q>=sc.big;
+      if(bigRow){ctx.fillStyle=t.s?'rgba(239,68,68,.20)':'rgba(34,201,107,.20)';ctx.fillRect(tx+1,yy,tapeW-1,rowH)}
+      ctx.font=(bigRow?'700 ':'')+'10.5px '+MONO;ctx.fillStyle=C.muted;if(wT){ctx.textAlign='left';ctx.fillText(fHMS(t.t),tx+5,yy+11)}ctx.textAlign='right';ctx.fillStyle=t.s?'#ff7b7b':'#5fe39a';ctx.fillText(fP(t.p),xP,yy+11);ctx.fillStyle=bigRow?'#fff':C.ink;ctx.fillText(fC(t.q),xQ,yy+11);if(wM){ctx.fillStyle=bigRow?'#fff':'#aab3c2';ctx.fillText(fM(t.q*t.p),xM,yy+11)}r++}
+    ctx.restore();ctx.textAlign='left'}
+  // 6c. profile phiên
+  if(vpW){let mx=0;const T=new Float32Array(Rn),Bv=new Float32Array(Rn);let pr=-1;for(let r=0;r<Rn;r++){const b0=bT-r*mg;for(let k=0;k<mg;k++){const e=sess.vp.get(b0-k);if(e){T[r]+=e[0]+e[1];Bv[r]+=e[0]}if(b0-k===sess.poc)pr=r}if(T[r]>mx)mx=T[r]}
+    const bh=Math.max(1,rh-(rh>3?1:0));if(mx>0)for(let r=0;r<Rn;r++){if(!T[r])continue;const yy=yTop+r*rh;if(yy<-rh||yy>hh)continue;const w=(vpW-4)*T[r]/mx,wb=w*Bv[r]/T[r];if(r===pr){ctx.fillStyle=C.poc;ctx.fillRect(vx+2,yy,w,bh)}else{ctx.fillStyle=C.vp;ctx.fillRect(vx+2,yy,wb,bh);ctx.fillStyle='#0c5f72';ctx.fillRect(vx+2+wb,yy,w-wb,bh)}}}
+  ctx.strokeStyle=C.line;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(dx+.5,0);ctx.lineTo(dx+.5,H);if(tapeW){ctx.moveTo(tx+.5,0);ctx.lineTo(tx+.5,hh)}if(vpW){ctx.moveTo(vx+.5,0);ctx.lineTo(vx+.5,hh)}ctx.moveTo(ax+.5,0);ctx.lineTo(ax+.5,H);ctx.stroke();
+  ctx.font='600 9.5px '+MONO;ctx.fillStyle=C.muted;ctx.textAlign='left';ctx.fillText('COB',dx+5,11);if(vpW)ctx.fillText('PHIÊN',vx+5,11);
+  // 7. trục giá
+  ctx.font='10.5px '+MONO;ctx.fillStyle=C.muted;const stp=niceStep(52/px*bk),first=Math.ceil(bB*bk/stp)*stp;for(let p=first;p<=bT*bk;p+=stp){const yy=y(p);if(yy>8&&yy<hh-4)ctx.fillText(fP(p),ax+6,yy+3.5)}
+  const tag=(name,p,col)=>{const yy=y(p);if(yy<0||yy>hh)return;ctx.fillStyle=col;ctx.fillRect(ax+1,yy-8,axisW-1,16);ctx.fillStyle='#04121a';ctx.font='700 10px '+MONO;ctx.fillText(name?name+' '+fP(p):fP(p),ax+4,yy+3.5)};
+  tags.sort((a,b)=>a[1]-b[1]).forEach(t=>tag(t[0],t[1],t[2]));
+  const lp=offC?cols[cols.length-1].c:(isFinite(last)?last:m),yl=Math.max(8,Math.min(hh-8,y(lp)));ctx.strokeStyle='rgba(255,255,255,.35)';ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(0,yl);ctx.lineTo(tx,yl);ctx.moveTo(vx,yl);ctx.lineTo(ax,yl);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='#f2f6fa';ctx.fillRect(ax+1,yl-8,axisW-1,16);ctx.fillStyle='#04121a';ctx.font='700 10.5px '+MONO;ctx.fillText(fP(lp),ax+4,yl+3.5);
+  // 8. bảng phụ bên dưới
+  const fy=hh;ctx.fillStyle='#070a0f';ctx.fillRect(0,fy,W,H-fy);ctx.strokeStyle=C.line;ctx.beginPath();ctx.moveTo(0,fy+.5);ctx.lineTo(W,fy+.5);ctx.stroke();
+  const cw=Math.max(1,colPx-(colPx>3?1:.5));
+  if(fp){// bảng thống kê footprint
+    const rows=['Ask','Bid','Delta','Δ/Vol','Δ phiên','Volume'],rH=16;let mA=1e-12,mB=1e-12,mD=1e-12,mV=1e-12,mC=1e-12;for(let j=0;j<N;j++){const c=cols[st+j];mA=Math.max(mA,c.bv);mB=Math.max(mB,c.sv);mD=Math.max(mD,Math.abs(c.bv-c.sv));mV=Math.max(mV,c.bv+c.sv);mC=Math.max(mC,Math.abs(c.cd||0))}
+    ctx.save();ctx.beginPath();ctx.rect(0,fy,hw,botH);ctx.clip();ctx.textAlign='center';ctx.font='10px '+MONO;const g=a=>'rgba(34,201,107,'+a.toFixed(3)+')',rd=a=>'rgba(239,68,68,'+a.toFixed(3)+')',txt=colPx>=40;
+    for(let j=0;j<N;j++){const c=cols[st+j],xx=xL(j),v=c.bv+c.sv,d=c.bv-c.sv,pc=v?d/v*100:0,cd=c.cd||0;
+      const cells=[[fC(c.bv),g(.1+.7*c.bv/mA)],[fC(c.sv),rd(.1+.7*c.sv/mB)],[(d>=0?'+':'')+fC(d),d>=0?g(.12+.75*Math.abs(d)/mD):rd(.12+.75*Math.abs(d)/mD)],[(pc>=0?'+':'')+pc.toFixed(1)+'%',pc>=0?g(Math.min(.85,.1+Math.abs(pc)/40)):rd(Math.min(.85,.1+Math.abs(pc)/40))],[(cd>=0?'+':'')+fC(cd),cd>=0?g(.1+.6*Math.abs(cd)/mC):rd(.1+.6*Math.abs(cd)/mC)],[fC(v),'rgba(40,110,220,'+(.12+.7*v/mV).toFixed(3)+')']];
+      cells.forEach((e,i)=>{const yy=fy+2+i*rH;ctx.fillStyle=e[1];ctx.fillRect(xx+1,yy,colPx-2,rH-1);if(txt){ctx.fillStyle='#eef2f7';ctx.fillText(e[0],xx+colPx/2,yy+11.5)}})}
+    ctx.textAlign='left';ctx.font='600 10px '+MONO;rows.forEach((n,i)=>{const yy=fy+2+i*rH;ctx.fillStyle='rgba(7,10,15,.92)';ctx.fillRect(0,yy,58,rH-1);ctx.fillStyle=C.muted;ctx.fillText(n,5,yy+11.5)});ctx.restore()}
+  else{const laneH=14,fh=botH-laneH-6,ly=fy+4+fh+4;ctx.save();ctx.beginPath();ctx.rect(0,fy,hw,H-fy);ctx.clip();
+    if(heatM){// volume bars kiểu Bookmap: mua (xanh) chồng lên bán (đỏ), kèm đường delta cộng dồn
+      const base=fy+4+fh;
+      if(hb){const w=Math.max(1,hb.binS*1000/S.tf*colPx-1),vs=hb.arr.map(g=>g.v).sort((a,b)=>a-b),vm=vs[Math.floor(vs.length*.97)]||1;let cd=0,mn=0,mxx=0;const pc=[];
+        for(const g of hb.arr){const xx=xT(g.id*hb.binS*1000),h1=Math.min(fh,fh*g.s/vm),h2=Math.min(fh-h1,fh*g.b/vm);ctx.fillStyle=C.sell;ctx.fillRect(xx,base-h1,w,h1);ctx.fillStyle=C.buy;ctx.fillRect(xx,base-h1-h2,w,h2);cd+=g.b-g.s;pc.push([xx+w/2,cd]);if(cd<mn)mn=cd;if(cd>mxx)mxx=cd}
+        const vc=[];for(let j=0;j<N;j++){const c=cols[st+j];if(c.t+S.tf<=hb.t0)vc.push(c.bv+c.sv)}vc.sort((a,b)=>a-b);const vm2=vc.length?vc[Math.floor(vc.length*.985)]||1:1;ctx.globalAlpha=.4;
+        for(let j=0;j<N;j++){const c=cols[st+j];if(c.t+S.tf>hb.t0)break;const h1=Math.min(fh,fh*c.sv/vm2),h2=Math.min(fh-h1,fh*c.bv/vm2),xx=xL(j);ctx.fillStyle=C.sell;ctx.fillRect(xx,base-h1,cw,h1);ctx.fillStyle=C.buy;ctx.fillRect(xx,base-h1-h2,cw,h2)}ctx.globalAlpha=1;
+        const rg=(mxx-mn)||1;ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=1.1;ctx.beginPath();pc.forEach((p,i)=>{const yy=fy+6+(fh-6)*(1-(p[1]-mn)/rg);i?ctx.lineTo(p[0],yy):ctx.moveTo(p[0],yy)});ctx.stroke()}
+      else{const vs=[];for(let j=0;j<N;j++){const t=cols[st+j].bv+cols[st+j].sv;if(t>0)vs.push(t)}vs.sort((a,b)=>a-b);const vm=vs.length?vs[Math.floor(vs.length*.985)]:1;ctx.globalAlpha=.45;
+        for(let j=0;j<N;j++){const c=cols[st+j],hb1=Math.min(fh,fh*c.sv/vm),ha=Math.min(fh-hb1,fh*c.bv/vm),xx=xL(j);ctx.fillStyle=C.sell;ctx.fillRect(xx,base-hb1,cw,hb1);ctx.fillStyle=C.buy;ctx.fillRect(xx,base-hb1-ha,cw,ha)}ctx.globalAlpha=1}}
+    else{const capR=4,yF=v=>fy+4+fh*(1-Math.min(v,capR)/capR);for(const [v,ds,col] of [[1,[1,3],C.neu],[1.5,[5,4],C.vwap]]){ctx.strokeStyle=col;ctx.globalAlpha=.7;ctx.setLineDash(ds);ctx.beginPath();ctx.moveTo(0,yF(v));ctx.lineTo(hw,yF(v));ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1}
+      let fs=0,fk=0;for(let i=Math.max(0,end-240);i<end;i++){fs+=cols[i].bv+cols[i].sv;fk++}const favg=Math.max(fs/(fk||1),1e-12);
+      for(let j=0;j<N;j++){const c=cols[st+j],t=c.bv+c.sv,xx=xL(j);if(t>0){const rv=t/favg,im=(c.bv-c.sv)/t,k=Math.min(1,Math.abs(im)/.5);ctx.fillStyle=im>=0?C.buy:C.sell;ctx.globalAlpha=(rv>=1.2?.4:.2)+.6*k*(rv>=1.2?1:.6);ctx.fillRect(xx,yF(rv),cw,fy+4+fh-yF(rv));ctx.globalAlpha=1;if(rv>capR){ctx.fillStyle=C.warn;ctx.fillRect(xx,fy+2,cw,2)}}}}
+    for(let j=0;j<N;j++){const c=cols[st+j];if(isFinite(c.adx)){ctx.fillStyle=c.adx<18?C.neu:(c.dir>0?C.buy:C.sell);ctx.globalAlpha=c.adx<18?.25:Math.min(.95,.3+(c.adx-18)/22*.65);ctx.fillRect(xL(j),ly,colPx+.5,laneH);ctx.globalAlpha=1}}
+    ctx.strokeStyle='#f2f6fa';ctx.lineWidth=1.1;ctx.beginPath();let on=false;for(let j=0;j<N;j++){const a=cols[st+j].adx;if(!isFinite(a)){on=false;continue}const yy=ly+laneH-laneH*Math.min(1,a/50);on?ctx.lineTo(xc(j),yy):ctx.moveTo(xc(j),yy);on=true}ctx.stroke();ctx.restore();
+    ctx.fillStyle=C.muted;ctx.font='600 9.5px '+MONO;ctx.fillText(heatM?'KHỐI LƯỢNG · mua / bán · delta cộng dồn':'FLOW · RVOL × DELTA',6,fy+13);
+  }
+  // 9. trục thời gian
+  ctx.fillStyle=C.muted;ctx.font='10px '+MONO;ctx.textAlign='center';const every=Math.max(1,Math.round((S.tf>=3600000?140:104)/colPx));for(let j=N-1;j>=0;j-=every)ctx.fillText(fT(cols[st+j].t),xc(j),H-5);ctx.textAlign='left';
+  // 10. dòng thông tin và tâm ngắm
+  let hi=end-1;if(mouse&&mouse.x<hw){hi=Math.max(st,Math.min(end-1,st+Math.floor((mouse.x-x0)/colPx)))}
+  const hc=cols[hi],dl=hc.bv-hc.sv,tl=TFL[S.tf];ctx.font='11px '+MONO;ctx.fillStyle='rgba(5,7,10,.8)';const info=hw<520?tl+' '+fT(hc.t)+'  C '+fP(hc.c)+'  V '+fQ(hc.bv+hc.sv)+'  Δ '+(dl>=0?'+':'')+fQ(dl):tl+'  '+fT(hc.t,true)+'  O '+fP(hc.o)+'  H '+fP(hc.h)+'  L '+fP(hc.l)+'  C '+fP(hc.c)+'  V '+fQ(hc.bv+hc.sv)+' ≈ '+fM((hc.bv+hc.sv)*hc.c)+'  Δ '+(dl>=0?'+':'')+fQ(dl)+' ≈ '+(dl>=0?'+':'')+fM(dl*hc.c);
+  ctx.fillRect(0,0,Math.min(hw,ctx.measureText(info).width+20),20);ctx.fillStyle=hc.c>=hc.o?C.buy:C.sell;ctx.fillText(info,10,14);
+  if(mouse&&mouse.x<ax&&mouse.y<hh&&!(mouse.x>=tx&&mouse.x<vx)){ctx.strokeStyle='rgba(255,255,255,.28)';ctx.setLineDash([2,3]);ctx.beginPath();ctx.moveTo(0,mouse.y);ctx.lineTo(tx,mouse.y);ctx.moveTo(vx,mouse.y);ctx.lineTo(ax,mouse.y);if(mouse.x<hw){ctx.moveTo(mouse.x,0);ctx.lineTo(mouse.x,H-18)}ctx.stroke();ctx.setLineDash([]);
+    const pr=(view.c+(hh/2-mouse.y)/px)*bk,kb=Math.round(pr/bk);ctx.fillStyle='#2a3342';ctx.fillRect(ax+1,mouse.y-8,axisW-1,16);ctx.fillStyle=C.ink;ctx.font='700 10px '+MONO;ctx.fillText(fP(pr),ax+4,mouse.y+3.5);
+    if(mouse.x<hw){const lines=[];
+      if(fp){const e=hc.fp&&hc.fp.get(kb);if(e)lines.push(['Bid '+fQ(e[0])+' × Ask '+fQ(e[1])+'  Δ '+(e[1]-e[0]>=0?'+':'')+fQ(e[1]-e[0])+' ≈ '+fM((e[0]+e[1])*kb*bk),e[1]>=e[0]?C.buy:C.sell]);else lines.push(['Giá '+fP(kb*bk)+' · chưa có lệnh khớp ghi nhận',C.muted])}
+      else{const si=heatM?hsIdx[Math.floor(mouse.x/2)]:-1,rec=si>=0,src=rec?hs[si]:cur;let sz=0;if(src){const i=kb-src.base;if(i>=0&&i<SPAN)sz=rec?src.d[i]:cur.b[i]+cur.a[i]}
+        lines.push([(rec?'Lệnh chờ ':'Lệnh chờ hiện tại ')+fQ(sz)+' ≈ '+fM(sz*pr),C.ink]);
+        if(S.bub){const t0=cols[st].t;let hb=null,bd=14;for(const t of histT){if(t.t<t0||t.r<S.bubMin)continue;const idx=Math.floor((t.t-t0)/S.tf);if(idx>=N)break;const dd=Math.hypot(xT(t.t)-mouse.x,y(t.p)-mouse.y);if(dd<bd){bd=dd;hb=t}}
+          if(hb)lines.push(['Cụm '+hb.lab+(hb.s?' · BÁN trội ':' · MUA trội ')+fQ(hb.q)+' ≈ '+fM(hb.q*hb.p)+' · Δ '+(hb.d>=0?'+':'')+fQ(hb.d),hb.s?C.sell:C.buy]);
+          if(heatM){if(!hc.hist){if(hc.bv>0)lines.push(['Khớp MUA '+fQ(hc.bv)+' ≈ '+fM(hc.bpv),C.buy]);if(hc.sv>0)lines.push(['Khớp BÁN '+fQ(hc.sv)+' ≈ '+fM(hc.spv),C.sell])}}
+          else{let best=null,b2=14;for(let k=bigT.length-1;k>=0;k--){const t=bigT[k];if(t.t<t0)break;const dd=Math.hypot(xT(t.t)-mouse.x,y(t.p)-mouse.y);if(dd<b2){b2=dd;best=t}}if(best)lines.push([(best.s?'Khớp BÁN ':'Khớp MUA ')+fQ(best.q)+' ≈ '+fM(best.q*best.p)+' @ '+fP(best.p),best.s?C.sell:C.buy])}}}
+      if(S.ice){const t0=cols[st].t;for(const e of iceList){if(e.t<t0)continue;if(Math.hypot(xT(e.t)-mouse.x,y(e.p)-mouse.y)<12){lines.push(['Iceberg (ước lượng) bên '+(e.s===0?'MUA':'BÁN')+': khớp '+fQ(e.q)+' trên lệnh chờ hiển thị '+fQ(e.disp),C.dia]);break}}}
+      ctx.font='11px '+MONO;let tw=0;for(const l of lines)tw=Math.max(tw,ctx.measureText(l[0]).width);tw+=12;const bh=lines.length*16+4,bx=Math.max(4,Math.min(hw-tw-4,mouse.x+12)),by=Math.max(26,Math.min(hh-bh-4,mouse.y-bh-8));
+      ctx.fillStyle='rgba(12,16,22,.95)';ctx.fillRect(bx,by,tw,bh);ctx.strokeStyle=C.line;ctx.strokeRect(bx+.5,by+.5,tw,bh);lines.forEach((l,i)=>{ctx.fillStyle=l[1];ctx.fillText(l[0],bx+6,by+14+i*16)})}}}
+
+// ───────────── bảng điều khiển MIDOTI ─────────────
+function dash(){const el=$('dash');if(!S.mid||!cols.length){el.hidden=true;return}el.hidden=false;const dock=L.W&&L.W-L.hw>=330;el.classList.toggle('dock',!!dock);el.style.width=dock?(L.W-L.hw)+'px':'';el.style.height=dock?(L.botH+L.timeH)+'px':'';
+  const p=last,vw=sess.vv?sess.pv/sess.vv:NaN,fl=sess.vol?sess.cvd/sess.vol*100:0,im=cur?cur.imb*100:0;
+  const nP=p>sess.op&&p>vw?1:p<sess.op&&p<vw?-1:0,nF=fl>=8?1:fl<=-8?-1:0,nB=im>=10?1:im<=-10?-1:0,nA=ind.adx>=20&&ind.adx>ind.adxPrev?(ind.dip>ind.dim?1:-1):0,fuel=ind.rvol>=1.2;
+  const ag=nP===0?0:(nF===nP)+(nB===nP)+(nA===nP),vb=nP===1&&ag>=2,vs=nP===-1&&ag>=2;
+  const verdict=vb?(fuel&&ag===3?'▲ MUA MẠNH':'▲ THIÊN MUA'):vs?(fuel&&ag===3?'▼ BÁN MẠNH':'▼ THIÊN BÁN'):'◇ ĐỨNG NGOÀI',vbg=vb?C.buy:vs?C.sell:C.neu,vfg=vb?'#04121a':'#fff';
+  const why=nP===0?'Giá kẹp giữa OP và VWAP':(ag+1)+'/4 nút đồng thuận'+(fuel?' · có khối lượng':' · thiếu khối lượng');
+  const nd=(s,t)=>`<div class="c b" style="background:${s===1?C.buy:s===-1?C.sell:'rgba(223,229,238,.1)'};color:${s===1?'#04121a':s===-1?'#fff':C.muted}">${t}</div>`,val=t=>`<div class="c mono">${t}</div>`;
+  let wb=null,wa=null;if(cur){let mb=0,ma=0;for(let i=0;i<SPAN;i++){if(cur.b[i]>mb){mb=cur.b[i];wb=i}if(cur.a[i]>ma){ma=cur.a[i];wa=i}}wb=wb===null?null:[(cur.base+wb)*bk,mb];wa=wa===null?null:[(cur.base+wa)*bk,ma]}
+  if(dock){const nowS=Math.floor(Date.now()/1000),tN=Date.now();let b10=0,s10=0,b60=0,s60=0,n10=0,m10=0;for(let i=secs.length-1;i>=0;i--){const e=secs[i],a=nowS-e.k;if(a>=60)break;b60+=e.b;s60+=e.s;if(a<10){b10+=e.b;s10+=e.s;n10+=e.n;m10+=e.pv}}
+    let lb=0,ls=0,lbm=0,lsm=0;for(let i=bigT.length-1;i>=0;i--){const t=bigT[i];if(tN-t.t>60000)break;if(t.s){ls++;lsm+=t.q*t.p}else{lb++;lbm+=t.q*t.p}}
+    let wb2=0,ws2=0,lsw=null;for(let i=sweeps.length-1;i>=0;i--){const w=sweeps[i];if(tN-w.t>60000)break;if(!lsw)lsw=w;if(w.s)ws2++;else wb2++}
+    const pct=(b,s)=>b+s>0?(b-s)/(b+s)*100:0,d10=pct(b10,s10),d60=pct(b60,s60),col=d=>d>=8?C.buy:d<=-8?C.sell:C.muted,mt=(lab,d)=>`<div class="pr"><span>${lab}</span><div class="imbbar"><i style="width:${(50+d/2).toFixed(1)}%;transition:none"></i></div><b style="color:${col(d)}">${(d>=0?'+':'')+d.toFixed(0)}%</b></div>`;
+    const chip=(st,lab,v,warn)=>`<div style="background:${warn?C.warn:st===1?C.buy:st===-1?C.sell:'rgba(223,229,238,.1)'};color:${warn||st===1?'#04121a':st===-1?'#fff':C.muted}"><b>${lab}</b><i>${v}</i></div>`;
+    el.innerHTML=`<div class="dk"><div class="h"><b style="color:${C.dia}">MIDOTI ◆</b><span>${S.src==='demo'?'MÔ PHỎNG':S.sym.toUpperCase()+' · '+TFL[S.tf]}</span></div>
+    <div class="vd" style="background:${vbg};color:${vfg}">${verdict}<small>${why}</small></div>
+    <div class="ch">${chip(nP,'GIÁ',nP===1?'▲OP':nP===-1?'▼OP':'kẹp')}${chip(nF,'FLOW',(fl>=0?'+':'')+fl.toFixed(0)+'%')}${chip(nB,'DOM',(im>=0?'+':'')+im.toFixed(0)+'%')}${chip(nA,'ADX',isFinite(ind.adx)?ind.adx.toFixed(0)+(ind.adx>ind.adxPrev?'↑':'↓'):'—')}${chip(0,'RVOL',isFinite(ind.rvol)?ind.rvol.toFixed(1)+'x':'—',fuel)}</div></div>
+    <div class="dk"><div class="h"><b style="color:${C.ink}">MARKET PULSE · 60s</b><span>${(n10/10).toFixed(1)} lệnh/s · ${fM(m10/10)}/s</span></div>
+    ${mt('Đà 10s',d10)}${mt('Đà 60s',d60)}
+    <div class="pr"><span>Lệnh lớn</span><em class="g">▲ ${lb} · ${fM(lbm)}</em><em class="rd">▼ ${ls} · ${fM(lsm)}</em></div>
+    <div class="pr"><span>Quét lệnh</span><em class="g">▲ ${wb2}</em><em class="rd">▼ ${ws2}</em><em style="color:${C.muted};overflow:hidden;text-overflow:ellipsis">${lsw?(lsw.s?'bán ':'mua ')+fQ(lsw.q)+' qua '+lsw.n+' mức':''}</em></div></div>`;return}
+  el.innerHTML=`<div class="r"><div class="c s2 b" style="color:${C.dia};text-align:left">MIDOTI ◆</div><div class="c s3" style="color:${C.muted};text-align:right">${S.src==='demo'?'MÔ PHỎNG':S.sym.toUpperCase()+' · L2'}</div></div>
+  <div class="r v"><div class="c s5 big" style="background:${vbg};color:${vfg}">${verdict}</div></div>
+  <div class="r"><div class="c s5" style="background:${vbg};color:${vfg}">${why}</div></div>
+  <div class="r">${nd(nP,'GIÁ')}${nd(nF,'FLOW')}${nd(nB,'DOM')}${nd(nA,'ADX')}<div class="c b" style="background:${fuel?C.warn:'rgba(223,229,238,.1)'};color:${fuel?'#04121a':C.muted}">RVOL</div></div>
+  <div class="r">${val(nP===1?'▲ OP':nP===-1?'▼ OP':'kẹp')}${val((fl>=0?'+':'')+fl.toFixed(0)+'%')}${val((im>=0?'+':'')+im.toFixed(0)+'%')}${val(isFinite(ind.adx)?ind.adx.toFixed(0)+(ind.adx>ind.adxPrev?'↑':'↓'):'—')}${val(isFinite(ind.rvol)?ind.rvol.toFixed(1)+'x':'—')}</div>
+  <div class="r"><div class="c s5 mono" style="color:#7ee7b0">Tường MUA ${wb?fP(wb[0])+' · '+fQ(wb[1])+' ≈ '+fM(wb[0]*wb[1]):'—'}</div></div>
+  <div class="r"><div class="c s5 mono" style="color:#ff8a82">Tường BÁN ${wa?fP(wa[0])+' · '+fQ(wa[1])+' ≈ '+fM(wa[0]*wa[1]):'—'}</div></div>`}
+
+// ───────────── điều khiển ─────────────
+const tfs=$('tfs');
+function buildTfs(){tfs.innerHTML='';const go=ms=>{S.tf=ms;buildTfs();start()};TFP.forEach(ms=>{const b=document.createElement('button');b.textContent=TFL[ms];b.dataset.tf=ms;b.setAttribute('aria-pressed',ms===S.tf);b.addEventListener('click',()=>go(ms));tfs.appendChild(b)});
+  const sel=document.createElement('select');sel.id='tfMore';sel.setAttribute('aria-label','Khung thời gian khác');sel.innerHTML='<option value="">Khác</option>'+TFALL.map(ms=>'<option value="'+ms+'">'+TFL[ms]+'</option>').join('');if(!TFP.includes(S.tf)){sel.value=String(S.tf);sel.className='on'}sel.addEventListener('change',()=>{if(sel.value)go(+sel.value)});tfs.appendChild(sel)}
+function applyMode(){document.body.dataset.mode=S.mode;document.querySelectorAll('#modes button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mode===S.mode));document.querySelectorAll('[data-m]').forEach(el=>{el.hidden=!el.dataset.m.split(' ').includes(S.mode)});buildTfs()}
+document.querySelectorAll('#modes button').forEach(b=>b.addEventListener('click',()=>{if(S.mode===b.dataset.mode)return;S.mode=b.dataset.mode;applyMode();start()}));
+const tog=(id,k,after)=>$(id).addEventListener('click',e=>{S[k]=!S[k];e.currentTarget.setAttribute('aria-pressed',S[k]);if(after)after()});
+tog('tHeat','heat');tog('tExt','ext');tog('tNum','num');tog('tBub','bub');tog('tTape','tape');tog('tWall','wall');tog('tIce','ice');tog('tMid','mid',dash);tog('tDraw','draw',()=>{$('tools').hidden=!S.draw});tog('tFollow','follow',()=>{if(S.follow){S.offset=0;view.c=NaN}});
+
+$('sym').addEventListener('change',e=>{const v=e.target.value.trim().toUpperCase();if(!v)return;S.sym=v;S.src='live';S.syms[S.ex+'|'+S.mkt]=v;retry=0;exLabel();start()});
+$('type').addEventListener('change',e=>{S.type=e.target.value});
+$('vp').addEventListener('change',e=>{S.vp=e.target.value;vpc=null});
+$('bk').addEventListener('change',e=>{S.bkMul=+e.target.value;start()});
+$('tapeMin').addEventListener('change',e=>{S.tapeMin=e.target.value});
+$('contrast').addEventListener('input',e=>{S.contrast=+e.target.value});
+$('pal').addEventListener('change',e=>{S.pal=e.target.value;$('cust').hidden=S.pal!=='custom';setPalette()});
+['c1','c2','c3'].forEach(id=>$(id).addEventListener('input',e=>{S[id]=e.target.value;setPalette()}));
+$('bubmin').addEventListener('input',e=>{S.bubMin=+e.target.value});
+const unfollow=()=>{S.follow=false;$('tFollow').setAttribute('aria-pressed','false')};
+const setPx=v=>{view.px=Math.max(.02,Math.min(30,v));if(S.mode==='fp')S.fpRow=Math.max(6,Math.min(30,view.px));else if(!(S.mode==='candle'&&isBar()))S.rowPx=view.px};
+const maxCol=()=>S.mode==='fp'?220:S.mode==='heat'?900:60,minCol=()=>S.mode==='fp'?14:1;
+const zoneAt=(x,yy)=>{if(yy>L.hh)return 'chart';if(x>L.W-L.axisW)return 'axis';if(Math.abs(x-L.hw)<5)return 'spDom';if(L.tapeW&&Math.abs(x-L.hw-L.domW)<5)return 'spTape';if(L.tapeW&&x>L.hw+L.domW&&x<L.hw+L.domW+L.tapeW)return 'tape';if(x>L.hw)return 'side';return 'chart'};
+cv.addEventListener('wheel',e=>{e.preventDefault();const f=e.deltaY<0?1.12:1/1.12;
+  if(e.ctrlKey||e.shiftKey||e.offsetX>L.hw){unfollowScale();setPx(view.px*f)}else S.colPx=Math.max(minCol(),Math.min(maxCol(),S.colPx*f))},{passive:false});
+function unfollowScale(){if(S.mode==='candle'&&isBar())unfollow()}
+let drag=null,pinch=null,lastTap=0,mouseT=0;const pts=new Map();
+const resetView=()=>{S.follow=true;S.offset=0;$('tFollow').setAttribute('aria-pressed','true');if(S.mode==='fp'){S.fpRow=15;view.c=NaN}else if(!(S.mode==='candle'&&isBar())){S.rowPx=3;view.c=NaN}};
+cv.addEventListener('pointerdown',e=>{pts.set(e.pointerId,{x:e.offsetX,y:e.offsetY});try{cv.setPointerCapture(e.pointerId)}catch(_){}
+  if(pts.size===2){const [a,b]=[...pts.values()];pinch={dx:Math.abs(a.x-b.x)||1,dy:Math.abs(a.y-b.y)||1,col:S.colPx,px:view.px};pinch.h=pinch.dx>=pinch.dy;drag=null;mouse=null;return}
+  const z=zoneAt(e.offsetX,e.offsetY);if(z==='chart'&&e.offsetY<L.hh&&S.draw&&drawDown(e.offsetX,e.offsetY))return;
+  drag={x:e.offsetX,y:e.offsetY,c:view.c,px:view.px,o:S.offset,dw:S.domW,tw:L.tapeW,v:false,h:false,zone:z,t:Date.now()}});
+cv.addEventListener('pointermove',e=>{if(pts.has(e.pointerId))pts.set(e.pointerId,{x:e.offsetX,y:e.offsetY});
+  if(pinch&&pts.size>=2){const [a,b]=[...pts.values()];if(pinch.h)S.colPx=Math.max(minCol(),Math.min(maxCol(),pinch.col*Math.abs(a.x-b.x)/pinch.dx));else{unfollowScale();setPx(pinch.px*Math.abs(a.y-b.y)/pinch.dy)}return}
+  mouse={x:e.offsetX,y:e.offsetY};clearTimeout(mouseT);
+  if(!drag){const z=zoneAt(e.offsetX,e.offsetY);cv.style.cursor=z==='axis'?'ns-resize':z==='spDom'||z==='spTape'?'col-resize':z==='side'?'grab':z==='tape'?'default':'crosshair';return}
+  if(drag.zone==='draw'||drag.zone==='move'){drawMove(e.offsetX,e.offsetY);return}
+  const dx=e.offsetX-drag.x,dy=e.offsetY-drag.y;
+  if(drag.zone==='spDom'){drag.m=true;S.domW=Math.max(28,Math.min(260,drag.dw-dx));return}
+  if(drag.zone==='spTape'){drag.m=true;S.tapeW=Math.max(110,Math.min(460,drag.tw-dx));return}
+  if(drag.zone==='tape')return;
+  if(drag.zone==='axis'){if(Math.abs(dy)>2){drag.m=true;unfollowScale();setPx(drag.px*Math.exp(-dy/160))}return}
+  if(drag.zone==='side'){if(Math.abs(dy)>2){drag.m=true;unfollow();view.c=drag.c+dy/view.px}return}
+  if(!drag.h&&Math.abs(dx)>6)drag.h=true;if(drag.h)S.offset=Math.max(0,Math.min(cols.length-5,drag.o+dx/S.colPx));
+  if(!drag.v&&Math.abs(dy)>14&&Math.abs(dy)>Math.abs(dx)){drag.v=true;unfollow()}if(drag.v)view.c=drag.c+dy/view.px});
+const up=e=>{pts.delete(e.pointerId);if(pts.size<2)pinch=null;if(drag&&(drag.zone==='draw'||drag.zone==='move')){drawUp();drag=null;return}
+  if(drag&&e.type==='pointerup'&&!drag.h&&!drag.v&&!drag.m&&drag.zone==='chart'&&Date.now()-drag.t<350){const n=Date.now();if(n-lastTap<340){resetView();lastTap=0}else lastTap=n}
+  if(drag&&drag.m)save();drag=null;if(e.pointerType==='touch'){clearTimeout(mouseT);mouseT=setTimeout(()=>{mouse=null},2600)}};
+cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);cv.addEventListener('pointerleave',e=>{if(e.pointerType!=='touch'){mouse=null;drag=null}});
+
+// ───────────── công cụ vẽ: lưu theo từng mã, toạ độ là (thời gian, giá) nên giữ đúng chỗ khi đổi khung ─────────────
+let shapes=[],sel=null,mk=null,tool='cur',shapeKey='';
+const DK='midoti-draw-v1';
+function loadShapes(){shapeKey=S.src==='demo'?'DEMO':S.sym.toUpperCase();sel=mk=null;try{shapes=(JSON.parse(localStorage.getItem(DK)||'{}')[shapeKey])||[]}catch(e){shapes=[]}}
+function saveShapes(){try{const o=JSON.parse(localStorage.getItem(DK)||'{}');o[shapeKey]=shapes.map(d=>({k:d.k,c:d.c,pts:d.pts,txt:d.txt}));localStorage.setItem(DK,JSON.stringify(o))}catch(e){}}
+const sPts=d=>d.pts.map(q=>[L.xT(q[0]),L.yOf(q[1])]);
+function drawShape(d){const P=sPts(d),c=d.c,on=d===sel;ctx.strokeStyle=c;ctx.fillStyle=c;ctx.lineWidth=on?2.4:1.6;ctx.lineJoin=ctx.lineCap='round';ctx.setLineDash([]);
+  if(d.k==='line'||d.k==='brush'||d.k==='path'){if(P.length<2)return;if(d.k==='brush')ctx.lineWidth=on?3:2.2;ctx.beginPath();P.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke()}
+  else if(d.k==='note'){ctx.font='600 12px system-ui,sans-serif';const tw=ctx.measureText(d.txt).width+12,x=P[0][0],yy=P[0][1];ctx.fillStyle='rgba(8,11,17,.92)';ctx.fillRect(x,yy-21,tw,20);ctx.lineWidth=on?2:1;ctx.strokeRect(x+.5,yy-20.5,tw,20);ctx.fillStyle=c;ctx.fillText(d.txt,x+6,yy-7);ctx.beginPath();ctx.arc(x,yy,2.5,0,TAU);ctx.fill();d._b=[x,yy-21,x+tw,yy+3]}
+  else{if(P.length<2)return;const a=P[0],b=P[1],x=Math.min(a[0],b[0]),yy=Math.min(a[1],b[1]),w=Math.abs(a[0]-b[0]),h=Math.abs(a[1]-b[1]);
+    if(d.k==='ell'){ctx.beginPath();ctx.ellipse(x+w/2,yy+h/2,Math.max(1,w/2),Math.max(1,h/2),0,0,TAU);ctx.globalAlpha=.12;ctx.fill();ctx.globalAlpha=1;ctx.stroke()}
+    else{ctx.globalAlpha=d.k==='range'?.16:.12;ctx.fillRect(x,yy,w,h);ctx.globalAlpha=1;if(d.k==='rect')ctx.strokeRect(x,yy,w,h);
+      else{const p0=d.pts[0][1],p1=d.pts[1][1],dp=p1-p0,dt=Math.abs(d.pts[1][0]-d.pts[0][0]),xm=x+w/2;ctx.beginPath();ctx.moveTo(x,a[1]);ctx.lineTo(x+w,a[1]);ctx.moveTo(x,b[1]);ctx.lineTo(x+w,b[1]);ctx.moveTo(xm,a[1]);ctx.lineTo(xm,b[1]);const s=b[1]<a[1]?1:-1;ctx.moveTo(xm-4,b[1]+5*s);ctx.lineTo(xm,b[1]);ctx.lineTo(xm+4,b[1]+5*s);ctx.stroke();
+        const txt=(dp>=0?'+':'−')+fP(Math.abs(dp))+'  ('+(dp>=0?'+':'−')+Math.abs(dp/p0*100).toFixed(2)+'%)  ·  '+Math.max(1,Math.round(dt/S.tf))+' nến  ·  '+fAge(dt);ctx.font='600 11px '+MONO;const tw=ctx.measureText(txt).width+12,ty=dp>=0?yy-20:yy+h+4;ctx.fillStyle='rgba(8,11,17,.92)';ctx.fillRect(xm-tw/2,ty,tw,17);ctx.fillStyle=c;ctx.textAlign='center';ctx.fillText(txt,xm,ty+12);ctx.textAlign='left'}}}
+  if(on&&d.k!=='note'){ctx.fillStyle='#fff';for(const p of d.k==='brush'?[P[0],P[P.length-1]]:P)ctx.fillRect(p[0]-3,p[1]-3,6,6)}}
+function drawShapes(){if(!S.draw||!L.xT)return;for(const d of shapes)drawShape(d);if(mk){if(mk.k==='path'&&mouse&&mouse.x<L.hw&&mouse.y<L.hh)drawShape({k:'path',c:mk.c,pts:mk.pts.concat([[L.tAt(mouse.x),L.pAt(mouse.y)]])});else drawShape(mk)}ctx.lineCap='butt'}
+const dSeg=(x,y,a,b)=>{const vx=b[0]-a[0],vy=b[1]-a[1],l=vx*vx+vy*vy||1,t=Math.max(0,Math.min(1,((x-a[0])*vx+(y-a[1])*vy)/l));return Math.hypot(x-a[0]-t*vx,y-a[1]-t*vy)};
+function hitShape(x,y){for(let i=shapes.length-1;i>=0;i--){const d=shapes[i],P=sPts(d);
+    if(d.k==='note'){const b=d._b;if(b&&x>=b[0]&&x<=b[2]&&y>=b[1]&&y<=b[3])return d}
+    else if(d.k==='rect'||d.k==='ell'||d.k==='range'){if(x>=Math.min(P[0][0],P[1][0])-4&&x<=Math.max(P[0][0],P[1][0])+4&&y>=Math.min(P[0][1],P[1][1])-4&&y<=Math.max(P[0][1],P[1][1])+4)return d}
+    else for(let j=1;j<P.length;j++)if(dSeg(x,y,P[j-1],P[j])<7)return d}return null}
+function setTool(t){tool=t;mk=null;document.querySelectorAll('#tools button[data-tool]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tool===t))}
+function finishShape(){if(!mk)return;const P=sPts(mk),ok=mk.k==='brush'||mk.k==='path'?mk.pts.length>1:Math.hypot(P[0][0]-P[1][0],P[0][1]-P[1][1])>5;if(ok){shapes.push(mk);sel=mk;saveShapes()}mk=null;setTool('cur')}
+function drawDown(x,y){if(!L.xT)return false;const t=L.tAt(x),p=L.pAt(y);
+  if(tool==='cur'){const h=hitShape(x,y);sel=h;if(!h)return false;$('dcol').value=h.c;drag={zone:'move',t,p,o:h.pts.map(q=>q.slice())};return true}
+  if(tool==='note'){const el=$('noteIn');el.hidden=false;el.value='';el.style.left=Math.max(0,Math.min(x,L.hw-176))+'px';el.style.top=Math.max(0,y-30)+'px';el._tp=[t,p];setTimeout(()=>el.focus(),0);return true}
+  if(tool==='path'){if(mk&&mk.k==='path'){const l=sPts(mk),q=l[l.length-1];if(Math.hypot(q[0]-x,q[1]-y)<8){finishShape();return true}mk.pts.push([t,p])}else mk={k:'path',c:S.dcol,pts:[[t,p]]};return true}
+  mk={k:tool,c:S.dcol,pts:tool==='brush'?[[t,p]]:[[t,p],[t,p]]};drag={zone:'draw'};return true}
+function drawMove(x,y){const t=L.tAt(x),p=L.pAt(y);if(drag.zone==='move'){if(sel){sel.pts=drag.o.map(q=>[q[0]+t-drag.t,q[1]+p-drag.p]);drag.m2=true}}
+  else if(mk){if(mk.k==='brush'){const l=mk.pts[mk.pts.length-1];if(Math.hypot(L.xT(l[0])-x,L.yOf(l[1])-y)>3)mk.pts.push([t,p])}else mk.pts[1]=[t,p]}}
+function drawUp(){if(drag.zone==='move'){if(drag.m2)saveShapes()}else finishShape()}
+const delSel=()=>{if(!sel)return;shapes=shapes.filter(d=>d!==sel);sel=null;saveShapes()};
+{const IC={cur:['Chọn và di chuyển','<path d="M3.5 2.5l8.5 4.6-3.7 1.2L6.7 12z"/>'],line:['Đường xu hướng','<path d="M3 13L13 3"/><circle cx="3" cy="13" r="1.4"/><circle cx="13" cy="3" r="1.4"/>'],rect:['Hình chữ nhật','<rect x="2.5" y="4" width="11" height="8"/>'],ell:['Hình tròn / elip','<ellipse cx="8" cy="8" rx="5.8" ry="4.4"/>'],brush:['Cọ vẽ tự do','<path d="M2 12c2 1.5 3-3 5-2s1 3 3 1 2-6 4-7"/>'],path:['Đường gấp khúc (bấm từng điểm, bấm lại điểm cuối để kết thúc)','<path d="M2.5 12.5l3.5-7 4 4 3.5-6.5"/><circle cx="6" cy="5.5" r="1"/><circle cx="10" cy="9.5" r="1"/>'],range:['Đo khoảng giá','<path d="M3 2.5h10M3 13.5h10M8 3.5v9M6 5.5l2-2 2 2M6 10.5l2 2 2-2"/>'],note:['Ghi chú','<path d="M3 3h10v7H8l-3 3v-3H3z"/>']};
+  const tb=$('tools'),svg=p=>'<svg viewBox="0 0 16 16" aria-hidden="true">'+p+'</svg>';let h='';for(const k in IC)h+='<button data-tool="'+k+'" title="'+IC[k][0]+'" aria-label="'+IC[k][0]+'" aria-pressed="'+(k==='cur')+'">'+svg(IC[k][1])+'</button>';
+  h+='<hr><input type="color" id="dcol" title="Màu nét vẽ" aria-label="Màu nét vẽ"><button id="dDel" title="Xoá hình đang chọn (phím Delete)" aria-label="Xoá hình đang chọn">'+svg('<path d="M3 4.5h10M6 4.5V3h4v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/>')+'</button><button id="dClr" title="Xoá tất cả hình vẽ của mã này (bấm hai lần)" aria-label="Xoá tất cả hình vẽ">'+svg('<path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/>')+'</button>';tb.innerHTML=h;tb.hidden=!S.draw;
+  tb.querySelectorAll('button[data-tool]').forEach(b=>b.addEventListener('click',()=>{sel=null;setTool(b.dataset.tool)}));
+  $('dcol').value=S.dcol;$('dcol').addEventListener('input',e=>{S.dcol=e.target.value;if(sel){sel.c=S.dcol;saveShapes()}save()});
+  $('dDel').addEventListener('click',delSel);let arm=0;$('dClr').addEventListener('click',e=>{const b=e.currentTarget;if(Date.now()-arm<3000){shapes=[];sel=null;saveShapes();arm=0;b.classList.remove('arm')}else{arm=Date.now();b.classList.add('arm');setTimeout(()=>b.classList.remove('arm'),3000)}});
+  const ni=$('noteIn'),commit=()=>{if(ni.hidden)return;const v=ni.value.trim();ni.hidden=true;if(v){const d={k:'note',c:S.dcol,pts:[ni._tp],txt:v};shapes.push(d);sel=d;saveShapes()}setTool('cur')};
+  ni.addEventListener('keydown',e=>{if(e.key==='Enter')commit();else if(e.key==='Escape'){ni.value='';commit()}e.stopPropagation()});ni.addEventListener('blur',commit);
+  document.addEventListener('keydown',e=>{if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;if(e.key==='Delete'||e.key==='Backspace')delSel();else if(e.key==='Escape'){sel=null;setTool('cur')}else if(e.key==='Enter'&&mk&&mk.k==='path')finishShape()})}
+
+// menu cài đặt, bảng điều khiển thu nhỏ, tiết kiệm, giữ màn hình sáng
+$('bar').classList.toggle('open',S.panel);$('menu').setAttribute('aria-expanded',S.panel);
+$('menu').addEventListener('click',e=>{S.panel=$('bar').classList.toggle('open');e.currentTarget.setAttribute('aria-expanded',S.panel)});
+const setM=()=>document.body.classList.toggle('m',MOBILE||window.innerWidth<=760);setM();window.addEventListener('resize',setM);
+if(document.body.classList.contains('m'))$('dash').classList.add('mini');$('dash').addEventListener('click',()=>{if(!$('dash').classList.contains('dock'))$('dash').classList.toggle('mini')});
+$('tEco').addEventListener('click',e=>{S.eco=!S.eco;e.currentTarget.setAttribute('aria-pressed',S.eco);start()});
+let wlk=null;const wake=async()=>{try{if(S.wake&&'wakeLock' in navigator&&document.visibilityState==='visible')wlk=await navigator.wakeLock.request('screen');else if(!S.wake&&wlk){await wlk.release();wlk=null}}catch(e){}};
+$('tWake').addEventListener('click',e=>{S.wake=!S.wake;e.currentTarget.setAttribute('aria-pressed',S.wake);wake()});
+let hiddenAt=0;document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')hiddenAt=Date.now();else{wake();if(hiddenAt&&Date.now()-hiddenAt>15000&&S.src!=='demo'&&running&&$('pk').hidden)start()}});
+// khôi phục cài đặt đã lưu, và lưu lại mỗi khi thay đổi
+$('sym').value=S.sym;$('type').value=S.type;$('vp').value=S.vp;$('bk').value=String(S.bkMul);$('pal').value=S.pal;$('cust').hidden=S.pal!=='custom';$('contrast').value=S.contrast;$('bubmin').value=S.bubMin;$('tapeMin').value=S.tapeMin;
+['c1','c2','c3'].forEach(id=>{$(id).value=S[id]});[['tHeat','heat'],['tExt','ext'],['tBub','bub'],['tNum','num'],['tMid','mid'],['tEco','eco'],['tTape','tape'],['tWall','wall'],['tIce','ice'],['tDraw','draw']].forEach(([id,k])=>$(id).setAttribute('aria-pressed',S[k]));setPalette();applyMode();
+['change','input','click'].forEach(ev=>$('bar').addEventListener(ev,()=>setTimeout(save,0)));
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+// ───────────── cửa sổ chọn nguồn dữ liệu ─────────────
+const MKL={fut:'Futures',spot:'Spot'},EXL=['binance','okx','bybit','coinbase','kraken','demo'];let P={ex:S.ex,mkt:S.mkt,sym:''},symCache={},pkTok=0,running=false;
+function exLabel(){$('exBtn').textContent=(S.src==='demo'?'Mô phỏng':EX[S.ex].name+' · '+MKL[EX[S.ex].mk.includes(S.mkt)?S.mkt:EX[S.ex].mk[0]])+' ▾'}
+const nrm=x=>x.toUpperCase().replace(/[^A-Z0-9]/g,'');
+function rank(id){const u=nrm(id),B=['BTC','ETH','SOL','XRP','BNB','DOGE','XAU','PAXG'];let b=B.findIndex(x=>u.startsWith(x));if(b<0)b=50;return b*10+(/USDT(SWAP)?$/.test(u)?0:/USD(SWAP)?$/.test(u)?1:/USDC(SWAP)?$/.test(u)?2:5)}
+function pkCards(){$('pkEx').innerHTML=EXL.map(k=>{const d=k==='demo';return '<button data-ex="'+k+'" aria-pressed="'+(P.ex===k)+'"><b>'+(d?'Mô phỏng':EX[k].name)+'</b><small>'+(d?'Dữ liệu giả để xem giao diện':EX[k].mk.map(m=>MKL[m]).join(' · '))+'</small></button>'}).join('');
+  const mk=P.ex==='demo'?[]:EX[P.ex].mk;document.querySelectorAll('#pkMk button').forEach(b=>{b.disabled=!mk.includes(b.dataset.mk);b.setAttribute('aria-pressed',b.dataset.mk===P.mkt&&!b.disabled)});$('pkQ').disabled=P.ex==='demo'}
+function pkSel(){$('pkSel').textContent=P.ex==='demo'?'Mô phỏng':EX[P.ex].name+' · '+MKL[P.mkt]+' · '+(P.sym||'chưa chọn mã')}
+function pkList(){const c=symCache[P.ex+'|'+P.mkt],ls=$('pkList');if(!c)return;const q=nrm($('pkQ').value),it=c.a.filter(id=>!q||nrm(id).includes(q)).slice(0,180);
+  ls.innerHTML=(c.ok?'':'<div class="pke">Không tải được danh sách mã từ sàn, đang hiện các mã phổ biến. Có thể gõ đúng mã của sàn vào ô tìm rồi bấm "Vào chart".</div>')+(it.length?it.map(id=>'<button data-sym="'+id+'" aria-pressed="'+(id===P.sym)+'">'+id+'</button>').join(''):'<div class="pke">Không có mã nào khớp.</div>');pkSel()}
+async function pkLoad(){pkCards();const ex=P.ex,mkt=P.mkt,key=ex+'|'+mkt,tok=++pkTok,ls=$('pkList');if(P.ex==='demo'){P.sym='';ls.innerHTML='<div class="pke">Dữ liệu giả lập chạy ngay trên máy, không cần kết nối sàn và không cần chọn mã.</div>';pkSel();return}
+  if(!symCache[key]||!symCache[key].ok){ls.innerHTML='<div class="pke">Đang tải danh sách mã từ '+EX[ex].name+'…</div>';let c;try{const a=await EX[ex].symbols(mkt);if(!a.length)throw 0;c={a:[...new Set(a)].sort((x,y)=>rank(x)-rank(y)||(x<y?-1:1)),ok:true}}catch(e){c={a:EX[ex].fb[mkt].slice(),ok:false}}if(tok!==pkTok)return;symCache[key]=c}
+  const c=symCache[key],sv=S.syms[key];P.sym=sv&&(c.a.includes(sv)||!c.ok)?sv:c.a[0];pkList()}
+function setEx(ex){P.ex=ex;if(ex!=='demo'&&!EX[ex].mk.includes(P.mkt))P.mkt=EX[ex].mk[0];$('pkQ').value='';pkLoad()}
+function openPicker(msg){P={ex:S.src==='demo'?'demo':S.ex,mkt:S.mkt,sym:''};$('pkMsg').hidden=!msg;$('pkMsg').textContent=msg||'';$('pkX').hidden=!running||!!msg&&!live;$('pk').hidden=false;setEx(P.ex)}
+function pkGo(){if(P.ex==='demo')S.src='demo';else{const typed=$('pkQ').value.trim().toUpperCase(),c=symCache[P.ex+'|'+P.mkt],sym=P.sym&&(!typed||nrm(P.sym).includes(nrm(typed)))?P.sym:typed;if(!sym)return;S.src='live';S.ex=P.ex;S.mkt=P.mkt;S.sym=sym;S.syms[P.ex+'|'+P.mkt]=sym;$('sym').value=sym}
+  $('pk').hidden=true;running=true;retry=0;exLabel();save();start()}
+$('pkEx').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setEx(b.dataset.ex)});
+$('pkMk').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&!b.disabled){P.mkt=b.dataset.mk;pkLoad()}});
+$('pkList').addEventListener('click',e=>{const b=e.target.closest('button');if(b){P.sym=b.dataset.sym;pkList()}});$('pkList').addEventListener('dblclick',e=>{if(e.target.closest('button'))pkGo()});
+$('pkQ').addEventListener('input',()=>{const c=symCache[P.ex+'|'+P.mkt];if(c){const q=nrm($('pkQ').value),f=c.a.find(id=>nrm(id).includes(q));if(f)P.sym=f}pkList()});$('pkQ').addEventListener('keydown',e=>{if(e.key==='Enter')pkGo();e.stopPropagation()});
+$('pkGo').addEventListener('click',pkGo);$('pkX').addEventListener('click',()=>{$('pk').hidden=true});$('exBtn').addEventListener('click',()=>openPicker(''));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('pk').hidden&&!$('pkX').hidden)$('pk').hidden=true});
+if(!EX[S.ex])S.ex='binance';exLabel();
+requestAnimationFrame(draw);openPicker('');
+})();
+</script>
+</body>
+</html>
