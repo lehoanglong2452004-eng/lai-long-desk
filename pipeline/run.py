@@ -95,7 +95,7 @@ def intraday_spike(bars_1h):
     best = None
     for i in range(max(48, len(bars_1h) - 3), len(bars_1h)):
         rv = rvol(bars_1h, i, 48)
-        if rv and rv >= 3 and (best is None or rv > best["rvol"]):
+        if rv and 3 <= rv <= 100 and (best is None or rv > best["rvol"]):
             b = bars_1h[i]
             best = {"rvol": round(rv, 1), "t": b["t"], "move_pct": round((b["c"] - b["o"]) / b["o"] * 100, 2)}
     return best

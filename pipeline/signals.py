@@ -125,7 +125,8 @@ def quiet_volume(p, i, rules):
         return None
     b, a = p.bars[i], p.atr[i]
     rv = rvol(p.bars, i)
-    if not rv or rv < rules["rvol_quiet"] or abs(b["c"] - p.bars[i - 1]["c"]) >= 0.5 * a:
+    # above ~100x is almost always a feed glitch or a futures contract roll, not real flow
+    if not rv or rv < rules["rvol_quiet"] or rv > 100 or abs(b["c"] - p.bars[i - 1]["c"]) >= 0.5 * a:
         return None
     rng = b["h"] - b["l"] or a
     pos = (b["c"] - b["l"]) / rng
