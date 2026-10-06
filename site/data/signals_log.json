@@ -1,1 +1,32 @@
-[]
+[
+{
+"symbol": "RLC",
+"cls": "crypto",
+"setup": "VOL_BREAKOUT",
+"dir": "long",
+"grade": "B",
+"score": 55,
+"entry": 0.7276,
+"stop": 0.6523354107674011,
+"target": 0.9032173748760643,
+"rr": 2.3333333333333353,
+"bar_t": 1791158400,
+"logged": 1791293466,
+"status": "open"
+},
+{
+"symbol": "ORCA",
+"cls": "crypto",
+"setup": "VOL_BREAKOUT",
+"dir": "long",
+"grade": "B",
+"score": 55,
+"entry": 2.415,
+"stop": 2.190491273641316,
+"target": 2.9388536948369293,
+"rr": 2.3333333333333326,
+"bar_t": 1791158400,
+"logged": 1791293466,
+"status": "open"
+}
+]
