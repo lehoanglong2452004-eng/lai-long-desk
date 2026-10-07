@@ -47,6 +47,19 @@ const T = {
     m_dxy: "Sức mạnh USD so với 6 đồng tiền lớn. Tăng = áp lực lên EURUSD, GBPUSD, vàng, crypto.", m_vix: "Mức sợ hãi trên S&P 500. Trên 25 = thị trường căng thẳng, nên giảm khối lượng.",
     m_bias: "Kết luận của bộ phận Vĩ mô: thang -2 (USD yếu) đến +2 (USD mạnh). Dùng để cộng/trừ điểm tín hiệu.",
     srcCol: "Nguồn / độ trễ", synth: "ước tính từ Kraken",
+    index: "CHỈ SỐ MỸ",
+    bonds: "TRÁI PHIẾU TOÀN CẦU · DÂN TRÁI PHIẾU ĐANG LÀM GÌ", cbanks: "10 NGÂN HÀNG TRUNG ƯƠNG · LÃI SUẤT ĐIỀU HÀNH",
+    usfut: "CHỈ SỐ MỸ · HỢP ĐỒNG TƯƠNG LAI (CME)", liq: "THANH KHOẢN · LẠM PHÁT KỲ VỌNG · RỦI RO TÍN DỤNG", cderiv: "CRYPTO TOÀN THỊ TRƯỜNG · PHÁI SINH · THANH LÝ",
+    bondsHint: "Lợi suất tăng = giá trái phiếu giảm = có người đang bán trái phiếu. Cột \"1 tháng\" so với cùng kỳ tháng trước, đơn vị bp (0,01%). Trạng thái đường cong được đọc từ thay đổi 1 tháng của kỳ hạn ngắn (2 năm, Anh dùng 5 năm) và 10 năm. Số liệu chính thức cuối ngày của Bộ Tài chính / ngân hàng trung ương nên trễ 1 ngày làm việc.",
+    tffHint: "CFTC Traders in Financial Futures: \"Quỹ dài hạn\" = quỹ hưu trí, bảo hiểm, quỹ đầu tư (tiền thật, nắm giữ lâu). \"Quỹ đòn bẩy\" = quỹ phòng hộ, thường bán khống hợp đồng tương lai để ăn chênh lệch với trái phiếu thật (basis trade). Phân vị 3 năm: ≥ 90 hoặc ≤ 10 là cực đoan. Số liệu chốt thứ Ba, công bố thứ Sáu.",
+    cbHint: "Ngân hàng trung ương tăng lãi suất thì đồng tiền đó thường mạnh lên (gửi tiền lãi cao hơn), giảm lãi suất thì thường yếu đi. \"Chênh lệch với USD\" = lãi suất nước đó trừ lãi suất Fed: dương thì giữ đồng tiền đó được lãi hơn giữ USD (carry). Đồng lãi thấp (JPY, CHF) hay được vay để mua tài sản khác, nên khi thị trường hoảng loạn chúng thường tăng mạnh. Nguồn BIS, cập nhật hằng tuần.",
+    usfutHint: "Hợp đồng tương lai chỉ số giao dịch gần 24/5, phản ánh tâm lý trước cả khi sàn chứng khoán mở cửa. \"KL / TB\" = khối lượng phiên này so với trung bình 20 phiên: trên 1,5 lần là bất thường. Giá CME miễn phí trễ ~10 phút; S&P 500 và Nasdaq 100 nhảy trực tiếp theo hợp đồng perp trên Hyperliquid.",
+    liqHint: "Thanh khoản ròng = Tài sản Fed − Tài khoản Kho bạc (TGA) − Repo ngược (RRP): tăng thường đỡ cho cổ phiếu và crypto. Số liệu ngày hoặc tuần từ FRED (Fed St. Louis), có ghi ngày ở cột Cập nhật.",
+    cderivHint: "Tỷ lệ Long/Short = số tài khoản đang mua chia số tài khoản đang bán trên OKX. Trên 2 = đám đông nghiêng hẳn về mua, dễ bị quét xuống. OI = tổng giá trị hợp đồng đang mở. Thanh lý = lệnh bị sàn đóng cưỡng bức. Binance trực tiếp đếm từ lúc bạn mở trang.",
+    country: "Nước", tenor: "Kỳ hạn", m1: "1 tháng", state: "Trạng thái đường cong", contract: "Hợp đồng", am: "Quỹ dài hạn (ròng)", lev: "Quỹ đòn bẩy (ròng)", reading: "Đọc vị",
+    bank: "Ngân hàng", rate: "Lãi suất", lastCh: "Lần đổi gần nhất", ch12: "12 tháng", stance: "Xu hướng", carry: "Chênh lệch với USD", fxMean: "Tác động lên đồng tiền",
+    volx: "KL / TB", coin: "Coin", lsr: "Long/Short", oiCol: "OI (thay đổi 24h)", vol24: "KL 24h", liqL: "Thanh lý Long", liqS: "Thanh lý Short", window: "Khoảng tính",
+    spreads: "Chênh lệch lợi suất 10 năm", verdict: "Kết luận",
   },
   en: {
     setups: "TRADE SETUPS", macro: "MACRO · RATES · USD", survival: "SURVIVAL · EDGE AFTER COSTS",
@@ -93,6 +106,19 @@ const T = {
     m_dxy: "Dollar strength against 6 majors. Rising = pressure on EURUSD, GBPUSD, gold, crypto.", m_vix: "Fear priced into the S&P 500. Above 25 = stressed market; size down.",
     m_bias: "The Macro department's verdict: -2 (weak USD) to +2 (strong USD). It adds or removes signal points.",
     srcCol: "Source / delay", synth: "estimated from Kraken",
+    index: "US INDICES",
+    bonds: "GLOBAL BONDS · WHAT BOND TRADERS ARE DOING", cbanks: "10 CENTRAL BANKS · POLICY RATES",
+    usfut: "US INDICES · FUTURES (CME)", liq: "LIQUIDITY · INFLATION EXPECTATIONS · CREDIT RISK", cderiv: "CRYPTO MARKET-WIDE · DERIVATIVES · LIQUIDATIONS",
+    bondsHint: "Rising yield = falling bond price = someone is selling bonds. \"1 month\" compares with a month ago, in bp (0.01%). The curve state reads the 1-month change of the short tenor (2Y; 5Y for the UK) against the 10Y. Official end-of-day data from treasuries and central banks, one business day behind.",
+    tffHint: "CFTC Traders in Financial Futures: \"Asset managers\" = pensions, insurers, funds (real money, long holding). \"Leveraged funds\" = hedge funds, often short futures against cash bonds (basis trade). 3-year percentile: ≥ 90 or ≤ 10 is extreme. As of Tuesday, published Friday.",
+    cbHint: "A hike tends to strengthen the currency (higher yield on deposits), a cut tends to weaken it. \"Carry vs USD\" = that rate minus the Fed rate: positive means holding the currency earns more than USD. Low-rate currencies (JPY, CHF) are borrowed to fund other trades, so they often jump in a panic. Source BIS, updated weekly.",
+    usfutHint: "Index futures trade almost 24/5 and show sentiment before the cash open. \"Vol / avg\" = this session's volume over the 20-session average: above 1.5x is unusual. Free CME prices are ~10 min delayed; S&P 500 and Nasdaq 100 move live with Hyperliquid perps.",
+    liqHint: "Net liquidity = Fed assets − Treasury General Account − reverse repo: rising usually supports stocks and crypto. Daily or weekly data from FRED (St. Louis Fed), dated in the Updated column.",
+    cderivHint: "Long/Short = accounts long divided by accounts short on OKX. Above 2 = the crowd leans long and is prone to a flush. OI = value of open contracts. Liquidations = positions the exchange closed by force. Binance live counts from when you opened the page.",
+    country: "Country", tenor: "Tenor", m1: "1 month", state: "Curve state", contract: "Contract", am: "Asset managers (net)", lev: "Leveraged funds (net)", reading: "Reading",
+    bank: "Bank", rate: "Rate", lastCh: "Last change", ch12: "12 months", stance: "Cycle", carry: "Carry vs USD", fxMean: "Effect on the currency",
+    volx: "Vol / avg", coin: "Coin", lsr: "Long/Short", oiCol: "OI (24h change)", vol24: "24h volume", liqL: "Long liquidations", liqS: "Short liquidations", window: "Window",
+    spreads: "10-year yield spreads", verdict: "Verdict",
   },
 };
 
@@ -122,7 +148,8 @@ const VI_NOTES = [
 
 let lang = safeGet("lld-lang") || "vi";
 let clsFilter = safeGet("lld-cls") || "all";
-let D = null, S = null, LOG = [];
+let D = null, S = null, LOG = [], G = null, LJ = null;
+const CLASSES = ["index", "crypto", "forex", "commodity"];
 let marketSort = { key: "rvol", dir: -1 };
 
 function safeGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -144,14 +171,14 @@ function px(x) {
 const pct = (x, d = 2) => (x == null ? "–" : `${x > 0 ? "+" : ""}${Number(x).toFixed(d)}%`);
 const sgn = (x, d = 2) => (x == null ? "–" : `${x > 0 ? "+" : ""}${Number(x).toFixed(d)}`);
 const cl = (x) => (x > 0 ? "up" : x < 0 ? "down" : "");
-const big = (x) => (x == null ? "–" : x >= 1e9 ? (x / 1e9).toFixed(2) + "B" : x >= 1e6 ? (x / 1e6).toFixed(1) + "M" : x.toFixed(0));
+const big = (x) => (x == null ? "–" : x >= 1e9 ? (x / 1e9).toFixed(2) + "B" : x >= 1e6 ? (x / 1e6).toFixed(1) + "M" : x >= 1e4 ? (x / 1e3).toFixed(0) + "K" : x.toFixed(0));
 const dirTag = (d) => `<span class="${d === "long" ? "up" : "down"}">${d === "long" ? "▲" : "▼"} ${t(d)}</span>`;
 const dateStr = (ts) => new Date(ts * 1000).toISOString().slice(0, 10);
 
 async function load() {
   const bust = `?v=${Date.now()}`;
   const get = (f) => fetch(`data/${f}${bust}`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-  [D, S, LOG] = await Promise.all([get("latest.json"), get("scorecard.json"), get("signals_log.json")]);
+  [D, S, LOG, G] = await Promise.all([get("latest.json"), get("scorecard.json"), get("signals_log.json"), get("global.json")]);
   LOG = LOG || [];
   render();
   binance();
@@ -166,13 +193,13 @@ function render() {
     $("t-setups").innerHTML = `<tr><td class="empty">${t("noData")}</td></tr>`;
     return;
   }
-  renderAge(); renderDash(); renderSetups(); renderMacro(); renderSurvival(); renderRadar();
+  renderAge(); renderDash(); renderGlobal(); renderSetups(); renderMacro(); renderSurvival(); renderRadar();
   renderCrowd(); renderCot(); renderJournal(); renderBacktest(); renderMarket();
   $("errors").textContent = D.errors && D.errors.length ? `${t("errors")}: ${D.errors.join(" · ")}` : "";
 }
 
 function renderTabs() {
-  $("cls-tabs").innerHTML = ["all", "crypto", "forex", "commodity"].map((c) =>
+  $("cls-tabs").innerHTML = ["all", ...CLASSES].map((c) =>
     `<button class="tab ${c === clsFilter ? "on" : ""}" data-cls="${c}">${t(c)}</button>`).join("");
 }
 
@@ -243,6 +270,7 @@ function tick() {
     const v = d.value * syn / dxyLive.anchor;
     if (v !== dxyLive.value) { dxyLive.value = v; paintCell("r:dxy", v.toFixed(3), d.prev ? (v / d.prev - 1) * 100 : null, `<span class="live">${t("liveNow")} · ${t("synth")}</span>`); }
   }
+  tickUsFut();
   changed.forEach((sym) => { const l = LV[sym]; paintCell(`m:${sym}`, px(l.price), l.chg_pct, freshText(l)); });
 }
 
@@ -273,7 +301,9 @@ async function pollLive() {
     const r = await fetch(`https://raw.githubusercontent.com/${REPO}/live-data/live.json?t=${Math.floor(Date.now() / 60000)}`, { cache: "no-store" });
     if (!r.ok) return;
     const j = await r.json();
-    if (j.macro && Object.keys(j.macro).length) { MAC = j.macro; if (D) renderDash(); }
+    LJ = j;
+    if (j.macro && Object.keys(j.macro).length) MAC = j.macro;
+    if (D) { renderDash(); renderGlobal(); }
   } catch (e) { /* keep the last values */ }
 }
 async function pollHL() {
@@ -361,6 +391,265 @@ function renderDash() {
       <td class="num ${cl(q.chg_pct)}" data-c="m:${esc(m.symbol)}">${pct(q.chg_pct)}</td><td class="src" data-s="m:${esc(m.symbol)}">${freshText(q)}</td></tr>`; }).join("");
 }
 
+// ---------- global desk: bonds, central banks, US futures, liquidity, crypto derivatives ----------
+// global.json comes from the hourly scan (official daily/weekly data); futuresBoard and
+// crypto_derivs come from live.json (every 5 minutes). Every row says where it is from and how old.
+const tt = (vi, en) => (lang === "vi" ? vi : en);
+const bp = (x, d = 0) => (x == null ? "–" : `<span class="${cl(x)}">${sgn(x, d)}bp</span>`);
+const day = (ms) => new Date(ms).toLocaleDateString(lang === "vi" ? "vi-VN" : "en-US", { day: "2-digit", month: "2-digit" });
+const usd = (x) => (x == null ? "–" : "$" + (x >= 1e12 ? (x / 1e12).toFixed(2) + "T" : big(x)));
+const verdict = (html) => `<div class="verdict"><b>${t("verdict")}:</b> ${html}</div>`;
+
+const CURVE_MEAN = {
+  bear_steepener: ["Bán mạnh trái phiếu dài hạn: lợi suất dài tăng nhanh hơn ngắn. Nhà đầu tư đòi bù rủi ro lạm phát / nợ công. Bất lợi cho cổ phiếu định giá cao, vàng và crypto.",
+    "Long bonds sold hard: long yields rise faster than short ones. Investors demand more for inflation / debt risk. Bad for richly valued stocks, gold and crypto."],
+  bull_steepener: ["Lợi suất ngắn giảm nhanh hơn dài: thị trường chờ ngân hàng trung ương cắt lãi suất, thường khi kinh tế yếu đi.",
+    "Short yields fall faster than long ones: the market expects rate cuts, usually as the economy weakens."],
+  bear_flattener: ["Lợi suất ngắn tăng nhanh hơn dài: thị trường chờ tăng lãi suất hoặc giữ cao lâu. Đồng tiền nước đó thường mạnh lên.",
+    "Short yields rise faster than long ones: the market expects hikes or higher for longer. The currency usually strengthens."],
+  bull_flattener: ["Lợi suất dài giảm nhanh hơn ngắn: dòng tiền trú ẩn vào trái phiếu dài, lo tăng trưởng chậm lại.",
+    "Long yields fall faster than short ones: money hides in long bonds, growth worries."],
+  parallel_up: ["Cả đường cong cùng tăng: bán trái phiếu diện rộng, chi phí vốn tăng.", "The whole curve rises: broad bond selling, money gets dearer."],
+  parallel_down: ["Cả đường cong cùng giảm: dòng tiền mua trái phiếu, chi phí vốn giảm.", "The whole curve falls: bonds bought across the board, money gets cheaper."],
+  stable: ["Ít thay đổi trong tháng.", "Little change over the month."],
+};
+const CURVE_NAME = {
+  bear_steepener: ["Dốc lên do bán (bear steepener)", "Bear steepener"], bull_steepener: ["Dốc lên do mua (bull steepener)", "Bull steepener"],
+  bear_flattener: ["Phẳng đi do bán (bear flattener)", "Bear flattener"], bull_flattener: ["Phẳng đi do mua (bull flattener)", "Bull flattener"],
+  parallel_up: ["Tăng song song", "Parallel up"], parallel_down: ["Giảm song song", "Parallel down"], stable: ["Ổn định", "Stable"],
+};
+const COUNTRY_EN = { US: "United States", DE: "Germany", EA: "Euro area (AAA)", UK: "United Kingdom", JP: "Japan" };
+const L = (pair) => (lang === "vi" ? pair[0] : pair[1]);
+
+function renderBonds() {
+  const B = G && G.bonds;
+  if (!B) { $("t-curves").innerHTML = `<tr><td class="empty">${t("noData")}</td></tr>`; return; }
+  const tenors = ["3M", "2Y", "5Y", "10Y", "20Y", "30Y"].filter((k) => Object.values(B.curves).some((c) => c.curve[k]));
+  const rows = Object.entries(B.curves).map(([code, c]) => {
+    const st = c.state || {}, ten = c.curve["10Y"];
+    const cells = tenors.map((k) => {
+      const v = c.curve[k];
+      return v ? `<td class="num">${v.value.toFixed(2)}%<br><small>${bp(v.prev != null ? (v.value - v.prev) * 100 : null, 1)}</small></td>` : `<td class="num dim">–</td>`;
+    }).join("");
+    const asOf = Math.max(...Object.values(c.curve).map((v) => v.asOf));
+    return `<tr><td class="name"><b>${esc(lang === "vi" ? c.name : COUNTRY_EN[code] || c.name)}</b></td>${cells}
+      <td class="num">${ten && ten.month != null ? bp((ten.value - ten.month) * 100) : "–"}</td>
+      <td><b>${CURVE_NAME[st.kind] ? L(CURVE_NAME[st.kind]) : "–"}</b><div class="mean">${CURVE_MEAN[st.kind] ? L(CURVE_MEAN[st.kind]) : ""}</div></td>
+      <td class="src">${t("daily")(day(asOf))} · ${esc(c.source)}</td></tr>`;
+  });
+  $("t-curves").innerHTML = `<tr><th>${t("country")}</th>${tenors.map((k) => `<th class="num">${k}</th>`).join("")}<th class="num">10Y ${t("m1")}</th><th>${t("state")}</th><th>${t("fresh")}</th></tr>` + rows.join("");
+
+  const SP = { "US-DE": ["Mỹ – Đức", "US – Germany", "EURUSD"], "US-JP": ["Mỹ – Nhật", "US – Japan", "USDJPY"], "US-UK": ["Mỹ – Anh", "US – UK", "GBPUSD"] };
+  $("t-spreads").innerHTML = `<tr><th>${t("spreads")}</th><th class="num">${t("value")}</th><th class="num">${t("m1")}</th><th>${t("meaning")}</th></tr>` +
+    Object.entries(B.spreads10y || {}).map(([k, s]) => {
+      const p = SP[k] || [k, k, ""], wide = s.month_bp > 0;
+      const m = tt(`${wide ? "Nới rộng" : "Thu hẹp"}: lãi suất Mỹ ${wide ? "hấp dẫn hơn" : "kém hấp dẫn đi"}, ${wide ? "hỗ trợ USD" : "bất lợi cho USD"} so với ${p[0].split(" – ")[1]} (${p[2]}).`,
+        `${wide ? "Widening" : "Narrowing"}: US yields ${wide ? "more" : "less"} attractive, ${wide ? "supports" : "weighs on"} USD vs ${p[1].split(" – ")[1]} (${p[2]}).`);
+      return `<tr><td><b>${L(p)}</b></td><td class="num">${sgn(s.value_bp, 0)}bp</td><td class="num">${bp(s.month_bp)}</td><td class="mean">${m}</td></tr>`;
+    }).join("");
+
+  // Treasury futures and MOVE from live.json
+  const fb = (LJ && LJ.futuresBoard || []).filter((f) => ["ZT", "ZF", "ZN", "ZB", "MOVE"].includes(f.key));
+  $("t-tfut").innerHTML = fb.length ? `<tr><th>${t("contract")}</th><th class="num">${t("price")}</th><th class="num">${t("chg")}</th><th class="num">${t("volx")}</th><th>${t("fresh")}</th></tr>` +
+    fb.map((f) => {
+      const ch = f.prev ? (f.value / f.prev - 1) * 100 : null, vx = f.avgVolume ? f.volume / f.avgVolume : null;
+      const nm = f.key === "MOVE" ? tt("MOVE (biến động trái phiếu)", "MOVE (bond volatility)") : tt(`HĐTL trái phiếu Mỹ ${f.name.replace("UST ", "")}`, f.name + " futures");
+      return `<tr><td><b>${esc(nm)}</b></td><td class="num">${f.value.toFixed(f.key === "MOVE" ? 1 : 3)}</td><td class="num ${cl(ch)}">${pct(ch)}</td>
+        <td class="num ${vx >= 1.5 ? "amber" : ""}">${vx ? vx.toFixed(2) + "x" : "–"}</td><td class="src">${macroFresh({ asOf: f.asOf, source: "Yahoo (CME/ICE)" })}</td></tr>`;
+    }).join("") : "";
+
+  const P = G.bond_positioning || [];
+  const read = (r) => {
+    const am = r.asset_mgr_chg > 0, lv = r.lev_chg < 0;
+    const parts = [am ? tt("quỹ dài hạn mua thêm", "asset managers added") : tt("quỹ dài hạn giảm mua", "asset managers cut")];
+    parts.push(lv ? tt("quỹ đòn bẩy bán khống thêm", "leveraged funds sold more") : tt("quỹ đòn bẩy mua lại / giảm bán", "leveraged funds covered"));
+    if (r.asset_mgr_pct >= 90 || r.lev_pct <= 10) parts.push(tt("vị thế cực đoan", "extreme positioning"));
+    return parts.join(", ");
+  };
+  $("t-tff").innerHTML = P.length ? `<tr><th>${t("contract")}</th><th class="num">${t("am")}</th><th class="num">${t("netPct")}</th><th class="num">${t("lev")}</th><th class="num">${t("netPct")}</th><th>${t("reading")}</th><th>${t("fresh")}</th></tr>` +
+    P.map((r) => `<tr><td><b>${esc(r.contract)}</b></td><td class="num">${big(Math.abs(r.asset_mgr_net))}${r.asset_mgr_net < 0 ? " ▼" : ""} <small class="${cl(r.asset_mgr_chg)}">${sgn(r.asset_mgr_chg / 1000, 0)}k</small></td>
+      <td class="num">${r.asset_mgr_pct}</td><td class="num">${r.lev_net < 0 ? "−" : ""}${big(Math.abs(r.lev_net))} <small class="${cl(r.lev_chg)}">${sgn(r.lev_chg / 1000, 0)}k</small></td>
+      <td class="num">${r.lev_pct}</td><td class="mean">${read(r)}</td><td class="src">${tt("tuần", "week")} ${day(Date.parse(r.date))} · CFTC</td></tr>`).join("") : "";
+
+  // verdict: how many of the 5 markets saw 10Y yields rise >10bp over the month
+  const cs = Object.values(B.curves), up = cs.filter((c) => c.curve["10Y"] && (c.curve["10Y"].value - c.curve["10Y"].month) * 100 > 10).length,
+    dn = cs.filter((c) => c.curve["10Y"] && (c.curve["10Y"].value - c.curve["10Y"].month) * 100 < -10).length;
+  const amAdd = P.filter((r) => r.asset_mgr_chg > 0).length, mv = fb.find((f) => f.key === "MOVE");
+  let v = up >= 3 ? tt(`Lợi suất 10 năm tăng ở ${up}/${cs.length} thị trường trong 1 tháng: dân trái phiếu toàn cầu đang <b class="down">bán</b>, chi phí vốn tăng. Thường gây áp lực lên cổ phiếu tăng trưởng, vàng và crypto.`,
+      `10Y yields rose in ${up}/${cs.length} markets over the month: global bond traders are <b class="down">selling</b> and money is getting dearer. Usually a headwind for growth stocks, gold and crypto.`)
+    : dn >= 3 ? tt(`Lợi suất 10 năm giảm ở ${dn}/${cs.length} thị trường: dòng tiền đang <b class="up">mua</b> trái phiếu, chi phí vốn giảm, thường có lợi cho tài sản rủi ro (trừ khi do lo suy thoái).`,
+      `10Y yields fell in ${dn}/${cs.length} markets: money is <b class="up">buying</b> bonds and getting cheaper, usually good for risk assets (unless driven by recession fears).`)
+    : tt("Lợi suất các nước đi lệch nhau, chưa có xu hướng toàn cầu rõ ràng.", "Yields are mixed across countries, no clear global trend.");
+  if (P.length) v += " " + tt(`Quỹ dài hạn mua thêm ở ${amAdd}/${P.length} hợp đồng trái phiếu Mỹ tuần qua${amAdd >= 4 ? " (đang tranh thủ gom khi lợi suất cao)" : amAdd <= 2 ? " (đang rút)" : ""}.`,
+    `Asset managers added in ${amAdd}/${P.length} US Treasury contracts last week${amAdd >= 4 ? " (buying the high yields)" : amAdd <= 2 ? " (pulling back)" : ""}.`);
+  if (mv) v += " " + tt(`MOVE ${mv.value.toFixed(0)}${mv.value >= 120 ? ": trái phiếu đang biến động mạnh, giảm khối lượng giao dịch." : mv.value <= 80 ? ": trái phiếu yên ả." : ": biến động bình thường."}`,
+    `MOVE ${mv.value.toFixed(0)}${mv.value >= 120 ? ": bonds are volatile, cut size." : mv.value <= 80 ? ": bonds are calm." : ": normal volatility."}`);
+  $("bonds-verdict").innerHTML = verdict(v);
+}
+
+const FX_OF = { USD: "DXY", EUR: "EURUSD", JPY: "USDJPY", GBP: "GBPUSD", CNY: "USDCNY", AUD: "AUDUSD", CAD: "USDCAD", CHF: "USDCHF", HKD: "USDHKD", SGD: "USDSGD" };
+function renderBanks() {
+  const R = (G && G.policy_rates) || [];
+  if (!R.length) { $("t-cb").innerHTML = `<tr><td class="empty">${t("noData")}</td></tr>`; return; }
+  const fed = R.find((r) => r.area === "US"), now = Date.now();
+  const rows = R.map((r) => {
+    if (r.rate == null) {
+      const why = r.currency === "SGD" ? tt("MAS điều hành bằng tỷ giá (dải SGD NEER), không dùng lãi suất.", "MAS steers the exchange rate (SGD NEER band), not a rate.") : "–";
+      return `<tr><td><b>${esc(r.bank)}</b> <span class="dim">${esc(r.currency)}</span></td><td class="num">–</td><td>–</td><td class="num">–</td><td>–</td><td class="num">–</td><td class="mean">${why}</td><td class="src">BIS</td></tr>`;
+    }
+    const lc = r.lastChange, recent = lc && now - Date.parse(lc.date) < 120 * 864e5;
+    const cyc = r.change12m_bp > 0 ? ["thắt chặt", "tightening", "down"] : r.change12m_bp < 0 ? ["nới lỏng", "easing", "up"] : ["đứng yên", "on hold", ""];
+    const stance = recent ? (lc.bp > 0 ? tt("vừa tăng", "just hiked") : tt("vừa cắt", "just cut")) : tt("đang giữ", "holding");
+    const carry = fed && r.area !== "US" ? (r.rate - fed.rate) * 100 : null;
+    const pair = FX_OF[r.currency] || "";
+    let mean;
+    if (r.area === "US") mean = tt(`Fed ${r.change12m_bp > 0 ? "thắt chặt" : r.change12m_bp < 0 ? "nới lỏng" : "giữ"} trong 12 tháng. Lãi suất Fed cao giữ USD mạnh; mỗi lần Fed cắt thường làm USD yếu, vàng và crypto được hỗ trợ.`,
+      `Fed ${r.change12m_bp > 0 ? "tightened" : r.change12m_bp < 0 ? "eased" : "held"} over 12 months. High Fed rates keep USD firm; each cut tends to weaken USD and help gold and crypto.`);
+    else if (r.currency === "HKD") mean = tt("HKD neo vào USD, HKMA đi theo Fed. Quan trọng với dòng tiền vào chứng khoán Hồng Kông / Trung Quốc.", "HKD is pegged to USD and HKMA follows the Fed. Matters for flows into Hong Kong / China stocks.");
+    else {
+      const dirWord = r.change12m_bp > (fed ? fed.change12m_bp : 0) ? tt("12 tháng qua chặt tay hơn Fed → có lợi cho", "tighter than the Fed over 12 months → supports") : r.change12m_bp < (fed ? fed.change12m_bp : 0) ? tt("12 tháng qua nới tay hơn Fed → bất lợi cho", "looser than the Fed over 12 months → weighs on") : tt("đi cùng nhịp Fed → trung tính cho", "moving with the Fed → neutral for");
+      mean = `${dirWord} ${esc(r.currency)} (${pair}).` + (carry != null && carry < -150 ? " " + tt("Lãi thấp hơn USD nhiều: hay được vay để đầu tư nơi khác, dễ tăng vọt khi thị trường hoảng loạn.", "Far below USD: a funding currency, prone to jump in a panic.") : "");
+    }
+    return `<tr><td><b>${esc(r.bank)}</b> <span class="dim">${esc(r.currency)}</span></td><td class="num"><b>${r.rate.toFixed(2)}%</b></td>
+      <td>${lc ? `${bp(lc.bp)} <span class="dim">${day(Date.parse(lc.date))}/${lc.date.slice(2, 4)}</span>` : "–"}</td><td class="num">${bp(r.change12m_bp)}</td>
+      <td><span class="${cyc[2]}">${tt(cyc[0], cyc[1])}</span> · ${stance}</td><td class="num">${carry != null ? bp(carry) : "–"}</td>
+      <td class="mean">${mean}</td><td class="src">${t("daily")(day(r.asOf))} · BIS</td></tr>`;
+  });
+  $("t-cb").innerHTML = `<tr><th>${t("bank")}</th><th class="num">${t("rate")}</th><th>${t("lastCh")}</th><th class="num">${t("ch12")}</th><th>${t("stance")}</th><th class="num">${t("carry")}</th><th>${t("fxMean")}</th><th>${t("fresh")}</th></tr>` + rows.join("");
+  const rest = R.filter((r) => r.area !== "US" && r.area !== "HK" && r.rate != null);
+  const hikes = rest.filter((r) => r.change12m_bp > (fed ? fed.change12m_bp : 0)).length, cuts = rest.filter((r) => r.change12m_bp < (fed ? fed.change12m_bp : 0)).length;
+  $("cb-verdict").innerHTML = verdict(tt(`So với Fed trong 12 tháng: ${hikes}/${rest.length} ngân hàng chặt tay hơn, ${cuts}/${rest.length} nới tay hơn. ${fed ? `Fed ${fed.rate.toFixed(2)}%${fed.change12m_bp < 0 ? " đang nới lỏng" : fed.change12m_bp > 0 ? " đang thắt chặt" : ""}` : ""}${hikes > cuts ? ": các nước khác thắt chặt nhiều hơn Mỹ, chênh lệch lãi suất thu hẹp, nghiêng về USD yếu dần trung hạn." : cuts > hikes ? ": thế giới nới lỏng nhiều hơn, USD có lợi thế lãi suất." : "."}`,
+    `Against the Fed over 12 months: ${hikes}/${rest.length} banks were tighter, ${cuts}/${rest.length} looser. ${fed ? `Fed ${fed.rate.toFixed(2)}%${fed.change12m_bp < 0 ? " easing" : fed.change12m_bp > 0 ? " tightening" : ""}` : ""}${hikes > cuts ? ": the rest of the world is tighter than the US, rate gaps narrow, leaning USD weaker medium term." : cuts > hikes ? ": the world is easing more, USD keeps the rate edge." : "."}`));
+}
+
+// US index futures move live with Hyperliquid's index perps, anchored on the delayed CME quote
+const HL_IDX = { ES: "SP500", NQ: "XYZ100" };
+const futLive = {};
+function futQuote(f) {
+  const h = HLX[HL_IDX[f.key]];
+  if (!h || !h.px) return null;
+  const a = futLive[f.key];
+  if (!a || a.base !== f) futLive[f.key] = { base: f, anchor: h.px };
+  return f.value * h.px / futLive[f.key].anchor;
+}
+function renderUsFut() {
+  const fb = (LJ && LJ.futuresBoard || []).filter((f) => ["ES", "NQ", "YM", "RTY"].includes(f.key));
+  if (!fb.length) { $("t-usfut").innerHTML = `<tr><td class="empty">${t("loading")}</td></tr>`; return; }
+  const NM = { ES: "S&P 500", NQ: "Nasdaq 100", YM: "Dow Jones", RTY: "Russell 2000" };
+  $("t-usfut").innerHTML = `<tr><th>${t("asset")}</th><th class="num">${t("price")}</th><th class="num">${t("chg")}</th><th class="num">${t("volx")}</th><th>${t("fresh")}</th></tr>` +
+    fb.map((f) => {
+      const lv = futQuote(f), v = lv || f.value, ch = f.prev ? (v / f.prev - 1) * 100 : null, vx = f.avgVolume ? f.volume / f.avgVolume : null;
+      const fr = lv ? `<span class="live">${t("liveNow")} · Hyperliquid</span>` : macroFresh({ asOf: f.asOf, source: "Yahoo (CME)" });
+      return `<tr><td><b>${NM[f.key]}</b> <span class="dim">${f.key}</span></td><td class="num" data-k="f:${f.key}">${px(v)}</td>
+        <td class="num ${cl(ch)}" data-c="f:${f.key}">${pct(ch)}</td><td class="num ${vx >= 1.5 ? "amber" : ""}">${vx ? vx.toFixed(2) + "x" : "–"}</td><td class="src" data-s="f:${f.key}">${fr}</td></tr>`;
+    }).join("");
+  const es = fb.find((f) => f.key === "ES"), rty = fb.find((f) => f.key === "RTY");
+  if (es && rty && es.prev && rty.prev) {
+    const a = (es.value / es.prev - 1) * 100, b = (rty.value / rty.prev - 1) * 100;
+    $("usfut-verdict").innerHTML = verdict(b - a > 0.5 ? tt("Russell 2000 (cổ phiếu nhỏ) mạnh hơn S&P 500: dòng tiền chấp nhận rủi ro, thường đi cùng kỳ vọng hạ lãi suất.", "Small caps beat the S&P 500: risk-on, often with rate-cut hopes.")
+      : a - b > 0.5 ? tt("Russell 2000 yếu hơn S&P 500: dòng tiền rút khỏi cổ phiếu nhỏ, nhạy với lãi suất cao. Thận trọng với tài sản rủi ro.", "Small caps lag the S&P 500: money leaves rate-sensitive names. Be careful with risk assets.")
+      : tt("Các chỉ số đi cùng nhịp.", "Indices move together."));
+  }
+}
+function tickUsFut() {
+  (LJ && LJ.futuresBoard || []).forEach((f) => {
+    if (!HL_IDX[f.key]) return;
+    const v = futQuote(f);
+    if (v) paintCell(`f:${f.key}`, px(v), f.prev ? (v / f.prev - 1) * 100 : null, `<span class="live">${t("liveNow")} · Hyperliquid</span>`);
+  });
+}
+
+const LIQ_ROWS = [
+  ["real10y", "Lợi suất thực 10 năm (TIPS)", "10Y real yield (TIPS)", "%", "Lợi suất sau lạm phát. Cao và tăng = bất lợi nhất cho vàng và cổ phiếu tăng trưởng.", "Yield after inflation. High and rising is the worst for gold and growth stocks."],
+  ["breakeven10y", "Lạm phát kỳ vọng 10 năm", "10Y breakeven inflation", "%", "Thị trường trái phiếu dự đoán lạm phát. Trên 2,5% = Fed khó hạ lãi suất.", "Inflation priced by bonds. Above 2.5% the Fed struggles to cut."],
+  ["breakeven5y", "Lạm phát kỳ vọng 5 năm", "5Y breakeven inflation", "%", "Lạm phát kỳ vọng ngắn hơn, nhạy với giá dầu.", "Shorter-run expectations, sensitive to oil."],
+  ["termprem10y", "Phần bù kỳ hạn 10 năm", "10Y term premium", "%", "Phần lợi suất nhà đầu tư đòi thêm vì giữ trái phiếu dài. Tăng = lo nợ công / lạm phát, bán trái phiếu dài.", "Extra yield for holding long bonds. Rising = debt / inflation worries, long-end selling."],
+  ["hy_oas", "Chênh lệch trái phiếu rác (HY)", "High-yield credit spread", "%", "Phần bù rủi ro vỡ nợ doanh nghiệp. Tăng nhanh = căng thẳng tín dụng, thường đi trước cổ phiếu giảm.", "Default risk premium. Rising fast = credit stress, often ahead of equity drops."],
+  ["nfci", "Chỉ số điều kiện tài chính (NFCI)", "Financial conditions (NFCI)", "", "Âm = tiền dễ vay, thuận lợi cho tài sản rủi ro. Dương = thắt chặt.", "Negative = loose money, good for risk. Positive = tight."],
+  ["net_liquidity", "Thanh khoản ròng của Fed", "Fed net liquidity", "B$", "Tài sản Fed − TGA − RRP. Tăng thường đỡ cho cổ phiếu và crypto.", "Fed assets − TGA − RRP. Rising usually supports stocks and crypto."],
+  ["fed_assets", "Bảng cân đối Fed", "Fed balance sheet", "B$", "Fed đang thu hẹp (QT) hay bơm tiền (QE).", "Whether the Fed is shrinking (QT) or adding (QE)."],
+  ["tga", "Tài khoản Kho bạc (TGA)", "Treasury account (TGA)", "B$", "Kho bạc rút tiền về TGA = hút thanh khoản khỏi thị trường.", "Treasury filling the TGA drains market liquidity."],
+  ["rrp", "Repo ngược (RRP)", "Reverse repo (RRP)", "B$", "Tiền nhàn rỗi gửi Fed. Đã cạn gần hết, không còn là bộ đệm thanh khoản.", "Idle cash parked at the Fed. Nearly drained, no longer a liquidity buffer."],
+  ["copper_gold", "Tỷ lệ Đồng / Vàng (×1000)", "Copper / gold ratio (×1000)", "", "Tăng = thị trường lạc quan về tăng trưởng, thường đi cùng lợi suất tăng.", "Rising = growth optimism, tends to track yields higher."],
+];
+function renderLiq() {
+  const X = G && G.macro_extra;
+  if (!X) { $("t-liq").innerHTML = `<tr><td class="empty">${t("noData")}</td></tr>`; return; }
+  const fmt = (v, u) => (u === "%" ? v.toFixed(2) + "%" : u === "B$" ? "$" + (v / (v > 1e5 ? 1000 : 1)).toLocaleString("en-US", { maximumFractionDigits: 0 }) + "B" : v.toFixed(3));
+  $("t-liq").innerHTML = `<tr><th>${t("ind")}</th><th class="num">${t("value")}</th><th class="num">${t("m1")}</th><th>${t("meaning")}</th><th>${t("fresh")}</th></tr>` +
+    LIQ_ROWS.filter((r) => X[r[0]]).map(([k, vi, en, u, mvi, men]) => {
+      const x = X[k], d = x.month != null ? x.value - x.month : null;
+      const dtxt = d == null ? "–" : u === "%" ? bp(d * 100) : `<span class="${cl(d)}">${u === "B$" ? sgn(d / (Math.abs(x.value) > 1e5 ? 1000 : 1), 0) + "B" : sgn(d, 3)}</span>`;
+      return `<tr><td class="name"><b>${tt(vi, en)}</b><small class="sm-only">${tt(mvi, men)}<br>${t("daily")(day(x.asOf))} · FRED</small></td><td class="num">${fmt(x.value, u)}</td><td class="num">${dtxt}</td>
+        <td class="mean">${tt(mvi, men)}</td><td class="src">${t("daily")(day(x.asOf))} · FRED</td></tr>`;
+    }).join("");
+}
+
+// Binance liquidations stream straight to the browser (the server is geo-blocked there)
+const BLQ = { long: 0, short: 0, n: 0, since: Date.now(), big: [] };
+let blqWs = null;
+function binanceLiq() {
+  try { blqWs = new WebSocket("wss://fstream.binance.com/ws/!forceOrder@arr"); } catch (e) { return; }
+  blqWs.onmessage = (ev) => {
+    let o;
+    try { o = JSON.parse(ev.data).o; } catch (e) { return; }
+    if (!o) return;
+    const v = +o.q * +o.ap;
+    if (o.S === "SELL") BLQ.long += v; else BLQ.short += v;  // a forced SELL closes a long
+    BLQ.n += 1;
+    if (v >= 100000) { BLQ.big.unshift({ s: o.s.replace(/USDT$/, ""), side: o.S === "SELL" ? "long" : "short", v, t: o.T }); BLQ.big.length = Math.min(BLQ.big.length, 6); }
+    paintBlq();
+  };
+  blqWs.onclose = () => setTimeout(binanceLiq, 10000);
+}
+function paintBlq() {
+  const el = $("blq");
+  if (!el) return;
+  const mins = Math.max(1, Math.round((Date.now() - BLQ.since) / 60000));
+  el.innerHTML = BLQ.n ? `<span class="live">${tt("Binance trực tiếp", "Binance live")}</span> · ${tt(`${mins} phút qua`, `last ${mins} min`)}: ${t("liqL")} <b class="down">${usd(BLQ.long)}</b> · ${t("liqS")} <b class="up">${usd(BLQ.short)}</b> · ${BLQ.n} ${tt("lệnh", "orders")}` +
+    (BLQ.big.length ? `<br><span class="dim">${tt("Lệnh lớn", "Large")}: ${BLQ.big.map((b) => `<span class="${b.side === "long" ? "down" : "up"}">${b.s} ${b.side.toUpperCase()} ${usd(b.v)}</span>`).join(" · ")}</span>` : "")
+    : `<span class="ld off"></span>${tt("Đang chờ lệnh thanh lý từ Binance… (nếu mạng chặn Binance thì phần này để trống)", "Waiting for Binance liquidations… (blank if your network blocks Binance)")}`;
+}
+
+function renderCrypto() {
+  const C = G && G.crypto_global, dv = (LJ && LJ.crypto_derivs) || [];
+  if (C) {
+    const sc = C.stablecoins, hr = C.hashrate_ehs;
+    const box = (k, v, sub) => `<div class="kpi"><div class="dim">${k}</div><b>${v}</b><div>${sub}</div></div>`;
+    $("cglobal").innerHTML = [
+      box(tt("Tổng vốn hóa crypto", "Total crypto market cap"), usd(C.market_cap_usd), `<span class="${cl(C.market_cap_chg24h_pct)}">${pct(C.market_cap_chg24h_pct)} 24h</span> · <span class="src">${macroFresh({ asOf: C.asOf, source: "CoinGecko" })}</span>`),
+      box(tt("Tỷ trọng BTC / ETH", "BTC / ETH dominance"), `${C.btc_dominance.toFixed(1)}% / ${C.eth_dominance.toFixed(1)}%`, `<span class="dim">${tt("BTC tăng tỷ trọng = tiền rút khỏi altcoin", "Rising BTC share = money leaving alts")}</span>`),
+      sc ? box(tt("Stablecoin lưu hành", "Stablecoin supply"), usd(sc.value), `<span class="${cl(sc.value - sc.week)}">${sgn((sc.value / sc.week - 1) * 100)}% ${tt("tuần", "wk")}</span> · <span class="${cl(sc.value - sc.month)}">${sgn((sc.value / sc.month - 1) * 100)}% ${tt("tháng", "mo")}</span> · <span class="src">DefiLlama ${day(sc.asOf)}</span>`) : "",
+      hr ? box(tt("Hashrate Bitcoin", "Bitcoin hashrate"), `${hr.value.toFixed(0)} EH/s`, `<span class="${cl(hr.value - hr.month)}">${sgn((hr.value / hr.month - 1) * 100)}% ${tt("tháng", "mo")}</span> · <span class="src">blockchain.info ${day(hr.asOf)}</span>`) : "",
+    ].join("");
+  }
+  if (!dv.length) { $("t-cderiv").innerHTML = `<tr><td class="empty">${t("loading")}</td></tr>`; paintBlq(); return; }
+  $("t-cderiv").innerHTML = `<tr><th>${t("coin")}</th><th class="num">${t("lsr")}</th><th class="num">${t("oiCol")}</th><th class="num">${t("vol24")}</th><th class="num">${t("liqL")}</th><th class="num">${t("liqS")}</th><th>${t("reading")}</th><th>${t("fresh")}</th></tr>` +
+    dv.map((r) => {
+      const oiCh = r.oi_usd && r.oi_24h_usd ? (r.oi_usd / r.oi_24h_usd - 1) * 100 : null, q = r.liq24h || {};
+      const win = q.complete ? "24h" : q.from_ms ? tt(`từ ${when(q.from_ms)}`, `since ${when(q.from_ms)}`) : "";
+      const notes = [];
+      if (r.long_short >= 2) notes.push(tt("đám đông nghiêng mua, dễ bị quét xuống", "crowd long, flush risk"));
+      else if (r.long_short <= 0.8) notes.push(tt("đám đông nghiêng bán, dễ bị ép tăng", "crowd short, squeeze risk"));
+      if (q.long_usd > 3 * (q.short_usd || 1)) notes.push(tt("phe mua đang bị thanh lý", "longs being liquidated"));
+      else if (q.short_usd > 3 * (q.long_usd || 1)) notes.push(tt("phe bán đang bị thanh lý", "shorts being liquidated"));
+      if (oiCh != null && Math.abs(oiCh) >= 5) notes.push(oiCh > 0 ? tt("tiền mới vào hợp đồng", "new money entering") : tt("vị thế đang đóng bớt", "positions closing"));
+      return `<tr><td><b>${esc(r.coin)}</b></td><td class="num ${r.long_short >= 2 ? "amber" : ""}">${r.long_short != null ? r.long_short.toFixed(2) : "–"} <small class="dim">${r.long_short_24h != null ? tt("24h trước", "24h ago") + " " + r.long_short_24h.toFixed(2) : ""}</small></td>
+        <td class="num">${usd(r.oi_usd)} <small class="${cl(oiCh)}">${pct(oiCh, 1)}</small></td><td class="num">${usd(r.vol_24h_usd)}</td>
+        <td class="num down">${usd(q.long_usd)}</td><td class="num up">${usd(q.short_usd)}</td><td class="mean">${notes.join("; ") || "–"}</td>
+        <td class="src">${macroFresh({ asOf: r.asOf, source: "OKX" })}${win ? " · " + tt("thanh lý", "liq.") + " " + win : ""}</td></tr>`;
+    }).join("");
+  const L2 = dv.reduce((a, r) => a + ((r.liq24h || {}).long_usd || 0), 0), S2 = dv.reduce((a, r) => a + ((r.liq24h || {}).short_usd || 0), 0);
+  const crowd = dv.filter((r) => r.long_short >= 2).length;
+  $("cderiv-verdict").innerHTML = verdict(tt(`Trên OKX, phe ${L2 > S2 ? "mua" : "bán"} bị thanh lý nhiều hơn (${usd(L2)} so với ${usd(S2)}). ${crowd}/${dv.length} coin có đám đông nghiêng mua quá mức${crowd >= 3 ? ": rủi ro còn một nhịp quét xuống nữa, chưa nên bắt đáy vội." : "."}`,
+    `On OKX, ${L2 > S2 ? "longs" : "shorts"} were liquidated more (${usd(L2)} vs ${usd(S2)}). ${crowd}/${dv.length} coins have a crowded long side${crowd >= 3 ? ": risk of another flush, no rush to catch the bottom." : "."}`));
+  paintBlq();
+}
+
+function renderGlobal() {
+  renderBonds(); renderBanks(); renderUsFut(); renderLiq(); renderCrypto();
+}
+
 function filtered(rows) { return clsFilter === "all" ? rows : rows.filter((r) => r.cls === clsFilter); }
 
 function renderSetups() {
@@ -402,7 +691,7 @@ function statusLine(label, st) {
 
 function renderSurvival() {
   if (!S) { $("survival").innerHTML = `<div class="empty">${t("noData")}</div>`; return; }
-  $("survival").innerHTML = ["crypto", "forex", "commodity"].map((c) =>
+  $("survival").innerHTML = CLASSES.filter((c) => S.backtest_class[c]).map((c) =>
     `<div style="margin-bottom:6px"><b>${t(c)}</b>${statusLine(t("btLabel"), S.backtest_class[c])}${statusLine(t("liveLabel"), S.live_class[c])}</div>`).join("");
   drawLine($("equity"), (S.equity_curve || []).map((p) => p[1]), { zero: true });
 }
@@ -478,7 +767,7 @@ function renderBacktest() {
         <td class="num ${cl(v.exp_r)}"><b>${v.exp_r != null ? sgn(v.exp_r, 3) : "–"}</b></td><td class="num ${cl(v.total_r)}">${sgn(v.total_r, 1)}</td>
         <td class="num">${v.pf ?? "–"}</td><td class="num down">${v.max_dd_r}</td><td class="num">${v.max_loss_streak}</td><td>${ok}</td></tr>`;
     }).join("") +
-    `<tr><td colspan="10" class="dim">${t("cost")}: crypto ${S.costs_roundtrip_pct.crypto}% · forex ${S.costs_roundtrip_pct.forex}% · ${t("commodity")} ${S.costs_roundtrip_pct.commodity}% · max ${S.rules.max_hold_bars} bars</td></tr>`;
+    `<tr><td colspan="10" class="dim">${t("cost")}: ${CLASSES.filter((c) => S.costs_roundtrip_pct[c] != null).map((c) => `${t(c)} ${S.costs_roundtrip_pct[c]}%`).join(" · ")} · max ${S.rules.max_hold_bars} bars</td></tr>`;
 }
 
 function renderMarket() {
@@ -551,7 +840,7 @@ setInterval(() => {
   const on = Date.now() - lastTick < 30000;
   $("live-state").innerHTML = `<span class="ld${on ? "" : " off"}">${on ? t("liveOn") : t("liveOff")}</span>`;
 }, 1000);
-setInterval(() => D && renderDash(), 30 * 1000);  // keeps the "N min delay" labels current
+setInterval(() => { if (D) { renderDash(); renderGlobal(); } }, 30 * 1000);  // keeps the "N min delay" labels current
 setInterval(load, 10 * 60 * 1000);
 setInterval(pollLive, 60 * 1000);
 setInterval(pollHL, 3000);
@@ -559,3 +848,4 @@ load();
 pollLive();
 pollHL();
 kraken();
+binanceLiq();

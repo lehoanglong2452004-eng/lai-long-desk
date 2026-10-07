@@ -115,6 +115,9 @@ canvas { width: 100%; display: block; margin-top: 8px; }
   .dash { grid-template-columns: minmax(0, 1fr); }
   #t-rates td.mean, #t-rates td.src, #t-rates th:nth-child(4), #t-rates th:nth-child(5) { display: none; }
   #t-rates td.name { white-space: normal; }
+  #t-liq td.mean, #t-liq td.src, #t-liq th:nth-child(4), #t-liq th:nth-child(5) { display: none; }
+  #t-liq td.name { white-space: normal; min-width: 180px; }
+  td .mean, div.mean, td.mean { min-width: 170px; font-size: 10.5px; }
   .sm-only { display: block; color: var(--dim); font-size: 10.5px; font-weight: 400; margin-top: 2px; }
   .brand .dim { display: none; }
   #clock { display: none; }
@@ -122,3 +125,14 @@ canvas { width: 100%; display: block; margin-top: 8px; }
   .pill { white-space: nowrap; }
   .btn { padding: 3px 8px; }
 }
+
+/* global desk panels */
+.verdict { border-left: 3px solid var(--amber); background: rgba(255, 176, 0, .06); padding: 6px 10px; margin: 0 0 8px; white-space: normal; }
+td .mean, div.mean { white-space: normal; color: var(--dim); font-size: 11px; max-width: 420px; }
+td small { font-size: 10px; }
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 8px; }
+.kpi { border: 1px solid var(--line); border-radius: 4px; padding: 6px 8px; font-size: 11px; }
+.kpi b { font-size: 16px; color: var(--text); }
+#p-bonds .scroll, #p-cb .scroll, #p-usfut .scroll, #p-liq .scroll, #p-cderiv .scroll { max-height: none; }
+.blq { margin-top: 8px; font-size: 12px; white-space: normal; }
+@media (max-width: 900px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

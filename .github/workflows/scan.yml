@@ -37,6 +37,9 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
         run: python -m pipeline.run
+      - name: Global desk data (bond curves, central banks, CFTC, macro, crypto-wide)
+        continue-on-error: true
+        run: python -m pipeline.global_desk
       - name: News desk data (prices, headlines, calendar)
         continue-on-error: true
         run: python -m pipeline.news_desk

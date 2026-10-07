@@ -18,7 +18,7 @@ UA = "Mozilla/5.0 (LaiLongDesk personal research)"
 ERRORS = []  # collected and shown on the terminal's status line
 
 
-def _get(url, data=None, headers=None, retries=3, timeout=25):
+def _get(url, data=None, headers=None, retries=3, timeout=25, errors="strict"):
     hdrs = {"User-Agent": UA, "Accept": "*/*"}
     hdrs.update(headers or {})
     body = json.dumps(data).encode() if data is not None else None
@@ -29,7 +29,7 @@ def _get(url, data=None, headers=None, retries=3, timeout=25):
         try:
             req = urllib.request.Request(url, data=body, headers=hdrs)
             with urllib.request.urlopen(req, timeout=timeout) as r:
-                return r.read().decode("utf-8")
+                return r.read().decode("utf-8", errors)
         except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
             last = e
             time.sleep(2 * (attempt + 1))
@@ -65,6 +65,30 @@ def binance_top_symbols(quote, top_n, exclude):
         return [{"symbol": s, "base": b} for _, s, b in out[:top_n]]
 
     return _safe("binance tickers", run, [])
+
+
+def top_by_market_cap(quote, top_n, exclude):
+    """CoinGecko's largest coins by market cap that trade against `quote` on Binance spot."""
+    def run():
+        listed = {r["symbol"] for r in json.loads(_get(f"{BINANCE}/ticker/price"))}
+        coins = []
+        for page in (1, 2):
+            coins += json.loads(_get("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd"
+                                     f"&order=market_cap_desc&per_page=100&page={page}&sparkline=false"))
+        out, seen = [], set()
+        for c in coins:
+            base = c["symbol"].upper()
+            if base in exclude or base in seen or f"{base}{quote}" not in listed:
+                continue
+            if abs((c.get("current_price") or 0) - 1) < 0.03:  # stablecoins
+                continue
+            seen.add(base)
+            out.append({"symbol": f"{base}{quote}", "base": base, "market_cap": c.get("market_cap")})
+            if len(out) >= top_n:
+                break
+        return out
+
+    return _safe("coingecko top by market cap", run, [])
 
 
 def binance_klines(symbol, interval, limit):
