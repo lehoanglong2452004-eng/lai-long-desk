@@ -352,7 +352,7 @@ function renderDash() {
   rows.push(["biasM", `<b class="${cl(med.bias)}">${biasWord(med.bias)} (${sgn(med.bias, 0)})</b>`, "", scanAt]);
   rows.push(["biasI", `<b class="${cl(intr.bias)}">${biasWord(intr.bias)} (${sgn(intr.bias, 0)})</b>`, "", scanAt]);
   $("t-rates").innerHTML = `<tr><th>${t("ind")}</th><th class="num">${t("value")}</th><th class="num">${t("change")}</th><th>${t("meaning")}</th><th>${t("fresh")}</th></tr>` +
-    rows.filter(Boolean).map(([k, v, c, f]) => `<tr><td><b>${t(`k_${k}`)}</b></td><td class="num">${v}</td><td class="num">${c}</td>
+    rows.filter(Boolean).map(([k, v, c, f]) => `<tr><td class="name"><b>${t(`k_${k}`)}</b><small class="sm-only">${t(`m_${k.startsWith("bias") ? "bias" : k}`)}<br>${f}</small></td><td class="num">${v}</td><td class="num">${c}</td>
       <td class="mean">${t(`m_${k.startsWith("bias") ? "bias" : k}`)}</td><td class="src">${f}</td></tr>`).join("");
 
   const keys = KEYS.map((s) => (D.market || []).find((m) => m.symbol === s)).filter(Boolean);

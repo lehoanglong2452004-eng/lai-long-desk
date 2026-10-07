@@ -2,6 +2,14 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
+<script>
+/* If anything breaks, say so on the page instead of showing a blank screen. */
+window.addEventListener("error", function (e) {
+  var b = document.getElementById("lld-err");
+  if (!b) { b = document.createElement("div"); b.id = "lld-err"; b.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:99;background:#b91c1c;color:#fff;font:13px/1.4 sans-serif;padding:8px 12px"; (document.body || document.documentElement).appendChild(b); }
+  b.textContent = "Lỗi trang / page error: " + (e.message || "unknown") + " (" + navigator.userAgent + ")";
+});
+</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <title>MIDOTI Depth</title>
 <style>*{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}</style>
