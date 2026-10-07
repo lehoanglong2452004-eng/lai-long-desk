@@ -152,6 +152,8 @@ def main():
     data = {"generatedAt": now_ms, "indices": idx, "stocks": stk, "forex": fx,
             "news": nd.news(now_ms), "calendar": nd.calendar(), "macro": macro_board(),
             "futuresBoard": futures_board(), "crypto_derivs": crypto_derivs()}
+    from .sources import health_report
+    data["health"] = health_report("live")
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")))
     print(f"live desk: indices={len(idx)} stocks={len(stk)} fx={len(fx)} news={len(data['news'])} "
