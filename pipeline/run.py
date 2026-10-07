@@ -283,4 +283,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    from . import sources as _src
+    try:
+        main()
+    except Exception as e:  # the status page should show a crashed desk, then the step still fails
+        _src.save_health("scan", {"crashed": f"{type(e).__name__}: {e}"[:300]})
+        raise
+    _src.save_health("scan")

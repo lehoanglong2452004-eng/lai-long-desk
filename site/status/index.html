@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Lai Long Desk Status</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<script>
+window.addEventListener("error", function (e) {
+  var b = document.getElementById("lld-err");
+  if (!b) { b = document.createElement("div"); b.id = "lld-err"; b.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:99;background:#b91c1c;color:#fff;font:13px/1.4 sans-serif;padding:8px 12px"; (document.body || document.documentElement).appendChild(b); }
+  b.textContent = "Lỗi trang / page error: " + (e.message || "unknown") + " (" + navigator.userAgent + ")";
+});
+</script>
+<style>
+.hero { font-size: 18px; font-weight: 700; padding: 12px 14px; border-radius: 6px; white-space: normal; }
+.hero.ok { background: rgba(34, 197, 94, .12); color: var(--green); }
+.hero.warn { background: rgba(255, 176, 0, .12); color: var(--amber); }
+.hero.bad { background: rgba(240, 82, 79, .14); color: var(--red); }
+.hero small { display: block; font-size: 12px; font-weight: 400; color: var(--dim); margin-top: 4px; }
+.st { display: inline-block; padding: 1px 8px; border-radius: 3px; font-size: 11px; font-weight: 700; }
+.st.ok { background: rgba(34, 197, 94, .18); color: var(--green); }
+.st.partial, .st.stale, .st.slow { background: rgba(255, 176, 0, .18); color: var(--amber); }
+.st.down, .st.crashed, .st.missing { background: rgba(240, 82, 79, .2); color: var(--red); }
+.st.unknown { background: #131a23; color: var(--dim); }
+.hist { display: inline-flex; gap: 1px; vertical-align: middle; }
+.hist i { width: 5px; height: 14px; border-radius: 1px; background: var(--dim); }
+.hist i.ok { background: var(--green); } .hist i.partial { background: var(--amber); } .hist i.down { background: var(--red); }
+td.err { white-space: normal; font-size: 11px; color: var(--dim); min-width: 240px; max-width: 420px; word-break: break-word; }
+td.use { white-space: normal; font-size: 11px; color: var(--dim); min-width: 200px; }
+@media (max-width: 720px) {
+  .grid { grid-template-columns: minmax(0, 1fr); padding: 10px 16px; }
+  .span2, .span3 { grid-column: span 1; }
+  .brand .dim { display: none; }
+  .top { position: static; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="logo">龍</span> LAI LONG DESK <span class="dim">▸ TÌNH TRẠNG / STATUS</span></div>
+  <div class="top-right">
+    <a class="btn" href="../">QUANT</a>
+    <a class="btn" href="../factory/">NHÀ MÁY</a>
+    <a class="btn" href="../news/">TIN TỨC</a>
+    <button id="lang" class="btn" title="Language">EN</button>
+  </div>
+</header>
+<main class="grid">
+  <section class="panel span3"><div id="hero" class="hero"></div></section>
+  <section class="panel span3">
+    <div class="ph"><h2 id="h-desks"></h2></div>
+    <div class="scroll"><table id="t-desks"></table></div>
+    <p class="hint" id="hint-desks"></p>
+  </section>
+  <section class="panel span3">
+    <div class="ph"><h2 id="h-src"></h2></div>
+    <div class="scroll tall"><table id="t-src"></table></div>
+    <p class="hint" id="hint-src"></p>
+  </section>
+  <section class="panel span3">
+    <div class="ph"><h2 id="h-br"></h2></div>
+    <div class="scroll"><table id="t-br"></table></div>
+    <p class="hint" id="hint-br"></p>
+  </section>
+</main>
+<footer class="foot"><p id="foot"></p></footer>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+function safeGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function safeSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* private mode */ } }
+let lang = safeGet("lld-lang") || "vi";
+const tt = (vi, en) => (lang === "vi" ? vi : en);
+let H = null, LIVE = null;
+const BR = {};
+const REPO = (() => {
+  const o = location.hostname.match(/^([^.]+)\.github\.io$/), r = location.pathname.split("/").filter(Boolean)[0];
+  return o && r ? `${o[1]}/${r}` : "lehoanglong2452004-eng/lai-long-desk";
+})();
+
+function ago(t) {
+  if (!t) return "–";
+  const m = Math.round((Date.now() / 1000 - t) / 60);
+  return m < 1 ? tt("vừa xong", "just now") : m < 60 ? tt(`${m} phút trước`, `${m} min ago`) : m < 2880 ? tt(`${Math.round(m / 60)} giờ trước`, `${Math.round(m / 60)} h ago`) : tt(`${Math.round(m / 1440)} ngày trước`, `${Math.round(m / 1440)} days ago`);
+}
+const when = (t) => (t ? new Date(t * 1000).toLocaleString(lang === "vi" ? "vi-VN" : "en-GB", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }) : "–");
+const ST = { ok: ["ỔN", "OK"], partial: ["MỘT PHẦN LỖI", "PARTIAL"], down: ["LỖI", "DOWN"], stale: ["CHẬM / CŨ", "STALE"], slow: ["CHẬM", "SLOW"], crashed: ["DỪNG GIỮA CHỪNG", "CRASHED"], missing: ["CHƯA CÓ", "MISSING"], unknown: ["CHƯA RÕ", "UNKNOWN"] };
+const badge = (s) => `<span class="st ${s}">${tt(...(ST[s] || [s, s]))}</span>`;
+
+const DESK = {
+  scan: ["Quét chính (tín hiệu, backtest, bảng thị trường)", "Main scan (signals, backtest, market table)", 60],
+  global: ["Dữ liệu toàn cầu (trái phiếu, NHTW, CFTC, thanh khoản)", "Global data (bonds, central banks, CFTC, liquidity)", 60],
+  factory: ["Nhà máy (Wyckoff, MSS, Profile, backtest 4 khung)", "Factory (Wyckoff, MSS, profile, 4-TF backtest)", 60],
+  news: ["Tin tức (giá, tin, lịch kinh tế)", "News (prices, headlines, calendar)", 60],
+  live: ["Giá & lịch cập nhật nhanh (live.json)", "Fast prices & calendar (live.json)", 5],
+};
+const SRC = {
+  yahoo: ["Yahoo Finance", "Giá chỉ số Mỹ, 7 cổ phiếu, hàng hóa, forex, DXY, VIX", "US indices, top-7 stocks, commodities, FX, DXY, VIX"],
+  binance: ["Binance", "Giá và khối lượng crypto", "Crypto prices and volume"],
+  coingecko: ["CoinGecko", "Vốn hóa crypto, chọn top 50", "Crypto market caps, top-50 pick"],
+  hyperliquid: ["Hyperliquid", "Funding, OI crypto", "Crypto funding, OI"],
+  fred: ["FRED (Fed St. Louis)", "Lãi suất Mỹ, thanh khoản, lạm phát kỳ vọng", "US rates, liquidity, inflation expectations"],
+  cftc: ["CFTC", "Vị thế COT / TFF", "COT / TFF positioning"],
+  treasury: ["US Treasury", "Đường cong lợi suất Mỹ", "US yield curve"],
+  bundesbank: ["Deutsche Bundesbank", "Lợi suất Đức", "German yields"],
+  ecb: ["ECB", "Lợi suất khu vực euro", "Euro area yields"],
+  boe: ["Bank of England", "Lợi suất Anh", "UK yields"],
+  mof: ["Bộ Tài chính Nhật (MOF)", "Lợi suất Nhật", "Japan yields"],
+  bis: ["BIS", "Lãi suất 10 ngân hàng trung ương", "10 central bank rates"],
+  defillama: ["DefiLlama", "Stablecoin lưu hành", "Stablecoin supply"],
+  blockchain: ["blockchain.info", "Hashrate Bitcoin", "Bitcoin hashrate"],
+  okx: ["OKX", "Long/short, OI, thanh lý crypto", "Crypto long/short, OI, liquidations"],
+  nasdaq: ["Nasdaq", "Lịch kinh tế có số thực tế", "Economic calendar with actuals"],
+  forex: ["Forex Factory", "Mức độ quan trọng của lịch kinh tế", "Calendar impact ratings"],
+  rss: ["RSS tin tức", "Tin tức", "Headlines"],
+};
+
+function renderText() {
+  document.documentElement.lang = lang;
+  $("lang").textContent = lang === "vi" ? "EN" : "VI";
+  $("h-desks").textContent = tt("CÁC PHÂN XƯỞNG (CHẠY TỰ ĐỘNG TRÊN GITHUB)", "WORKSHOPS (RUN AUTOMATICALLY ON GITHUB)");
+  $("hint-desks").textContent = tt("Mỗi phân xưởng chạy độc lập. Quét chính, dữ liệu toàn cầu, nhà máy và tin tức chạy mỗi giờ; giá nhanh chạy mỗi 5 phút. GitHub đôi khi trễ lịch vài phút đến vài chục phút, đó là bình thường.",
+    "Each workshop runs on its own. The main scan, global data, factory and news run hourly; fast prices every 5 minutes. GitHub sometimes starts a few to a few dozen minutes late, which is normal.");
+  $("h-src").textContent = tt("NGUỒN DỮ LIỆU", "DATA SOURCES");
+  $("hint-src").textContent = tt("Lịch sử: mỗi vạch là một lần quét (xanh = ổn, vàng = một phần lỗi, đỏ = lỗi hoàn toàn), mới nhất bên phải. Một vài lần vàng là bình thường (nguồn miễn phí đôi khi chậm). Đỏ liên tiếp nhiều lần nghĩa là nguồn đó đổi hoặc chặn, cần sửa.",
+    "History: one bar per scan (green = OK, amber = partial, red = down), newest on the right. Some amber is normal (free sources are sometimes slow). Red many times in a row means the source changed or blocks us and needs a fix.");
+  $("h-br").textContent = tt("GIÁ TRỰC TIẾP TRÊN TRÌNH DUYỆT CỦA BẠN", "LIVE FEEDS IN YOUR BROWSER");
+  $("hint-br").textContent = tt("Phần này kiểm tra ngay trên máy bạn, vì giá trực tiếp được trình duyệt lấy thẳng từ sàn. Nếu một dòng lỗi mà các dòng khác ổn, có thể mạng của bạn chặn sàn đó.",
+    "Checked on your device, since live prices come straight from the exchanges to your browser. If one line fails while others work, your network may block that exchange.");
+  $("foot").textContent = tt("Hệ thống chạy trên GitHub Actions và GitHub Pages của tài khoản bạn, không phụ thuộc gói Claude.", "The system runs on your account's GitHub Actions and GitHub Pages, independent of any Claude plan.");
+}
+
+function render() {
+  renderText();
+  if (!H) { $("hero").className = "hero warn"; $("hero").innerHTML = tt("Chưa có báo cáo tình trạng. Báo cáo sẽ có sau lần quét kế tiếp (mỗi giờ).", "No status report yet. It arrives with the next hourly scan."); renderBrowser(); return; }
+  const desks = H.desks.slice();
+  if (LIVE) {
+    const t = Math.round(LIVE.generatedAt / 1000), m = (Date.now() / 1000 - t) / 60;
+    desks.push({ desk: "live", t, errors: LIVE.health ? LIVE.health.errors : null, state: m < 20 ? "ok" : m < 90 ? "slow" : "stale" });
+  }
+  // a desk that has not reported for over 2.5 hours is stale even if its last run was fine
+  desks.forEach((d) => { if (d.state === "ok" && d.t && Date.now() / 1000 - d.t > (d.desk === "live" ? 5400 : 9000)) d.state = "stale"; });
+  const src = H.sources.slice();
+  if (LIVE && LIVE.health) Object.entries(LIVE.health.sources || {}).forEach(([k, c]) => {
+    const row = src.find((s) => s.key === k);
+    const st = !c.fail ? "ok" : c.ok ? "partial" : "down";
+    if (!row) src.push({ key: k, status: st, ok: c.ok, fail: c.fail, error: c.error, desks: ["live"], history: [] });
+    else if (!row.desks.includes("live")) row.desks = row.desks.concat("live");
+  });
+  const down = src.filter((s) => s.status === "down"), longDown = src.filter((s) => s.fails_in_row >= 3), part = src.filter((s) => s.status === "partial");
+  const deskBad = desks.filter((d) => d.state !== "ok");
+  const level = longDown.length || deskBad.some((d) => d.state === "crashed" || d.state === "stale") ? "bad" : down.length || part.length || deskBad.length ? "warn" : "ok";
+  $("hero").className = "hero " + level;
+  $("hero").innerHTML = (level === "ok" ? tt("● Hệ thống hoạt động bình thường", "● All systems normal") :
+    level === "warn" ? tt(`▲ Hệ thống chạy, có ${down.length + part.length} nguồn lỗi tạm thời`, `▲ Running, ${down.length + part.length} source(s) with temporary errors`) :
+    tt("✕ Có sự cố cần sửa", "✕ Something needs fixing")) +
+    `<small>${tt("Báo cáo lần quét", "Report from scan")} ${when(H.generated)} (${ago(H.generated)}).${longDown.length ? " " + tt("Lỗi liên tiếp từ 3 lần trở lên", "Failing 3+ runs in a row") + ": " + longDown.map((s) => esc((SRC[s.key] || [s.key])[0])).join(", ") + "." : ""}${deskBad.length ? " " + tt("Phân xưởng cần xem", "Workshops to check") + ": " + deskBad.map((d) => esc(tt(...(DESK[d.desk] || [d.desk, d.desk])).split(" (")[0])).join(", ") + "." : ""}</small>`;
+
+  $("t-desks").innerHTML = `<tr><th>${tt("Phân xưởng", "Workshop")}</th><th>${tt("Trạng thái", "Status")}</th><th>${tt("Lần chạy gần nhất", "Last run")}</th><th class="num">${tt("Số lỗi lần đó", "Errors that run")}</th><th>${tt("Chu kỳ", "Every")}</th><th>${tt("Ghi chú", "Note")}</th></tr>` +
+    desks.map((d) => { const k = DESK[d.desk] || [d.desk, d.desk, 60]; return `<tr><td><b>${esc(tt(k[0], k[1]))}</b></td><td>${badge(d.state)}</td><td>${when(d.t)} <span class="dim">(${ago(d.t)})</span></td>
+      <td class="num ${d.errors ? "amber" : ""}">${d.errors ?? "–"}</td><td>${k[2] === 5 ? tt("5 phút", "5 min") : tt("1 giờ", "1 hour")}</td><td class="err">${esc(d.crashed || "")}</td></tr>`; }).join("");
+
+  const order = { down: 0, partial: 1, unknown: 2, ok: 3 };
+  src.sort((a, b) => (order[a.status] ?? 2) - (order[b.status] ?? 2) || (b.fails_in_row || 0) - (a.fails_in_row || 0) || a.key.localeCompare(b.key));
+  $("t-src").innerHTML = `<tr><th>${tt("Nguồn", "Source")}</th><th>${tt("Dùng cho", "Used for")}</th><th>${tt("Trạng thái", "Status")}</th><th class="num">${tt("Gọi OK / lỗi", "Calls OK / failed")}</th><th class="num">${tt("Lỗi liên tiếp", "Fails in a row")}</th><th>${tt("OK gần nhất", "Last OK")}</th><th>${tt("Lịch sử 48 lần quét", "Last 48 scans")}</th><th>${tt("Lỗi gần nhất", "Last error")}</th></tr>` +
+    src.map((s) => { const m = SRC[s.key] || [s.key, "", ""]; return `<tr><td><b>${esc(m[0])}</b></td><td class="use">${esc(tt(m[1], m[2]))}</td><td>${badge(s.status)}</td>
+      <td class="num">${s.ok ?? "–"} / <span class="${s.fail ? "down" : ""}">${s.fail ?? "–"}</span></td><td class="num ${s.fails_in_row >= 3 ? "down" : ""}">${s.fails_in_row ?? 0}</td>
+      <td>${s.last_ok ? ago(s.last_ok) : "–"}</td><td><span class="hist">${(s.history || []).map(([t, st]) => `<i class="${st}" title="${when(t)}"></i>`).join("")}</span></td>
+      <td class="err">${s.error ? `${esc(s.what || "")}: ${esc(s.error)}` : s.last_error ? `<span class="dim">${tt("trước đó", "earlier")}: ${esc(s.last_error)}</span>` : ""}</td></tr>`; }).join("");
+  renderBrowser();
+}
+
+function renderBrowser() {
+  const rows = [["hl", "Hyperliquid", tt("Giá trực tiếp chỉ số, cổ phiếu, hàng hóa", "Live indices, stocks, commodities")],
+    ["kr", "Kraken", tt("Giá trực tiếp forex, DXY ước tính", "Live FX, estimated DXY")],
+    ["bn", "Binance", tt("Giá trực tiếp crypto", "Live crypto")],
+    ["bf", "Binance Futures", tt("Thanh lý crypto trực tiếp", "Live crypto liquidations")],
+    ["gh", "GitHub (live.json)", tt("Giá & lịch cập nhật 5 phút", "5-minute prices & calendar")]];
+  $("t-br").innerHTML = `<tr><th>${tt("Nguồn", "Feed")}</th><th>${tt("Dùng cho", "Used for")}</th><th>${tt("Trạng thái", "Status")}</th><th>${tt("Chi tiết", "Detail")}</th></tr>` +
+    rows.map(([k, n, u]) => { const b = BR[k] || { st: "unknown", msg: tt("đang kiểm tra…", "checking…") }; return `<tr><td><b>${n}</b></td><td class="use">${u}</td><td>${badge(b.st)}</td><td class="err">${esc(b.msg)}</td></tr>`; }).join("");
+}
+
+function wsCheck(key, url, sub) {
+  let ws, done = false;
+  const fin = (st, msg) => { if (done) return; done = true; BR[key] = { st, msg }; try { ws.close(); } catch (e) { /* closed */ } renderBrowser(); };
+  try { ws = new WebSocket(url); } catch (e) { fin("down", String(e)); return; }
+  const t0 = Date.now();
+  ws.onopen = () => { if (sub) ws.send(JSON.stringify(sub)); };
+  ws.onmessage = () => fin("ok", tt(`nhận dữ liệu sau ${Date.now() - t0} ms`, `data after ${Date.now() - t0} ms`));
+  ws.onerror = () => fin("down", tt("không kết nối được", "cannot connect"));
+  setTimeout(() => fin(key === "bf" ? "partial" : "down", key === "bf" ? tt("kết nối được nhưng 15 giây chưa có lệnh thanh lý nào (bình thường khi thị trường yên)", "connected, no liquidation in 15 s (normal in a calm market)") : tt("quá 15 giây không có dữ liệu", "no data within 15 s")), 15000);
+}
+async function browserChecks() {
+  try {
+    const t0 = Date.now();
+    const r = await fetch("https://api.hyperliquid.xyz/info", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "allMids", dex: "xyz" }) });
+    const j = await r.json();
+    BR.hl = { st: r.ok ? "ok" : "down", msg: tt(`${Object.keys(j).length} mã, ${Date.now() - t0} ms`, `${Object.keys(j).length} symbols, ${Date.now() - t0} ms`) };
+  } catch (e) { BR.hl = { st: "down", msg: tt("không kết nối được", "cannot connect") }; }
+  renderBrowser();
+  wsCheck("kr", "wss://ws.kraken.com/v2", { method: "subscribe", params: { channel: "ticker", symbol: ["EUR/USD"] } });
+  wsCheck("bn", "wss://data-stream.binance.vision/ws/btcusdt@miniTicker");
+  wsCheck("bf", "wss://fstream.binance.com/ws/!forceOrder@arr");
+}
+
+async function load() {
+  const get = (u) => fetch(u, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  [H, LIVE] = await Promise.all([get(`../data/health.json?v=${Date.now()}`), get(`https://raw.githubusercontent.com/${REPO}/live-data/live.json?t=${Math.floor(Date.now() / 60000)}`)]);
+  BR.gh = LIVE ? { st: Date.now() - LIVE.generatedAt < 20 * 60000 ? "ok" : "slow", msg: tt(`cập nhật ${ago(LIVE.generatedAt / 1000)}`, `updated ${ago(LIVE.generatedAt / 1000)}`) } : { st: "down", msg: tt("không tải được", "cannot load") };
+  render();
+}
+$("lang").addEventListener("click", () => { lang = lang === "vi" ? "en" : "vi"; safeSet("lld-lang", lang); render(); });
+renderText(); load(); browserChecks();
+setInterval(load, 5 * 60 * 1000);
+</script>
+</body>
+</html>

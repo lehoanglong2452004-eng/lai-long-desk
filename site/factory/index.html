@@ -63,6 +63,7 @@ tr.grp td { color: var(--amber); font-size: 11px; letter-spacing: .08em; font-we
     <a class="btn" href="../">QUANT</a>
     <a class="btn" href="../news/">TIN TỨC</a>
     <a class="btn" href="../depth/">DEPTH</a>
+    <a id="sys" class="pill" data-base="../" href="../status/" title="Tình trạng hệ thống / system status">…</a>
     <span id="age" class="pill"></span>
     <button id="lang" class="btn" title="Language">EN</button>
   </div>
@@ -396,6 +397,19 @@ $("lang").addEventListener("click", () => { lang = lang === "vi" ? "en" : "vi"; 
 window.addEventListener("resize", () => A && drawChart());
 renderText(); renderTabs(); load();
 setInterval(load, 15 * 60 * 1000);
+</script>
+<script>
+/* system status pill: green when every source worked in the last scan */
+(function () {
+  var a = document.getElementById("sys"), base = a.getAttribute("data-base");
+  fetch(base + "data/health.json?v=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (h) {
+    if (!h) { a.textContent = "? STATUS"; return; }
+    var bad = h.sources.filter(function (s) { return s.status !== "ok"; }).length, long = h.sources.filter(function (s) { return s.fails_in_row >= 3; }).length;
+    var old = Date.now() / 1000 - h.generated > 3 * 3600, vi = (document.documentElement.lang || "vi") === "vi";
+    a.className = "pill " + (long || old ? "stale" : bad ? "warn" : "ok");
+    a.textContent = long || old ? (vi ? "✕ CÓ SỰ CỐ" : "✕ ISSUE") : bad ? (vi ? "▲ " + bad + " NGUỒN LỖI" : "▲ " + bad + " SOURCE ERR") : (vi ? "● HỆ THỐNG ỔN" : "● ALL OK");
+  }).catch(function () { a.textContent = "? STATUS"; });
+})();
 </script>
 </body>
 </html>

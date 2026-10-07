@@ -28,6 +28,8 @@ body { font: 13px/1.45 "JetBrains Mono", ui-monospace, Menlo, Consolas, monospac
 .top-right { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
 .pill { padding: 2px 8px; border: 1px solid var(--line); border-radius: 999px; font-size: 12px; }
 .pill.ok { border-color: var(--green); color: var(--green); }
+.pill.warn { border-color: var(--amber); color: var(--amber); }
+a.pill { text-decoration: none; }
 .pill.stale { border-color: var(--red); color: var(--red); }
 .btn { background: transparent; color: var(--amber); border: 1px solid var(--amber); border-radius: 4px;
   font: inherit; padding: 3px 10px; cursor: pointer; }
