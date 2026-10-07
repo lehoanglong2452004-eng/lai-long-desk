@@ -13,14 +13,15 @@ jobs:
           mkdir -p probe/out; cd probe/out
           UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/128 Safari/537.36"
           g(){ curl -sS -m 30 -A "$UA" -H "Origin: https://lehoanglong2452004-eng.github.io" -D "$1.h" -o "$1.b" "${@:2}" || echo fail > "$1.h"; }
-          for t in fx metal equity commodities indices crypto rates; do g pyth_$t "https://hermes.pyth.network/v2/price_feeds?asset_type=$t"; done
+          rm -rf ./*
           g ff "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
-          g ffxml "https://nfs.faireconomy.media/ff_calendar_thisweek.xml"
-          g nasdaq "https://api.nasdaq.com/api/calendar/economicevents?date=$(date -u +%F)" -H "Accept: application/json"
-          g tv "https://economic-calendar.tradingview.com/events?from=$(date -u +%F)T00:00:00.000Z&to=$(date -u -d tomorrow +%F)T00:00:00.000Z&countries=US,EU,GB,JP,CN" -H "Origin: https://www.tradingview.com" -H "Referer: https://www.tradingview.com/"
-          g tvcors "https://economic-calendar.tradingview.com/events?from=$(date -u +%F)T00:00:00.000Z&to=$(date -u -d tomorrow +%F)T00:00:00.000Z&countries=US"
-          g yahoo "https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?interval=1m&range=1d"
-          for f in *.b; do head -c 1500 "$f" > "$f.head"; done; ls -la; rm -f ff.b ffxml.b tv.b tvcors.b nasdaq.b yahoo.b
+          for d in $(date -u -d '-2 day' +%F) $(date -u -d '-1 day' +%F) $(date -u +%F); do g nasdaq_$d "https://api.nasdaq.com/api/calendar/economicevents?date=$d" -H "Accept: application/json"; done
+          T=$(( $(date +%s) - 3600 ))
+          g pyth_hist "https://hermes.pyth.network/v2/updates/price/$T?ids%5B%5D=0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace&parsed=true&encoding=hex"
+          g pyth_latest "https://hermes.pyth.network/v2/updates/price/latest?ids%5B%5D=0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace&parsed=true"
+          curl -sS -m 6 -N -A "$UA" -H "Origin: https://lehoanglong2452004-eng.github.io" -D pyth_sse.h "https://hermes.pyth.network/v2/updates/price/stream?ids%5B%5D=0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace&parsed=true" -o pyth_sse.b || true
+          g ws_test "https://data-api.binance.vision/api/v3/ticker/24hr?symbol=BTCUSDT"
+          ls -la
       - run: |
           git config user.name probe; git config user.email probe@users.noreply.github.com
           git add probe/out; git commit -m "probe results" -q; git push -q
