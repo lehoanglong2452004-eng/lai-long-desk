@@ -9,24 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: |
-          mkdir -p probe/out; cd probe/out
-          UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/128 Safari/537.36"
-          g(){ curl -sS -m 30 -A "$UA" -H "Origin: https://lehoanglong2452004-eng.github.io" -D "$1.h" -o "$1.b" "${@:2}" || echo fail > "$1.h"; }
-          rm -rf ./*
-          g bfx "https://fapi.binance.com/fapi/v1/exchangeInfo"
-          python3 -c "import json;d=json.load(open('bfx.b'));print(sorted(s['symbol'] for s in d['symbols'] if s['status']=='TRADING' and (s.get('underlyingType') not in ('COIN',) or s['symbol'][:3] in ('XAU','XAG','XPT','XPD'))))" > bfx_tradfi.txt || true
-          python3 -c "import json;d=json.load(open('bfx.b'));import collections;print(collections.Counter(s.get('underlyingType') for s in d['symbols']));print([s['symbol'] for s in d['symbols'] if s.get('underlyingSubType') and any(k in str(s.get('underlyingSubType')) for k in ('TradFi','STOCK','Stock','COMMOD','Commod','INDEX','Index','FX'))][:200])" >> bfx_tradfi.txt || true
-          rm -f bfx.b
-          g kraken "https://api.kraken.com/0/public/AssetPairs"
-          python3 -c "import json;d=json.load(open('kraken.b'))['result'];print([v['wsname'] for v in d.values() if v.get('wsname','').split('/')[0] in ('EUR','GBP','AUD','USD','NZD','CHF','CAD','JPY','PAXG','XAUT')])" > kraken_fx.txt || true
-          rm -f kraken.b
-          curl -sS -m 30 -D hl_dexs.h -H "Origin: https://lehoanglong2452004-eng.github.io" -H "Content-Type: application/json" -d '{"type":"perpDexs"}' https://api.hyperliquid.xyz/info -o hl_dexs.b || true
-          curl -sS -m 30 -D hl_xyz.h -H "Origin: https://lehoanglong2452004-eng.github.io" -H "Content-Type: application/json" -d '{"type":"metaAndAssetCtxs","dex":"xyz"}' https://api.hyperliquid.xyz/info -o hl_xyz.b || true
-          python3 -c "import json;m,c=json.load(open('hl_xyz.b'));print([(u['name'],x.get('markPx'),x.get('prevDayPx')) for u,x in zip(m['universe'],c)])" > hl_xyz.txt || true
-          head -c 3000 hl_dexs.b > hl_dexs.txt; rm -f hl_dexs.b hl_xyz.b
-          g kr_tick "https://api.kraken.com/0/public/Ticker?pair=EURUSD"
-          ls -la
+      - run: mkdir -p probe/out && rm -f probe/out/* && python3 probe/sources.py
       - run: |
           git config user.name probe; git config user.email probe@users.noreply.github.com
           git add probe/out; git commit -m "probe results" -q; git push -q
