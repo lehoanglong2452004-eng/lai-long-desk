@@ -97,7 +97,7 @@ OKX_COINS = ["BTC", "ETH", "SOL", "XRP", "DOGE"]
 def okx_liquidations(coin, ct_val, since_ms):
     """Long and short liquidations (USD) on OKX's USDT perpetual since `since_ms`."""
     longs = shorts = 0.0
-    after, n = None, 0
+    after, n, first = None, 0, None
     for _ in range(40):  # 100 per page; very busy days are capped and say so
         q = f"{OKX}/public/liquidation-orders?instType=SWAP&uly={coin}-USDT&state=filled&limit=100"
         details = (json.loads(_get(q + (f"&after={after}" if after else ""), retries=2)).get("data") or [{}])[0].get("details") or []
@@ -105,15 +105,17 @@ def okx_liquidations(coin, ct_val, since_ms):
             break
         for d in details:
             if int(d["ts"]) < since_ms:
-                return {"long_usd": round(longs), "short_usd": round(shorts), "count": n, "complete": True}
+                return {"long_usd": round(longs), "short_usd": round(shorts), "count": n, "complete": True, "from_ms": since_ms}
             usd = float(d["sz"]) * ct_val * float(d["bkPx"])
             if d.get("posSide") == "long":
                 longs += usd
             else:
                 shorts += usd
             n += 1
+            first = int(d["ts"])
         after = details[-1]["ts"]
-    return {"long_usd": round(longs), "short_usd": round(shorts), "count": n, "complete": False}
+    # OKX keeps only a recent window, so say where the sum actually starts
+    return {"long_usd": round(longs), "short_usd": round(shorts), "count": n, "complete": False, "from_ms": first}
 
 
 def crypto_derivs():
