@@ -33,6 +33,20 @@ const T = {
     why: "Lý do", scoreParts: "Cách tính điểm", risk: "Rủi ro / lệnh", cost: "Chi phí khứ hồi", plan: "Kế hoạch lệnh",
     histFor: "Backtest của mẫu hình này trong nhóm", errors: "Nguồn lỗi lần quét này",
     TREND_PULLBACK: "Hồi về hỗ trợ/kháng cự thuận xu hướng", VOL_BREAKOUT: "Phá vỡ kèm khối lượng", RANGE_EDGE: "Bật lại ở biên vùng đi ngang",
+    dash: "MACRO DASHBOARD · LÃI SUẤT, USD & GIÁ CHỦ CHỐT", dashRates: "Lãi suất & đồng USD", dashKeys: "Giá chủ chốt",
+    dashHint: "Cột Cập nhật cho biết số liệu mới đến đâu: ● trực tiếp = nhảy theo từng giao dịch; \"trễ N phút\" = nguồn miễn phí bị trễ; \"số liệu ngày\" = nguồn chỉ công bố 1 lần mỗi ngày. bp = 0,01 điểm phần trăm. Hàng hóa trực tiếp lấy theo hợp đồng perp trên Hyperliquid và % thay đổi 24 giờ.",
+    ind: "Chỉ báo", value: "Giá trị", change: "Thay đổi", meaning: "Ý nghĩa", fresh: "Cập nhật",
+    liveNow: "trực tiếp", delayed: (m) => `trễ ~${m} phút`, closedAt: (s) => `đóng cửa ${s}`, daily: (s) => `số liệu ngày ${s}`, perScan: (s) => `theo lần quét ${s}`, lastClose: (s) => `giá đóng cửa ngày ${s}`,
+    liveOn: "Giá trực tiếp đang chạy", liveOff: "Đang kết nối giá trực tiếp…", perp24: "Hyperliquid perp, % 24h",
+    k_fed_funds: "Lãi suất Fed (thực tế)", k_us3m: "Lợi suất 3 tháng", k_us2y: "Lợi suất 2 năm", k_us5y: "Lợi suất 5 năm", k_us10y: "Lợi suất 10 năm", k_us30y: "Lợi suất 30 năm",
+    k_s2s10: "Chênh lệch 10 năm – 2 năm", k_dxy: "DXY (chỉ số USD)", k_vix: "VIX (chỉ số sợ hãi)", k_biasM: "Kết luận USD trung hạn", k_biasI: "Kết luận USD trong ngày",
+    m_fed_funds: "Lãi suất qua đêm thực tế của Fed. Tăng = USD đắt hơn, thường gây áp lực lên vàng và crypto.",
+    m_us3m: "Bám sát kỳ vọng lãi suất Fed trong vài tháng tới.", m_us2y: "Nhạy nhất với kỳ vọng lãi suất Fed 1–2 năm tới. Cao hơn lãi suất Fed = thị trường chờ tăng lãi suất.",
+    m_us5y: "Kỳ vọng lãi suất trung hạn.", m_us10y: "Chuẩn chi phí vốn toàn cầu. Tăng nhanh thường bất lợi cho cổ phiếu, vàng, crypto.",
+    m_us30y: "Kỳ vọng lạm phát và rủi ro dài hạn.", m_s2s10: "Âm = đường cong đảo ngược: thị trường lo suy thoái. Chuyển từ âm sang dương thường đi kèm Fed cắt giảm.",
+    m_dxy: "Sức mạnh USD so với 6 đồng tiền lớn. Tăng = áp lực lên EURUSD, GBPUSD, vàng, crypto.", m_vix: "Mức sợ hãi trên S&P 500. Trên 25 = thị trường căng thẳng, nên giảm khối lượng.",
+    m_bias: "Kết luận của bộ phận Vĩ mô: thang -2 (USD yếu) đến +2 (USD mạnh). Dùng để cộng/trừ điểm tín hiệu.",
+    srcCol: "Nguồn / độ trễ", synth: "ước tính từ Kraken",
   },
   en: {
     setups: "TRADE SETUPS", macro: "MACRO · RATES · USD", survival: "SURVIVAL · EDGE AFTER COSTS",
@@ -65,6 +79,20 @@ const T = {
     why: "Why", scoreParts: "Score breakdown", risk: "Risk / trade", cost: "Round-trip cost", plan: "Trade plan",
     histFor: "Backtest of this setup in", errors: "Feeds that failed this scan",
     TREND_PULLBACK: "Pullback to support/resistance with the trend", VOL_BREAKOUT: "Breakout on volume", RANGE_EDGE: "Bounce at a range edge",
+    dash: "MACRO DASHBOARD · RATES, USD & KEY PRICES", dashRates: "Rates & the US dollar", dashKeys: "Key prices",
+    dashHint: "The Updated column says how fresh each number is: ● live = moves with every trade; \"~N min delay\" = the free source is delayed; \"daily\" = the source publishes once a day. bp = 0.01 percentage point. Live commodities follow Hyperliquid perps with a 24-hour change.",
+    ind: "Gauge", value: "Value", change: "Change", meaning: "What it means", fresh: "Updated",
+    liveNow: "live", delayed: (m) => `~${m} min delay`, closedAt: (s) => `closed ${s}`, daily: (s) => `daily, ${s}`, perScan: (s) => `scan ${s}`, lastClose: (s) => `close of ${s}`,
+    liveOn: "Live prices running", liveOff: "Connecting to live prices…", perp24: "Hyperliquid perp, 24h %",
+    k_fed_funds: "Fed funds (effective)", k_us3m: "US 3M yield", k_us2y: "US 2Y yield", k_us5y: "US 5Y yield", k_us10y: "US 10Y yield", k_us30y: "US 30Y yield",
+    k_s2s10: "10Y – 2Y spread", k_dxy: "DXY (US dollar index)", k_vix: "VIX (fear gauge)", k_biasM: "USD verdict, medium term", k_biasI: "USD verdict, intraday",
+    m_fed_funds: "The Fed's effective overnight rate. Higher = dearer dollar, usually a headwind for gold and crypto.",
+    m_us3m: "Tracks where the Fed is expected to be within months.", m_us2y: "Most sensitive to the Fed path over 1–2 years. Above Fed funds = market expects hikes.",
+    m_us5y: "Medium-term rate expectations.", m_us10y: "The world's benchmark cost of money. Fast rises usually hurt stocks, gold and crypto.",
+    m_us30y: "Long-run inflation and risk expectations.", m_s2s10: "Negative = inverted curve: recession worries. Turning positive often comes with Fed cuts.",
+    m_dxy: "Dollar strength against 6 majors. Rising = pressure on EURUSD, GBPUSD, gold, crypto.", m_vix: "Fear priced into the S&P 500. Above 25 = stressed market; size down.",
+    m_bias: "The Macro department's verdict: -2 (weak USD) to +2 (strong USD). It adds or removes signal points.",
+    srcCol: "Source / delay", synth: "estimated from Kraken",
   },
 };
 
@@ -126,6 +154,7 @@ async function load() {
   [D, S, LOG] = await Promise.all([get("latest.json"), get("scorecard.json"), get("signals_log.json")]);
   LOG = LOG || [];
   render();
+  binance();
 }
 
 function render() {
@@ -137,7 +166,7 @@ function render() {
     $("t-setups").innerHTML = `<tr><td class="empty">${t("noData")}</td></tr>`;
     return;
   }
-  renderAge(); renderStrip(); renderSetups(); renderMacro(); renderSurvival(); renderRadar();
+  renderAge(); renderDash(); renderSetups(); renderMacro(); renderSurvival(); renderRadar();
   renderCrowd(); renderCot(); renderJournal(); renderBacktest(); renderMarket();
   $("errors").textContent = D.errors && D.errors.length ? `${t("errors")}: ${D.errors.join(" · ")}` : "";
 }
@@ -157,20 +186,179 @@ function renderAge() {
 
 function biasWord(b) { return b > 0 ? t("usdStrong") : b < 0 ? t("usdWeak") : t("usdNeutral"); }
 
-function renderStrip() {
-  const m = D.macro.medium, i = D.macro.intraday;
-  const items = [
-    [t("ff"), m.fed_funds != null ? m.fed_funds.toFixed(2) + "%" : "–"],
-    [t("y2"), m.us2y != null ? m.us2y.toFixed(2) + "%" : "–"],
-    [t("y10"), m.us10y != null ? m.us10y.toFixed(2) + "%" : "–"],
-    [t("dxy"), m.dxy != null ? m.dxy.toFixed(2) : "–"],
-    ["DXY 8h", `<span class="${cl(i.dxy_chg_pct)}">${pct(i.dxy_chg_pct)}</span>`],
-    ["10Y 8h", `<span class="${cl(i.us10y_chg_bp)}">${sgn(i.us10y_chg_bp, 1)}bp</span>`],
-    [t("usdBias"), `${biasWord(m.bias)} / ${biasWord(i.bias)}`],
-  ];
-  const tops = (D.market || []).filter((x) => ["BTC", "ETH", "GOLD", "WTI", "EURUSD", "USDJPY"].includes(x.symbol));
-  tops.forEach((x) => items.push([x.symbol, `${px(x.price)} <span class="${cl(x.chg_pct)}">${pct(x.chg_pct)}</span>`]));
-  $("strip").innerHTML = items.map(([k, v]) => `<span><b>${esc(k)}</b>${v}</span>`).join("");
+// ---------- live prices and the macro dashboard ----------
+// The scan (hourly) stores closed daily bars. Between scans the browser streams prices itself:
+// crypto from Binance, FX from Kraken, commodities from Hyperliquid's perps. Rates come from
+// live.json (refreshed every 5 minutes on the live-data branch) with the time of each quote.
+const KR_PAIRS = { EURUSD: "EUR/USD", GBPUSD: "GBP/USD", AUDUSD: "AUD/USD", USDJPY: "USD/JPY", USDCAD: "USD/CAD", USDCHF: "USD/CHF" };
+const HL_COM = { GOLD: "GOLD", SILVER: "SILVER", PLATINUM: "PLATINUM", COPPER: "COPPER", WTI: "CL", BRENT: "BRENTOIL", NATGAS: "NATGAS", CORN: "CORN" };
+const DXY_W = { "EUR/USD": -0.576, "USD/JPY": 0.136, "GBP/USD": -0.119, "USD/CAD": 0.091, "USD/CHF": 0.036 };  // ICE weights without SEK
+const KEYS = ["BTC", "ETH", "SOL", "GOLD", "SILVER", "WTI", "EURUSD", "GBPUSD", "USDJPY"];
+const LV = {}, KRX = {}, BNX = {}, HLX = {};
+let MAC = null, lastTick = 0, dxyLive = null;
+
+function fxOpen() {
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", hour: "2-digit", hourCycle: "h23" })
+    .formatToParts(new Date()).map((x) => [x.type, x.value]));
+  const h = +p.hour;
+  return !(p.weekday === "Sat" || (p.weekday === "Sun" && h < 17) || (p.weekday === "Fri" && h >= 17));
+}
+
+function quote(m) {
+  const l = LV[m.symbol];
+  return l ? { price: l.price, chg_pct: l.chg_pct, via: l.via } : { price: m.price, chg_pct: m.chg_pct, bar_t: m.bar_t };
+}
+function freshText(q) {
+  return q.via ? `<span class="live">${t("liveNow")} · ${esc(q.via)}</span>` : t("lastClose")(dateStr(q.bar_t));
+}
+
+function liveFor(m) {
+  if (m.cls === "crypto") {
+    const b = BNX[`${m.symbol}USDT`];
+    // the scan's price is the last closed daily close, so today's change is measured from it
+    if (b && Math.abs(b / m.price - 1) < 0.5) return { price: b, chg_pct: (b / m.price - 1) * 100, via: "Binance" };
+  } else if (m.cls === "forex") {
+    const k = KRX[KR_PAIRS[m.symbol]];
+    if (k && fxOpen()) return { price: k, chg_pct: (k / m.price - 1) * 100, via: "Kraken" };
+  } else if (HL_COM[m.symbol]) {
+    const h = HLX[HL_COM[m.symbol]];
+    if (h && h.px) return { price: h.px, chg_pct: h.prev ? (h.px / h.prev - 1) * 100 : null, via: t("perp24") };
+  }
+  return null;
+}
+
+function tick() {
+  const changed = [];
+  for (const m of D.market || []) {
+    const l = liveFor(m);
+    if (!l || (LV[m.symbol] && LV[m.symbol].price === l.price)) continue;
+    LV[m.symbol] = l;
+    changed.push(m.symbol);
+  }
+  // synthetic DXY: Kraken's FX basket moves the last Yahoo DXY quote
+  const d = MAC && MAC.dxy;
+  if (d && fxOpen() && Object.keys(DXY_W).every((k) => KRX[k])) {
+    const syn = Object.entries(DXY_W).reduce((v, [k, w]) => v * KRX[k] ** w, 1);
+    if (!dxyLive || dxyLive.base !== d) dxyLive = { base: d, anchor: syn };
+    const v = d.value * syn / dxyLive.anchor;
+    if (v !== dxyLive.value) { dxyLive.value = v; paintCell("r:dxy", v.toFixed(3), d.prev ? (v / d.prev - 1) * 100 : null, `<span class="live">${t("liveNow")} · ${t("synth")}</span>`); }
+  }
+  changed.forEach((sym) => { const l = LV[sym]; paintCell(`m:${sym}`, px(l.price), l.chg_pct, freshText(l)); });
+}
+
+function flash(el, up) {
+  el.classList.remove("fl-up", "fl-down");
+  void el.offsetWidth;
+  el.classList.add(up ? "fl-up" : "fl-down");
+}
+function paintCell(key, text, chg, fresh) {
+  const q = CSS.escape(key);
+  document.querySelectorAll(`[data-k="${q}"]`).forEach((el) => {
+    if (el.textContent === text) return;
+    const before = parseFloat(el.textContent.replace(/,/g, ""));
+    el.textContent = text;
+    if (isFinite(before)) flash(el, parseFloat(text.replace(/,/g, "")) > before);
+  });
+  document.querySelectorAll(`[data-c="${q}"]`).forEach((el) => { el.textContent = pct(chg); el.className = `num ${cl(chg)}`; });
+  if (fresh) document.querySelectorAll(`[data-s="${q}"]`).forEach((el) => { if (el.innerHTML !== fresh) el.innerHTML = fresh; });
+}
+
+// ---------- feeds ----------
+const REPO = (() => {
+  const o = location.hostname.match(/^([^.]+)\.github\.io$/), r = location.pathname.split("/").filter(Boolean)[0];
+  return o && r ? `${o[1]}/${r}` : "lehoanglong2452004-eng/lai-long-desk";
+})();
+async function pollLive() {
+  try {
+    const r = await fetch(`https://raw.githubusercontent.com/${REPO}/live-data/live.json?t=${Math.floor(Date.now() / 60000)}`, { cache: "no-store" });
+    if (!r.ok) return;
+    const j = await r.json();
+    if (j.macro && Object.keys(j.macro).length) { MAC = j.macro; if (D) renderDash(); }
+  } catch (e) { /* keep the last values */ }
+}
+async function pollHL() {
+  if (document.hidden) return;
+  try {
+    const r = await fetch("https://api.hyperliquid.xyz/info", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "metaAndAssetCtxs", dex: "xyz" }) });
+    if (!r.ok) return;
+    const [meta, ctxs] = await r.json();
+    meta.universe.forEach((a, k) => { const c = ctxs[k]; if (c) HLX[a.name.replace(/^xyz:/, "")] = { px: +(c.midPx || c.markPx), prev: +c.prevDayPx }; });
+    lastTick = Date.now();
+  } catch (e) { /* retry on the next poll */ }
+}
+function kraken() {
+  let ws;
+  try { ws = new WebSocket("wss://ws.kraken.com/v2"); } catch (e) { return; }
+  ws.onopen = () => ws.send(JSON.stringify({ method: "subscribe", params: { channel: "ticker", symbol: Object.values(KR_PAIRS) } }));
+  ws.onmessage = (ev) => {
+    let m;
+    try { m = JSON.parse(ev.data); } catch (e) { return; }
+    if (m.channel !== "ticker" || !Array.isArray(m.data)) return;
+    m.data.forEach((x) => { const mid = x.bid && x.ask ? (x.bid + x.ask) / 2 : x.last; if (mid) KRX[x.symbol] = mid; });
+    lastTick = Date.now();
+  };
+  ws.onclose = () => setTimeout(kraken, 5000);
+}
+let bnWs = null, bnKey = "";
+function binance() {
+  const syms = (D && D.market || []).filter((m) => m.cls === "crypto").map((m) => `${m.symbol.toLowerCase()}usdt`).filter((s) => /^[a-z0-9]+$/.test(s));
+  const key = syms.join("/");
+  if (!syms.length || (key === bnKey && bnWs && bnWs.readyState <= 1)) return;
+  bnKey = key;
+  if (bnWs) { bnWs.onclose = null; bnWs.close(); }
+  try { bnWs = new WebSocket(`wss://data-stream.binance.vision/stream?streams=${syms.map((s) => `${s}@miniTicker`).join("/")}`); } catch (e) { return; }
+  bnWs.onmessage = (ev) => {
+    let m;
+    try { m = JSON.parse(ev.data).data; } catch (e) { return; }
+    if (m && m.s) { BNX[m.s] = +m.c; lastTick = Date.now(); }
+  };
+  bnWs.onclose = () => { bnKey = ""; setTimeout(binance, 5000); };
+}
+
+// ---------- dashboard ----------
+const when = (ms) => new Date(ms).toLocaleString(lang === "vi" ? "vi-VN" : "en-US", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
+function macroFresh(r) {
+  if (!r) return "–";
+  if (r.source === "FRED") return `${t("daily")(dateStr(r.asOf / 1000))} · FRED`;
+  const mins = Math.round((Date.now() - r.asOf) / 60000);
+  return `${mins <= 60 ? t("delayed")(Math.max(1, mins)) : t("closedAt")(when(r.asOf))} · ${esc(r.source)}`;
+}
+
+function renderDash() {
+  const M = MAC || {}, med = D.macro.medium, intr = D.macro.intraday;
+  // before live.json arrives, fall back to the hourly scan's FRED values
+  const pick = (k, fallback) => M[k] || (fallback != null ? { value: fallback, prev: null, scan: true } : null);
+  const rate = (k, fb) => {
+    const r = pick(k, fb);
+    if (!r) return null;
+    const ch = r.prev != null ? (r.value - r.prev) * 100 : null;
+    return [k, `${r.value.toFixed(2)}%`, ch != null ? `<span class="${cl(ch)}">${sgn(ch, 1)}bp</span>` : "–", r.scan ? t("perScan")(when(D.generated * 1000)) : macroFresh(r)];
+  };
+  const rows = [rate("fed_funds", med.fed_funds), rate("us3m"), rate("us2y", med.us2y), rate("us5y"), rate("us10y", med.us10y), rate("us30y")];
+  const y2 = pick("us2y", med.us2y), y10 = pick("us10y", med.us10y);
+  if (y2 && y10) {
+    const sp = (y10.value - y2.value) * 100, spPrev = y2.prev != null && y10.prev != null ? (y10.prev - y2.prev) * 100 : null;
+    rows.push(["s2s10", `<span class="${cl(sp)}">${sgn(sp, 0)}bp</span>`, spPrev != null ? `<span class="${cl(sp - spPrev)}">${sgn(sp - spPrev, 1)}bp</span>` : "–", y2.source === "FRED" ? macroFresh(y2) : "–"]);
+  }
+  const dx = pick("dxy", med.dxy);
+  if (dx) {
+    const v = dxyLive && dxyLive.base === dx ? dxyLive.value : dx.value, ch = dx.prev ? (v / dx.prev - 1) * 100 : null;
+    rows.push(["dxy", `<span data-k="r:dxy">${v.toFixed(3)}</span>`, `<span data-c="r:dxy" class="num ${cl(ch)}">${pct(ch)}</span>`,
+      `<span data-s="r:dxy">${dxyLive && dxyLive.base === dx ? `<span class="live">${t("liveNow")} · ${t("synth")}</span>` : dx.scan ? t("perScan")(when(D.generated * 1000)) : macroFresh(dx)}</span>`]);
+  }
+  const vx = M.vix;
+  if (vx) { const ch = vx.prev ? (vx.value / vx.prev - 1) * 100 : null; rows.push(["vix", `<span class="${vx.value >= 25 ? "down" : ""}">${vx.value.toFixed(2)}</span>`, `<span class="${cl(-ch)}">${pct(ch)}</span>`, macroFresh(vx)]); }
+  const scanAt = t("perScan")(when(D.generated * 1000));
+  rows.push(["biasM", `<b class="${cl(med.bias)}">${biasWord(med.bias)} (${sgn(med.bias, 0)})</b>`, "", scanAt]);
+  rows.push(["biasI", `<b class="${cl(intr.bias)}">${biasWord(intr.bias)} (${sgn(intr.bias, 0)})</b>`, "", scanAt]);
+  $("t-rates").innerHTML = `<tr><th>${t("ind")}</th><th class="num">${t("value")}</th><th class="num">${t("change")}</th><th>${t("meaning")}</th><th>${t("fresh")}</th></tr>` +
+    rows.filter(Boolean).map(([k, v, c, f]) => `<tr><td><b>${t(`k_${k}`)}</b></td><td class="num">${v}</td><td class="num">${c}</td>
+      <td class="mean">${t(`m_${k.startsWith("bias") ? "bias" : k}`)}</td><td class="src">${f}</td></tr>`).join("");
+
+  const keys = KEYS.map((s) => (D.market || []).find((m) => m.symbol === s)).filter(Boolean);
+  $("t-keys").innerHTML = `<tr><th>${t("asset")}</th><th class="num">${t("price")}</th><th class="num">${t("chg")}</th><th>${t("fresh")}</th></tr>` +
+    keys.map((m) => { const q = quote(m); return `<tr><td><b>${esc(m.symbol)}</b> <span class="dim">${t(m.cls)}</span></td><td class="num" data-k="m:${esc(m.symbol)}">${px(q.price)}</td>
+      <td class="num ${cl(q.chg_pct)}" data-c="m:${esc(m.symbol)}">${pct(q.chg_pct)}</td><td class="src" data-s="m:${esc(m.symbol)}">${freshText(q)}</td></tr>`; }).join("");
 }
 
 function filtered(rows) { return clsFilter === "all" ? rows : rows.filter((r) => r.cls === clsFilter); }
@@ -297,14 +485,16 @@ function renderMarket() {
   const q = ($("q").value || "").trim().toUpperCase();
   const rows = filtered(D.market || []).filter((m) => !q || m.symbol.includes(q));
   const { key, dir } = marketSort;
-  rows.sort((a, b) => ((a[key] ?? -1e18) > (b[key] ?? -1e18) ? 1 : -1) * dir);
+  const val = (m, k) => (k === "price" || k === "chg_pct" ? quote(m)[k] : m[k]);
+  rows.sort((a, b) => ((val(a, key) ?? -1e18) > (val(b, key) ?? -1e18) ? 1 : -1) * dir);
   const cols = [["symbol", "asset"], ["price", "price"], ["chg_pct", "chg"], ["trend", "trend"], ["rvol", "rvol"], ["atr_pct", "atr"], ["funding_apr", "funding"]];
-  $("t-market").innerHTML = `<tr>${cols.map(([k, l], n) => `<th class="sort ${n ? "num" : ""}" data-sort="${k}">${t(l)}${key === k ? (dir > 0 ? " ▲" : " ▼") : ""}</th>`).join("")}<th></th></tr>` +
-    rows.map((m) => `<tr><td><b>${esc(m.symbol)}</b> <span class="dim">${t(m.cls)}</span></td><td class="num">${px(m.price)}</td>
-      <td class="num ${cl(m.chg_pct)}">${pct(m.chg_pct)}</td><td class="num ${m.trend === "up" ? "up" : m.trend === "down" ? "down" : "dim"}">${t(m.trend)}</td>
+  $("t-market").innerHTML = `<tr>${cols.map(([k, l], n) => `<th class="sort ${n ? "num" : ""}" data-sort="${k}">${t(l)}${key === k ? (dir > 0 ? " ▲" : " ▼") : ""}</th>`).join("")}<th></th><th>${t("srcCol")}</th></tr>` +
+    rows.map((m) => { const q = quote(m); return `<tr><td><b>${esc(m.symbol)}</b> <span class="dim">${t(m.cls)}</span></td><td class="num" data-k="m:${esc(m.symbol)}">${px(q.price)}</td>
+      <td class="num ${cl(q.chg_pct)}" data-c="m:${esc(m.symbol)}">${pct(q.chg_pct)}</td><td class="num ${m.trend === "up" ? "up" : m.trend === "down" ? "down" : "dim"}">${t(m.trend)}</td>
       <td class="num ${m.rvol >= 2 ? "amber" : ""}">${m.rvol != null ? m.rvol.toFixed(2) : "–"}</td><td class="num">${m.atr_pct}</td>
       <td class="num ${cl(m.funding_apr)}">${m.funding_apr != null ? sgn(m.funding_apr, 1) : ""}</td>
-      <td><canvas class="spark" data-sym="${esc(m.symbol)}" width="90" height="22" style="width:90px;height:22px;margin:0"></canvas></td></tr>`).join("");
+      <td><canvas class="spark" data-sym="${esc(m.symbol)}" width="90" height="22" style="width:90px;height:22px;margin:0"></canvas></td>
+      <td class="src" data-s="m:${esc(m.symbol)}">${freshText(q)}</td></tr>`; }).join("");
   document.querySelectorAll("canvas.spark").forEach((cv) => {
     const m = D.market.find((x) => x.symbol === cv.dataset.sym);
     if (m) drawLine(cv, m.spark || []);
@@ -355,6 +545,17 @@ document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") $("drawe
 $("lang").addEventListener("click", () => { lang = lang === "vi" ? "en" : "vi"; safeSet("lld-lang", lang); render(); });
 $("show-c").addEventListener("change", () => D && renderSetups());
 $("q").addEventListener("input", () => D && renderMarket());
-setInterval(() => { $("clock").textContent = new Date().toISOString().slice(0, 19).replace("T", " ") + " UTC"; if (D) renderAge(); }, 1000);
+setInterval(() => {
+  $("clock").textContent = new Date().toISOString().slice(0, 19).replace("T", " ") + " UTC";
+  if (D) { renderAge(); tick(); }
+  const on = Date.now() - lastTick < 30000;
+  $("live-state").innerHTML = `<span class="ld${on ? "" : " off"}">${on ? t("liveOn") : t("liveOff")}</span>`;
+}, 1000);
+setInterval(() => D && renderDash(), 30 * 1000);  // keeps the "N min delay" labels current
 setInterval(load, 10 * 60 * 1000);
+setInterval(pollLive, 60 * 1000);
+setInterval(pollHL, 3000);
 load();
+pollLive();
+pollHL();
+kraken();

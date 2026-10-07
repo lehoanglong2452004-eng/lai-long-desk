@@ -21,9 +21,16 @@
   </div>
 </header>
 
-<div id="strip" class="strip"></div>
-
 <main class="grid">
+  <section class="panel span3" id="p-dash">
+    <div class="ph"><h2 data-i18n="dash">MACRO DASHBOARD</h2><span class="dim small" id="live-state"></span></div>
+    <div class="dash">
+      <div><h3 class="sub" data-i18n="dashRates"></h3><div class="scroll"><table id="t-rates"></table></div></div>
+      <div><h3 class="sub" data-i18n="dashKeys"></h3><div class="scroll"><table id="t-keys"></table></div></div>
+    </div>
+    <p class="hint" data-i18n="dashHint"></p>
+  </section>
+
   <section class="panel span2" id="p-setups">
     <div class="ph"><h2 data-i18n="setups">CƠ HỘI GIAO DỊCH</h2>
       <div class="tabs" id="cls-tabs"></div>
