@@ -97,7 +97,7 @@ def jgb():
     base = "https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate"
     rows = []
     for url in (f"{base}/historical/jgbcme_all.csv", f"{base}/jgbcme.csv"):
-        raw = _safe(f"mof {url.rsplit('/', 1)[1]}", lambda u=url: _get(u, headers={"User-Agent": BROWSER_UA}), "")
+        raw = _safe(f"mof {url.rsplit('/', 1)[1]}", lambda u=url: _get(u, headers={"User-Agent": BROWSER_UA}, errors="replace"), "")
         lines = raw.splitlines()
         head = next((i for i, l in enumerate(lines) if l.startswith("Date")), None)
         if head is None:
@@ -124,8 +124,8 @@ def jgb():
 
 
 def curve_state(c):
-    """The four classic moves of a yield curve over ~1 month, from the 2Y and 10Y."""
-    a, b = c.get("2Y"), c.get("10Y")
+    """The four classic moves of a yield curve over ~1 month, from the 2Y (else 5Y) and the 10Y."""
+    a, b = c.get("2Y") or c.get("5Y"), c.get("10Y")
     if not a or not b:
         return None
     d2, d10 = (a["value"] - a["month"]) * 100, (b["value"] - b["month"]) * 100
@@ -180,7 +180,9 @@ def policy_rates(today=None):
     series = {}
     for r in csv.DictReader(io.StringIO(raw)):
         try:
-            series.setdefault(r["REF_AREA"], []).append((dt.date.fromisoformat(r["TIME_PERIOD"]), float(r["OBS_VALUE"])))
+            v = float(r["OBS_VALUE"])
+            if v == v:  # BIS marks missing days as NaN
+                series.setdefault(r["REF_AREA"], []).append((dt.date.fromisoformat(r["TIME_PERIOD"]), v))
         except (KeyError, ValueError):
             continue
     out = []

@@ -98,7 +98,7 @@ def okx_liquidations(coin, ct_val, since_ms):
     """Long and short liquidations (USD) on OKX's USDT perpetual since `since_ms`."""
     longs = shorts = 0.0
     after, n = None, 0
-    for _ in range(15):  # 100 per page; busy days are capped and say so
+    for _ in range(40):  # 100 per page; very busy days are capped and say so
         q = f"{OKX}/public/liquidation-orders?instType=SWAP&uly={coin}-USDT&state=filled&limit=100"
         details = (json.loads(_get(q + (f"&after={after}" if after else ""), retries=2)).get("data") or [{}])[0].get("details") or []
         if not details:

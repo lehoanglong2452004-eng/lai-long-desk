@@ -14,6 +14,7 @@ from .signals import Prepared, SETUPS, detect, quiet_volume, score, simulate, tr
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = Path(os.environ.get("LLD_DATA_DIR") or ROOT / "site" / "data")
+CLASSES = ("index", "crypto", "forex", "commodity")
 
 
 def utc(ts):
@@ -104,15 +105,19 @@ def intraday_spike(bars_1h):
 def load_universe(cfg):
     assets = []
     cc = cfg["crypto"]
-    for s in sources.binance_top_symbols(cc["quote"], cc["top_n"], set(cc["exclude"])):
+    picks = []
+    if cc.get("select") == "market_cap":
+        picks = sources.top_by_market_cap(cc["quote"], cc["top_n"], set(cc["exclude"]))
+    for s in picks or sources.binance_top_symbols(cc["quote"], cc["top_n"], set(cc["exclude"])):
         assets.append({"symbol": s["base"], "cls": "crypto", "usd_beta": cfg["crypto_usd_beta"],
                        "daily": sources.binance_klines(s["symbol"], "1d", 1000),
                        "hourly": sources.binance_klines(s["symbol"], "1h", 200), "cot": None})
     for f in cfg["forex"]:
+        vp = f.get("volume_proxy")  # CME currency futures lend their volume; pairs without one have none
         daily = merge_volume(sources.yahoo_chart(f["yahoo"], "1d", "5y"),
-                             sources.yahoo_chart(f["volume_proxy"], "1d", "5y"))
+                             sources.yahoo_chart(vp, "1d", "5y") if vp else [])
         hourly = merge_volume_hourly(sources.yahoo_chart(f["yahoo"], "1h", "1mo"),
-                                     sources.yahoo_chart(f["volume_proxy"], "1h", "1mo"))
+                                     sources.yahoo_chart(vp, "1h", "1mo") if vp else [])
         code = cfg["forex_cot"].get(f["symbol"])
         # CME FX futures are quoted as the foreign currency vs USD: invert for USDxxx pairs
         cot = cot_percentile(sources.cftc_cot(code), invert=f["symbol"].startswith("USD")) if code else None
@@ -123,6 +128,11 @@ def load_universe(cfg):
         assets.append({"symbol": c["symbol"], "cls": "commodity", "usd_beta": c["usd_beta"],
                        "daily": sources.yahoo_chart(c["yahoo"], "1d", "5y"),
                        "hourly": sources.yahoo_chart(c["yahoo"], "1h", "1mo"), "cot": cot})
+    for x in cfg.get("indices", []):
+        cot = cot_percentile(sources.cftc_cot(x["cot"])) if x.get("cot") else None
+        assets.append({"symbol": x["symbol"], "cls": "index", "usd_beta": x["usd_beta"],
+                       "daily": sources.yahoo_chart(x["yahoo"], "1d", "5y"),
+                       "hourly": sources.yahoo_chart(x["yahoo"], "1h", "1mo"), "cot": cot})
     return [a for a in assets if len(a["daily"]) > 230]
 
 
@@ -181,7 +191,7 @@ def main():
         all_trades += [dict(t, symbol=a["symbol"]) for t in backtest(p, a["cls"], cost, rules)]
 
     hist = {}
-    for cls in ("crypto", "forex", "commodity"):
+    for cls in CLASSES:
         for st in SETUPS:
             hist[(cls, st)] = stats([t for t in all_trades if t["cls"] == cls and t["setup"] == st])
 
@@ -233,8 +243,8 @@ def main():
 
     live_stats = {cls: stats([dict(e, t=e["bar_t"], result=e["status"]) for e in log
                               if e["cls"] == cls and e["status"] not in ("open",)])
-                  for cls in ("crypto", "forex", "commodity")}
-    bt_class = {cls: stats([t for t in all_trades if t["cls"] == cls]) for cls in ("crypto", "forex", "commodity")}
+                  for cls in CLASSES}
+    bt_class = {cls: stats([t for t in all_trades if t["cls"] == cls]) for cls in CLASSES}
 
     # equity curve of the whole backtest, in R, weekly points
     eq, curve, last_week = 0.0, [], None
