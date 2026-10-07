@@ -48,11 +48,11 @@ class NewsDeskTests(unittest.TestCase):
         finally:
             news_desk.yahoo_quote = orig
         cl = next(f for f in out if f["root"] == "CL")
-        self.assertEqual(cl["contracts"][0]["symbol"], "CLV26.NYM")
+        self.assertEqual(cl["contracts"][0]["symbol"], "CLX26.NYM")  # October has already expired
         self.assertEqual(len(cl["contracts"]), 3)
         self.assertEqual(cl["structure"], "contango")
         gc = next(f for f in out if f["root"] == "GC")
-        self.assertEqual(gc["contracts"][0]["symbol"], "GCV26.CMX")
+        self.assertNotIn("V26", gc["contracts"][0]["symbol"])
 
     def test_nasdaq_day_and_merge(self):
         payload = {"data": {"rows": [

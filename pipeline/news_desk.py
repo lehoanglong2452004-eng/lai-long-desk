@@ -123,7 +123,8 @@ def futures_curves(now=None):
     out = []
     for root, ex, listed, dec, unit, vi, en in FUTURES:
         cands = []
-        y, m = now.year, now.month  # month index 1..12, start from the current month
+        # start from next month: energy contracts for the current month expire before it begins (a 404 on every scan)
+        y, m = (now.year + 1, 1) if now.month == 12 else (now.year, now.month + 1)
         while len(cands) < 6 and y < now.year + 3:
             code = MONTHS[m - 1]
             if code in listed:
