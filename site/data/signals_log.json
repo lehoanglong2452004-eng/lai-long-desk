@@ -12,7 +12,10 @@
 "rr": 2.3333333333333353,
 "bar_t": 1791158400,
 "logged": 1791293466,
-"status": "open"
+"status": "win",
+"r": 2.318,
+"fill": 0.7275,
+"closed_bars": 1
 },
 {
 "symbol": "ORCA",
@@ -27,6 +30,9 @@
 "rr": 2.3333333333333326,
 "bar_t": 1791158400,
 "logged": 1791293466,
-"status": "open"
+"status": "win",
+"r": 2.327,
+"fill": 2.414,
+"closed_bars": 1
 }
 ]
