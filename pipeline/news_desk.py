@@ -5,6 +5,7 @@ Run:  python -m pipeline.news_desk     -> writes site/news/data.json
 """
 import datetime as dt
 import email.utils
+import html
 import json
 import os
 import re
@@ -222,23 +223,109 @@ def news(now_ms):
     return out[:150]
 
 
-def calendar():
-    """This week's events from the Forex Factory public weekly export."""
-    def run():
-        rows = json.loads(_get("https://nfs.faireconomy.media/ff_calendar_thisweek.json"))
-        imp = {"High": 3, "Medium": 2, "Low": 1}
-        out = []
-        for r in rows:
-            if r.get("impact") not in imp:
-                continue
-            when = _when(r.get("date"))
-            if when:
-                out.append({"date": when, "country": r.get("country", ""), "title": r.get("title", ""),
-                            "impact": imp[r["impact"]], "actual": r.get("actual", "") or "",
-                            "forecast": r.get("forecast", "") or "", "previous": r.get("previous", "") or ""})
-        return sorted(out, key=lambda r: r["date"])
+# Nasdaq's public calendar gives actual / consensus / previous; times are New York time.
+NASDAQ_CAL = "https://api.nasdaq.com/api/calendar/economicevents?date={d}"
+BROWSER_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36"
+CURRENCY = {"United States": "USD", "Euro Zone": "EUR", "Germany": "EUR", "France": "EUR", "Italy": "EUR",
+            "Spain": "EUR", "United Kingdom": "GBP", "Japan": "JPY", "China": "CNY", "Canada": "CAD",
+            "Australia": "AUD", "New Zealand": "NZD", "Switzerland": "CHF"}
+HIGH = re.compile(r"non-?farm|\bcpi\b|consumer price index|\bpce\b|\bgdp\b|rate decision|interest rate|fomc|"
+                  r"fed chair|powell|unemployment rate|retail sales|ism (manufacturing|non-manufacturing) pmi|"
+                  r"employment change(?! weekly)|average hourly earnings|jolts", re.I)
+MEDIUM = re.compile(r"\bppi\b|\bpmi\b|jobless claims|\badp\b|trade balance|industrial production|confidence|"
+                    r"sentiment|\bzew\b|\bifo\b|durable goods|housing starts|building permits|home sales|"
+                    r"crude oil|speaks|factory orders|ivey|tankan|employment|inflation|wage|earnings", re.I)
+NY = None
 
-    return _safe("calendar", run, [])
+
+def _et():
+    global NY
+    if NY is None:
+        from zoneinfo import ZoneInfo
+        NY = ZoneInfo("America/New_York")
+    return NY
+
+
+def _clean(v):
+    v = html.unescape(str(v or "")).replace("\xa0", " ").strip()
+    return "" if v in ("", "-", "--") else v
+
+
+def _words(t):
+    return set(re.findall(r"[a-z0-9]+", t.lower().replace("-", ""))) - {"m", "y", "q", "s", "a", "of", "the", "and"}
+
+
+def nasdaq_day(day):
+    """One New York calendar day of events for the major currencies."""
+    raw = _get(NASDAQ_CAL.format(d=day.isoformat()), headers={"User-Agent": BROWSER_UA, "Accept": "application/json"},
+               retries=2)
+    rows = (json.loads(raw).get("data") or {}).get("rows") or []
+    out = []
+    for r in rows:
+        cur = CURRENCY.get(r.get("country", ""))
+        m = re.match(r"^(\d{1,2}):(\d{2})$", (r.get("gmt") or "").strip())
+        if not cur or not m:
+            continue  # minor countries, holidays and "All Day" items
+        when = dt.datetime(day.year, day.month, day.day, int(m[1]), int(m[2]), tzinfo=_et())
+        title = _clean(r.get("eventName"))
+        if not title:
+            continue
+        impact = 3 if HIGH.search(title) and "speak" not in title.lower() else 2 if MEDIUM.search(title) else 1
+        out.append({"date": int(when.timestamp() * 1000), "country": cur, "title": title, "impact": impact,
+                    "actual": _clean(r.get("actual")), "forecast": _clean(r.get("consensus")),
+                    "previous": _clean(r.get("previous"))})
+    return out
+
+
+def ff_week():
+    """Forex Factory's weekly export: used for its impact ratings and as a fallback."""
+    rows = json.loads(_get("https://nfs.faireconomy.media/ff_calendar_thisweek.json"))
+    imp = {"High": 3, "Medium": 2, "Low": 1}
+    out = []
+    for r in rows:
+        when = _when(r.get("date"))
+        if r.get("impact") in imp and when:
+            out.append({"date": when, "country": r.get("country", ""), "title": r.get("title", ""),
+                        "impact": imp[r["impact"]], "actual": r.get("actual", "") or "",
+                        "forecast": r.get("forecast", "") or "", "previous": r.get("previous", "") or ""})
+    return out
+
+
+def merge_calendar(nq, ff):
+    """Nasdaq rows (with actuals) take Forex Factory's impact when the same event matches.
+    Forex Factory fills the days Nasdaq has not published yet, and adds high-impact items
+    Nasdaq does not list (for example FOMC minutes)."""
+    used = set()
+    for r in nq:
+        best, score = None, 0.0
+        for i, f in enumerate(ff):
+            if f["country"] != r["country"] or abs(f["date"] - r["date"]) > 36 * 3600 * 1000:
+                continue
+            a, b = _words(r["title"]), _words(f["title"])
+            j = len(a & b) / max(1, len(a | b))
+            if j > score:
+                best, score = i, j
+        if best is not None and score >= 0.5:
+            used.add(best)
+            r["impact"] = max(r["impact"], ff[best]["impact"])
+            r["forecast"] = r["forecast"] or ff[best]["forecast"]
+    covered = {dt.datetime.fromtimestamp(r["date"] / 1000, _et()).date() for r in nq}
+    extra = [f for i, f in enumerate(ff) if i not in used and f["impact"] >= 2
+             and (f["impact"] == 3 or dt.datetime.fromtimestamp(f["date"] / 1000, _et()).date() not in covered)
+             and not any(r["country"] == f["country"] and abs(r["date"] - f["date"]) < 3600 * 1000
+                         and len(_words(r["title"]) & _words(f["title"])) >= 2 for r in nq)]
+    return sorted(nq + extra, key=lambda r: (r["date"], -r["impact"]))
+
+
+def calendar(now=None):
+    """This week's events (Monday to Sunday, New York time) with actual figures as they are released."""
+    now = (now or dt.datetime.now(dt.timezone.utc)).astimezone(_et())
+    monday = now.date() - dt.timedelta(days=now.weekday())
+    nq = []
+    for k in range(7):
+        nq += _safe(f"nasdaq calendar {monday + dt.timedelta(days=k)}", lambda: nasdaq_day(monday + dt.timedelta(days=k)), [])
+    ff = _safe("forex factory calendar", ff_week, [])
+    return merge_calendar(nq, ff) if nq else sorted(ff, key=lambda r: r["date"])
 
 
 def main():
@@ -248,7 +335,7 @@ def main():
     data = {
         "generatedAt": now_ms, "sample": False,
         "indices": idx, "stocks": stk, "forex": fx, "crypto": crypto(),
-        "futures": futures_curves(), "news": news(now_ms), "calendar": calendar(), "views": [],
+        "futures": futures_curves(), "news": news(now_ms), "calendar": calendar(),
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")))
