@@ -1,0 +1,37 @@
+name: Lai Long Desk live data
+
+# Every 5 minutes: quotes, headlines and the economic calendar for the news page.
+# The file goes to the `live-data` branch (one commit, replaced each time), not to main,
+# so it does not fill the history and does not need a Pages deploy.
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: live
+  cancel-in-progress: true
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build live.json
+        run: python -m pipeline.live_desk
+      - name: Publish to the live-data branch
+        run: |
+          cd live
+          git init -q -b live-data
+          git config user.name "lai-long-desk-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add live.json
+          git commit -q -m "live $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" live-data

@@ -54,6 +54,41 @@ class NewsDeskTests(unittest.TestCase):
         gc = next(f for f in out if f["root"] == "GC")
         self.assertEqual(gc["contracts"][0]["symbol"], "GCV26.CMX")
 
+    def test_nasdaq_day_and_merge(self):
+        payload = {"data": {"rows": [
+            {"gmt": "08:30", "country": "United States", "eventName": "Nonfarm Payrolls",
+             "actual": "254K", "consensus": "140K", "previous": "&nbsp;159K"},
+            {"gmt": "All Day", "country": "United States", "eventName": "Holiday"},
+            {"gmt": "10:00", "country": "Brazil", "eventName": "Retail Sales"},
+            {"gmt": "10:00", "country": "United States", "eventName": "Fed Waller Speaks", "actual": "-"}]}}
+        orig = news_desk._get
+        news_desk._get = lambda url, **k: json.dumps(payload)
+        try:
+            rows = news_desk.nasdaq_day(dt.date(2026, 10, 2))
+        finally:
+            news_desk._get = orig
+        self.assertEqual([r["title"] for r in rows], ["Nonfarm Payrolls", "Fed Waller Speaks"])
+        nfp = rows[0]
+        self.assertEqual((nfp["impact"], nfp["actual"], nfp["previous"]), (3, "254K", "159K"))
+        self.assertEqual(nfp["date"], int(dt.datetime(2026, 10, 2, 12, 30, tzinfo=dt.timezone.utc).timestamp() * 1000))
+        self.assertEqual(rows[1]["actual"], "")
+        h = 3600 * 1000
+        ff = [{"date": nfp["date"], "country": "USD", "title": "Non-Farm Payrolls", "impact": 3,
+               "actual": "", "forecast": "145K", "previous": ""},
+              {"date": nfp["date"] + 2 * h, "country": "USD", "title": "Fed Waller Speaks", "impact": 2,
+               "actual": "", "forecast": "", "previous": ""},
+              {"date": nfp["date"] + 30 * h, "country": "USD", "title": "FOMC Meeting Minutes", "impact": 3,
+               "actual": "", "forecast": "", "previous": ""},
+              {"date": nfp["date"] + 5 * 24 * h, "country": "EUR", "title": "German Ifo", "impact": 2,
+               "actual": "", "forecast": "", "previous": ""},
+              {"date": nfp["date"] + 5 * 24 * h, "country": "EUR", "title": "Tiny", "impact": 1,
+               "actual": "", "forecast": "", "previous": ""}]
+        out = news_desk.merge_calendar(rows, ff)
+        self.assertEqual([r["title"] for r in out],
+                         ["Nonfarm Payrolls", "Fed Waller Speaks", "FOMC Meeting Minutes", "German Ifo"])
+        self.assertEqual(out[0]["forecast"], "140K")  # Nasdaq consensus kept
+        self.assertEqual(out[1]["impact"], 2)  # took Forex Factory's rating
+
 
 if __name__ == "__main__":
     unittest.main()
