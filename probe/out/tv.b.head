@@ -1,0 +1,38 @@
+{
+    "status": "ok",
+    "result": [
+        {
+            "id": "417360",
+            "title": "National Day Golden Week",
+            "country": "CN",
+            "indicator": "Holidays",
+            "category": "gov",
+            "period": "",
+            "referenceDate": null,
+            "source": "",
+            "source_url": "",
+            "actual": null,
+            "previous": null,
+            "forecast": null,
+            "actualRaw": null,
+            "previousRaw": null,
+            "forecastRaw": null,
+            "currency": "CNY",
+            "importance": -1,
+            "date": "2026-10-07T00:00:00.000Z"
+        },
+        {
+            "id": "401302",
+            "title": "Foreign Exchange Reserves",
+            "country": "CN",
+            "indicator": "Foreign Exchange Reserves",
+            "ticker": "ECONOMICS:CNFER",
+            "comment": "In China, Foreign Exchange Reserves are the foreign assets held or controlled by the country central bank. The reserves are made of gold or a specific currency. They can also be special drawing rights and marketable securities denominated in foreign currencies like treasury bills, government bonds, corporate bonds and equities and foreign currency loans.",
+            "category": "mny",
+            "period": "Sep",
+            "referenceDate": "2026-09-30T00:00:00Z",
+            "source": "Central Bank",
+            "source_url": "http://www.pbc.gov.cn",
+            "actual": 3.4,
+            "previous": 3.438,
+  
