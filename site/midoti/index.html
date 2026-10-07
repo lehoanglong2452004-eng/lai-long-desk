@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Lai Long Desk MIDOTI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<script>
+window.addEventListener("error", function (e) {
+  var b = document.getElementById("lld-err");
+  if (!b) { b = document.createElement("div"); b.id = "lld-err"; b.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:99;background:#b91c1c;color:#fff;font:13px/1.4 sans-serif;padding:8px 12px"; (document.body || document.documentElement).appendChild(b); }
+  b.textContent = "Lỗi trang: " + (e.message || "unknown") + " (" + navigator.userAgent + ")";
+});
+</script>
+<style>
+:root { --dia: #22e3ff; --buy: #3d7bff; --sell: #ff4d5e; --vwap: #ffc233; --op: #ff8a3d; --mlp: #c77dff; }
+.ctl { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.ctl label, .ctl-l { font-size: 11px; color: var(--dim); display: inline-flex; align-items: center; gap: 6px; }
+select, .ctl input, .par input { background: #000; color: var(--text); border: 1px solid var(--line); border-radius: 3px; font: inherit; font-size: 12px; padding: 3px 6px; max-width: 100%; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.seg button { font: inherit; font-size: 12px; background: none; color: var(--dim); border: 0; border-right: 1px solid var(--line); padding: 3px 9px; cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button.on { background: var(--amber); color: #000; font-weight: 700; }
+.seg .sep { width: 6px; background: var(--line); }
+.feed { font-size: 11px; color: var(--dim); }
+.feed b.live { color: var(--green); }
+.feed b.off { color: var(--red); }
+.pipe { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.st { position: relative; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: #0a0e14; font-size: 11.5px; white-space: normal; min-width: 0; }
+.st:not(:last-child)::after { content: "▶"; position: absolute; right: -11px; top: 50%; transform: translateY(-50%); color: var(--amber); font-size: 10px; }
+.st h4 { margin: 0 0 2px; font-size: 10.5px; letter-spacing: .06em; color: var(--amber); text-transform: uppercase; display: flex; justify-content: space-between; gap: 6px; }
+.st .clk { color: var(--dim); font-weight: 400; letter-spacing: 0; }
+.st .clk::before { content: "●"; color: var(--green); margin-right: 3px; animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: .25; } }
+.st .row { display: flex; justify-content: space-between; gap: 6px; margin: 1px 0; }
+.st .row span:first-child { color: var(--dim); }
+.st .big { font-size: 14px; font-weight: 700; margin: 3px 0; }
+.st.prod { border-color: var(--amber); }
+.st.pulse { animation: pul .9s ease-out; }
+@keyframes pul { from { box-shadow: 0 0 0 2px rgba(255, 176, 0, .7); } to { box-shadow: 0 0 0 0 rgba(255, 176, 0, 0); } }
+.ck { display: grid; grid-template-columns: minmax(0, 1fr) 30px 30px; gap: 1px 4px; }
+.ck .h { color: var(--dim); font-size: 10px; text-align: center; }
+.ck .y { color: var(--green); text-align: center; } .ck .n { color: var(--red); text-align: center; } .ck .x { color: #39424f; text-align: center; }
+.ck .lb.off { color: #39424f; text-decoration: line-through; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.pre { font: inherit; font-size: 12px; text-align: left; background: #0a0e14; color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; cursor: pointer; max-width: 300px; white-space: normal; }
+.pre small { display: block; color: var(--dim); font-size: 10.5px; }
+.pre.on { border-color: var(--amber); box-shadow: inset 0 0 0 1px var(--amber); }
+.cgrp { margin: 8px 0 2px; font-size: 10.5px; color: var(--amber); letter-spacing: .06em; text-transform: uppercase; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: inherit; font-size: 11.5px; border: 1px solid var(--line); background: #0a0e14; color: var(--dim); border-radius: 999px; padding: 3px 10px 3px 8px; cursor: pointer; }
+.chip::before { content: "○ "; }
+.chip.on { color: #000; background: var(--amber); border-color: var(--amber); font-weight: 600; }
+.chip.on::before { content: "● "; }
+.chip.na { opacity: .4; cursor: not-allowed; }
+.delta:empty { display: none; }
+.delta { margin-top: 8px; font-size: 12px; padding: 6px 10px; border-left: 3px solid var(--amber); background: rgba(255, 176, 0, .06); white-space: normal; }
+.par { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px 14px; margin-top: 8px; }
+.par label { font-size: 11px; color: var(--dim); display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.par input { width: 80px; text-align: right; }
+details summary { cursor: pointer; color: var(--amber); font-size: 12px; margin-top: 8px; }
+#cv { width: 100%; height: 460px; display: block; touch-action: none; cursor: crosshair; background: #05070a; border-radius: 4px; }
+.legend { font-size: 11px; color: var(--dim); display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; }
+.legend i { display: inline-block; width: 14px; height: 3px; vertical-align: 3px; margin-right: 4px; }
+.kpis6 { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.kpi b { display: block; font-size: 16px; margin-top: 2px; }
+#eq { width: 100%; height: 120px; display: block; margin-top: 8px; }
+td.why { white-space: normal; min-width: 260px; font-size: 11px; color: var(--dim); }
+td.why b { color: var(--text); font-weight: 600; }
+td.why ul { margin: 2px 0 0; padding-left: 14px; }
+tr.sel td { background: rgba(255, 176, 0, .12) !important; }
+.g2 { color: var(--dia); font-weight: 700; } .g1 { color: var(--dim); }
+.alert { display: none; margin: 0 16px; padding: 8px 12px; border-radius: 6px; background: rgba(34, 227, 255, .12); border: 1px solid var(--dia); color: var(--text); white-space: normal; }
+.alert.show { display: block; }
+.prog { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; margin: 6px 0; }
+.prog i { display: block; height: 100%; background: var(--amber); width: 0; transition: width .3s; }
+.how { white-space: normal; font-size: 12px; } .how li { margin: 3px 0; }
+tr.grp td { color: var(--amber); font-size: 11px; letter-spacing: .08em; font-weight: 700; background: #0a0e14; padding-top: 8px; }
+@media (max-width: 1100px) {
+  .pipe { grid-template-columns: repeat(2, minmax(0, 1fr)); } .st::after { display: none; } .st.prod { grid-column: span 2; }
+  .par { grid-template-columns: repeat(2, minmax(0, 1fr)); } .kpis6 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .grid { grid-template-columns: minmax(0, 1fr); padding: 10px 16px; }
+  .span2, .span3 { grid-column: span 1; }
+  .pipe { grid-template-columns: minmax(0, 1fr); } .st.prod { grid-column: span 1; }
+  .par { grid-template-columns: minmax(0, 1fr); }
+  #cv { height: 340px; }
+  .brand .dim { display: none; }
+  .top { position: static; }
+  .alert { margin: 0 16px; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="logo">龍</span> LAI LONG DESK <span class="dim">▸ MIDOTI v1.568</span></div>
+  <div class="top-right">
+    <a class="btn" href="../">QUANT</a>
+    <a class="btn" href="../factory/">NHÀ MÁY</a>
+    <a class="btn" href="../news/">TIN TỨC</a>
+    <a class="btn" href="../depth/">DEPTH</a>
+    <a id="sys" class="pill" data-base="../" href="../status/" title="Tình trạng hệ thống">…</a>
+    <span id="clock" class="pill"></span>
+  </div>
+</header>
+<div class="alert" id="alert"></div>
+
+<main class="grid">
+  <section class="panel span3">
+    <div class="ctl">
+      <label>Sản phẩm <select id="asset"></select></label>
+      <label>Nguồn dữ liệu <select id="src"></select></label>
+      <span class="ctl-l">Khung <span class="seg" id="tfs"></span></span>
+      <label>Góc nhìn <select id="view"><option value="auto">Tự động</option><option value="day">Trong ngày</option><option value="swing">Swing</option></select></label>
+      <label>Lịch sử <select id="hist"><option value="1500">1.500 nến</option><option value="3000">3.000 nến</option><option value="5000">5.000 nến</option><option value="8000">8.000 nến</option></select></label>
+      <button class="btn" id="reload">TẢI LẠI</button>
+    </div>
+    <p class="feed" id="feed"></p>
+  </section>
+
+  <section class="panel span3">
+    <div class="ph"><h2>DÂY CHUYỀN MIDOTI · 5 KHÂU CHẠY SONG SONG</h2><span class="dim small">mỗi khâu tự làm mới mỗi giây khi có dữ liệu trực tiếp</span></div>
+    <div class="pipe" id="pipe">
+      <div class="st" id="s1"><h4>① Nguyên liệu <span class="clk"></span></h4><div class="body"></div></div>
+      <div class="st" id="s2"><h4>② Bộ phận xử lý <span class="clk"></span></h4><div class="body"></div></div>
+      <div class="st" id="s3"><h4>③ Lắp ráp <span class="clk"></span></h4><div class="body"></div></div>
+      <div class="st" id="s4"><h4>④ Kiểm định <span class="clk"></span></h4><div class="body"></div></div>
+      <div class="st prod" id="s5"><h4>⑤ Thành phẩm <span class="clk"></span></h4><div class="body"></div></div>
+    </div>
+  </section>
+
+  <section class="panel span3">
+    <div class="ph"><h2>ĐIỀU KIỆN VÀO LỆNH · BẬT / TẮT</h2><span class="dim small">bật nhiều điều kiện thì ít lệnh hơn nhưng chắc hơn; tắt bớt thì nhiều lệnh hơn</span></div>
+    <div class="presets" id="presets"></div>
+    <div id="chips"></div>
+    <div class="delta" id="delta"></div>
+    <details><summary>Thông số chi tiết (con số trong từng điều kiện)</summary><div class="par" id="par"></div></details>
+  </section>
+
+  <section class="panel span3">
+    <div class="ph"><h2 id="h-chart">BIỂU ĐỒ</h2><span class="seg"><button id="zin">＋</button><button id="zout">－</button><button id="zend">▶|</button></span><span class="dim small">kéo để xem lại quá khứ, lăn chuột hoặc ＋/－ để phóng to</span></div>
+    <canvas id="cv"></canvas>
+    <div class="legend">
+      <span><i style="background:var(--buy)"></i>Nến Blue (mua có động lượng)</span>
+      <span><i style="background:#d5dae3"></i>Nến Black (bán có động lượng)</span>
+      <span><i style="background:var(--vwap)"></i>VWAP</span>
+      <span><i style="background:var(--op)"></i>OP (giá mở kỳ)</span>
+      <span><i style="background:var(--mlp)"></i>MLP (giữa đỉnh–đáy kỳ trước)</span>
+      <span><b style="color:var(--dia)">◆</b> tín hiệu đủ chuẩn (RVOL cao)</span>
+      <span><b>◇</b> tín hiệu thiếu khối lượng</span>
+      <span><b class="up">▲</b>/<b class="down">▼</b> vào lệnh, ● thoát lệnh</span>
+    </div>
+  </section>
+
+  <section class="panel span3">
+    <div class="ph"><h2>KIỂM ĐỊNH · KẾT QUẢ VỚI CÁC ĐIỀU KIỆN ĐANG BẬT</h2><span class="dim small" id="st-note"></span></div>
+    <div class="kpis6" id="kpis"></div>
+    <canvas id="eq"></canvas>
+  </section>
+
+  <section class="panel span3">
+    <div class="ph"><h2>NHẬT KÝ TỪNG LỆNH</h2><div class="tabs" id="logf"></div><span class="dim small" id="log-n"></span></div>
+    <div class="scroll tall"><table id="log"></table></div>
+    <p class="hint">Giờ theo GMT+7. Lệnh vào ở giá mở của nến ngay sau nến tín hiệu. R = số lần rủi ro ban đầu (khoảng cách giá vào → SL), đã trừ chi phí. Bấm một dòng để xem lệnh trên biểu đồ.</p>
+  </section>
+
+  <section class="panel span2">
+    <div class="ph"><h2>ĐIỀU KIỆN NÀO GIÚP THẮNG?</h2></div>
+    <div class="scroll"><table id="fac"></table></div>
+    <p class="hint">So các lệnh có và không có từng yếu tố tại nến tín hiệu. Yếu tố nào làm tỷ lệ thắng và R trung bình cao hẳn lên thì nên bật làm điều kiện.</p>
+  </section>
+  <section class="panel">
+    <div class="ph"><h2>VÌ SAO THUA · TỔNG HỢP</h2></div>
+    <div class="scroll"><table id="lossum"></table></div>
+  </section>
+
+  <section class="panel span3">
+    <div class="ph"><h2>CHẠY CHO TẤT CẢ CÁC MÃ</h2><button class="btn" id="runall">CHẠY</button><span class="dim small" id="ra-note">cùng khung và cùng bộ điều kiện đang chọn, mỗi mã dùng nguồn mặc định của nó</span></div>
+    <div class="prog"><i id="ra-prog"></i></div>
+    <div class="scroll tall"><table id="ra"></table></div>
+  </section>
+
+  <section class="panel span3">
+    <details class="how" open id="how"><summary>MIDOTI chạy thế nào? (đọc 1 lần là hiểu)</summary>
+      <ol>
+        <li><b>Nguyên liệu</b>: nến của sản phẩm theo khung đã chọn, lấy từ nguồn bạn chọn. Crypto lấy thẳng từ sàn và cập nhật mỗi giây. Forex, hàng hóa, chỉ số, cổ phiếu mặc định lấy từ Yahoo Finance qua máy chủ (cập nhật mỗi giờ, khối lượng FX mượn từ hợp đồng tương lai CME); muốn giá trực tiếp thì chọn nguồn Kraken (FX) hoặc Hyperliquid (hàng hóa, chỉ số, cổ phiếu).</li>
+        <li><b>Bộ phận xử lý</b>: tính VWAP, OP (giá mở kỳ), MLP (điểm giữa đỉnh–đáy kỳ trước), ATR, ADX/DI, CMF, RVOL theo khung giờ, KSI và màu nến CCRY. Khung dưới H1 xem <i>Trong ngày</i> (OP 00:00 New York, VWAP phiên, khung lớn = tuần). Từ H1 trở lên xem <i>Swing</i> (OP tuần, VWAP tuần, khung lớn = tháng).</li>
+        <li><b>Lắp ráp</b>: ghép các điều kiện đang bật. Lõi v1.568: L1 giá cùng phía OP và VWAP, L2 ADX ≥ 20 và đang tăng với DI cùng hướng, L3 giá hồi về vùng tựa (VWAP, MLP hoặc OP) rồi đóng nến cùng hướng. Đủ lõi mà RVOL nến tín hiệu ≥ 1.5 thì là <b>◆</b>, thiếu khối lượng là ◇.</li>
+        <li><b>Kiểm định</b>: chạy lại quy tắc trên toàn bộ lịch sử, từng nến một, không nhìn trước tương lai. Vào lệnh ở giá mở nến kế tiếp, SL dưới đáy nhịp hồi, TP1 2R chốt 50% rồi dời SL về hòa vốn, TP2 3R, trailing theo VWAP, thoát khi hết thời gian hoặc mất OP và VWAP. Trừ phí và trượt giá theo loại sản phẩm.</li>
+        <li><b>Thành phẩm</b>: trạng thái lúc này. Có lệnh đang giữ, lệnh chờ vào, hay còn thiếu điều kiện nào. Đây là cảnh báo, người quyết định là bạn.</li>
+      </ol>
+      <p class="dim">Kết quả quá khứ không bảo đảm tương lai. Số lệnh ít (dưới 30) thì tỷ lệ thắng chưa đáng tin.</p>
+    </details>
+  </section>
+</main>
+<footer class="foot"><p>MIDOTI v1.568 chạy hoàn toàn trên trình duyệt của bạn. Dữ liệu miễn phí từ sàn và Yahoo Finance, có thể trễ; chỉ để tham khảo, không phải lời khuyên đầu tư.</p></footer>
+
+<script src="engine.js"></script>
+<script src="feeds.js"></script>
+<script src="midoti.js"></script>
+<script>
+/* system status pill: green when every source worked in the last scan */
+(function () {
+  var a = document.getElementById("sys"), base = a.getAttribute("data-base");
+  fetch(base + "data/health.json?v=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (h) {
+    if (!h) { a.textContent = "? STATUS"; return; }
+    var bad = h.sources.filter(function (s) { return s.status !== "ok"; }).length, long = h.sources.filter(function (s) { return s.fails_in_row >= 3; }).length;
+    var old = Date.now() / 1000 - h.generated > 3 * 3600;
+    a.className = "pill " + (long || old ? "stale" : bad ? "warn" : "ok");
+    a.textContent = long || old ? "✕ CÓ SỰ CỐ" : bad ? "▲ " + bad + " NGUỒN LỖI" : "● HỆ THỐNG ỔN";
+  }).catch(function () { a.textContent = "? STATUS"; });
+})();
+</script>
+</body>
+</html>

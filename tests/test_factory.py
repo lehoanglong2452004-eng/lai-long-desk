@@ -1,4 +1,8 @@
+import json
+import tempfile
 import unittest
+from pathlib import Path
+from unittest import mock
 
 from tests import fake
 from pipeline import factory
@@ -35,6 +39,17 @@ class FactoryTests(unittest.TestCase):
         self.assertGreaterEqual(t["exit_t"], t["entry_t"])
         s = factory.summary(res)
         self.assertIn("1W", s["tfs"])
+
+    def test_write_bars_columns_for_midoti(self):
+        bars = fake.walk(300, seed=3, step=3600, vol=0.01)
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(factory, "DATA", Path(d)):
+            factory.write_bars([{"symbol": "X", "cls": "crypto", "source": "test", "yahoo": None, "bars": {"1H": bars, "4H": []}}])
+            j = json.loads((Path(d) / "bars" / "X_1H.json").read_text())
+            idx = json.loads((Path(d) / "bars" / "index.json").read_text())
+        self.assertEqual(len(j["t"]), 300)
+        self.assertEqual(set(j), {"s", "tf", "t", "o", "h", "l", "c", "v"})
+        self.assertAlmostEqual(j["c"][-1], bars[-1]["c"], delta=abs(bars[-1]["c"]) * 1e-6)
+        self.assertEqual(list(idx["assets"][0]["tfs"]), ["1H"])
 
 
 if __name__ == "__main__":

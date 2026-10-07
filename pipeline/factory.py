@@ -104,8 +104,9 @@ def load_assets(cfg):
     for sym, cls in universe:
         if cls == "crypto":
             pair = f"{sym}{cfg['crypto']['quote']}"
+            h = binance_hist(pair, "1h", 6)
             tf = {"1W": binance_hist(pair, "1w", 1), "1D": binance_hist(pair, "1d", 2),
-                  "4H": binance_hist(pair, "4h", 2), "1H": binance_hist(pair, "1h", 3)}
+                  "4H": binance_hist(pair, "4h", 2), "1H": h[-3000:]}
             src = "Binance"
         elif sym in yahoo:
             tk, vp = yahoo[sym]
@@ -120,8 +121,51 @@ def load_assets(cfg):
             src = "Yahoo Finance" + (f" (volume {vp})" if vp else "")
         else:
             continue
-        assets.append({"symbol": sym, "cls": cls, "source": src, "tf": tf})
+        # the MIDOTI page replays its own rules in the browser, on a longer hourly history
+        assets.append({"symbol": sym, "cls": cls, "source": src, "tf": tf, "yahoo": yahoo.get(sym) if cls != "crypto" else None,
+                       "bars": {"1H": h[-BARS_N:], "4H": tf["4H"], "1D": tf["1D"]}})
     return assets
+
+
+BARS_N = 6000  # bars kept per timeframe for the MIDOTI page
+INTRADAY = {"5m": 300, "15m": 900, "30m": 1800}  # Yahoo keeps 60 days of these
+
+
+def intraday(a):
+    """5m/15m/30m Yahoo bars for the non-crypto assets (the browser fetches crypto from the exchanges itself)."""
+    if not a.get("yahoo"):
+        return
+    tk, vp = a["yahoo"]
+    for iv, secs in INTRADAY.items():
+        b = sources.yahoo_chart(tk, iv, "60d")
+        if vp:
+            b = with_volume(b, sources.yahoo_chart(vp, iv, "60d"), lambda t, s=secs: t // s)
+        a["bars"][iv] = b[-BARS_N:]
+
+
+def sig(x, n=7):
+    return float(f"{x:.{n}g}") if x else 0
+
+
+def write_bars(assets):
+    """site/data/bars/<SYM>_<TF>.json: compact columns for the MIDOTI page (deployed, not committed)."""
+    out = DATA / "bars"
+    out.mkdir(parents=True, exist_ok=True)
+    index = []
+    for a in assets:
+        intraday(a)
+        tfs = {}
+        for f, bars in a.get("bars", {}).items():
+            if not bars:
+                continue
+            (out / f"{a['symbol']}_{f}.json").write_text(json.dumps({
+                "s": a["symbol"], "tf": f, "t": [b["t"] for b in bars], "o": [sig(b["o"]) for b in bars],
+                "h": [sig(b["h"]) for b in bars], "l": [sig(b["l"]) for b in bars], "c": [sig(b["c"]) for b in bars],
+                "v": [sig(b["v"], 4) for b in bars]}, separators=(",", ":")))
+            tfs[f] = {"n": len(bars), "last": bars[-1]["t"]}
+        if tfs:
+            index.append({"symbol": a["symbol"], "cls": a["cls"], "source": a["source"], "tfs": tfs})
+    (out / "index.json").write_text(json.dumps({"generated": int(time.time()), "assets": index}, separators=(",", ":")))
 
 
 # ------------------------------------------------------------------ P4 profile
@@ -443,6 +487,7 @@ def main():
     out_dir = DATA / "factory"
     out_dir.mkdir(parents=True, exist_ok=True)
     assets = load_assets(cfg)
+    write_bars(assets)
     index, all_trades = [], []
     for a in assets:
         try:

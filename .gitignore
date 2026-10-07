@@ -4,3 +4,4 @@ __pycache__/
 site/news/data.json
 live/
 site/data/factory/
+site/data/bars/
