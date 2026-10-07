@@ -50,7 +50,9 @@ class EndToEnd(unittest.TestCase):
         import os, tempfile
         os.environ["LLD_DATA_DIR"] = tempfile.mkdtemp()
         fake.install()
+        from pathlib import Path
         from pipeline import run
+        run.DATA = Path(os.environ["LLD_DATA_DIR"])  # run may already be imported with the real data dir
         run.main()
         latest = json.loads((run.DATA / "latest.json").read_text())
         self.assertGreater(latest["asset_count"], 20)
