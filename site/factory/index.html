@@ -42,6 +42,7 @@ tr.sel td { background: rgba(255, 176, 0, .12) !important; }
 .how summary { cursor: pointer; color: var(--amber); }
 .how ol { padding-left: 18px; margin: 6px 0; } .how li { margin: 3px 0; }
 #detail.hidden { display: none; }
+tr.grp td { color: var(--amber); font-size: 11px; letter-spacing: .08em; font-weight: 700; background: #0a0e14; padding-top: 8px; }
 @media (max-width: 1100px) { .flow { grid-template-columns: repeat(3, minmax(0, 1fr)); } .dept:nth-child(3)::after { display: none; } }
 @media (max-width: 720px) {
   .grid { grid-template-columns: minmax(0, 1fr); padding: 10px 16px; }
@@ -131,6 +132,8 @@ const PHASE = {
 };
 const STRUCT = { bull: ["Tăng: đỉnh cao hơn, đáy cao hơn", "Bullish: HH and HL"], bear: ["Giảm: đỉnh thấp hơn, đáy thấp hơn", "Bearish: LH and LL"], mixed: ["Lẫn lộn", "Mixed"] };
 const SETUP = { SPRING: ["Spring (rũ bỏ đáy)", "Spring"], UPTHRUST: ["Upthrust (rũ bỏ đỉnh)", "Upthrust"], MSS_VALUE: ["MSS từ vùng giá trị", "MSS from value"] };
+const GROUPS = ["index", "stock", "crypto", "forex", "commodity"];
+const GNAME = { index: ["CHỈ SỐ MỸ", "US INDICES"], stock: ["CỔ PHIẾU MỸ TOP 7 CÔNG NGHỆ", "US TOP 7 TECH STOCKS"], crypto: ["CRYPTO", "CRYPTO"], forex: ["FOREX", "FOREX"], commodity: ["HÀNG HÓA", "COMMODITIES"] };
 const EVN = { spring: "Spring", upthrust: "UT", sos: "SOS", sow: "SOW", MSS: "MSS", BOS: "BOS" };
 const biasWord = (b) => (b > 0 ? tt("tăng", "bullish") : b < 0 ? tt("giảm", "bearish") : tt("trung tính", "neutral"));
 const L = (p) => (p ? (lang === "vi" ? p[0] : p[1]) : "–");
@@ -193,7 +196,7 @@ function renderText() {
 
 // ---------- list ----------
 function renderTabs() {
-  $("tabs").innerHTML = [["all", "TẤT CẢ", "ALL"], ["index", "CHỈ SỐ MỸ", "US INDICES"], ["crypto", "CRYPTO", "CRYPTO"], ["forex", "FOREX", "FOREX"], ["commodity", "HÀNG HÓA", "COMMODITIES"]]
+  $("tabs").innerHTML = [["all", "TẤT CẢ", "ALL"], ["index", "CHỈ SỐ MỸ", "US INDICES"], ["stock", "CỔ PHIẾU MỸ TOP 7", "US TOP 7 STOCKS"], ["crypto", "CRYPTO", "CRYPTO"], ["forex", "FOREX", "FOREX"], ["commodity", "HÀNG HÓA", "COMMODITIES"]]
     .map(([k, vi, en]) => `<button class="tab ${k === cls ? "on" : ""}" data-c="${k}">${tt(vi, en)}</button>`).join("");
 }
 function cell(x) {
@@ -205,9 +208,9 @@ function renderList() {
   if (!IDX) return;
   const q = $("q").value.trim().toUpperCase();
   const rows = IDX.assets.filter((a) => (cls === "all" || a.cls === cls) && (!q || a.symbol.includes(q)))
-    .sort((a, b) => (b.tfs["1D"]?.signal?.length || 0) - (a.tfs["1D"]?.signal?.length || 0) || Math.abs(b.score) - Math.abs(a.score));
+    .sort((a, b) => GROUPS.indexOf(a.cls) - GROUPS.indexOf(b.cls) || (b.tfs["1D"]?.signal?.length || 0) - (a.tfs["1D"]?.signal?.length || 0) || Math.abs(b.score) - Math.abs(a.score));
   $("t-list").innerHTML = `<tr><th>${tt("Tài sản", "Asset")}</th><th class="num">${tt("Giá (nến ngày)", "Price (daily)")}</th>${TFS.map((f) => `<th>${f}</th>`).join("")}<th class="num">${tt("Điểm tổng", "Score")}</th></tr>` +
-    rows.map((a) => `<tr class="click ${A && A.symbol === a.symbol ? "sel" : ""}" data-s="${esc(a.symbol)}"><td><b>${esc(a.symbol)}</b> <span class="dim">${esc(a.cls)}</span></td><td class="num">${px(a.price)}</td>${TFS.map((f) => cell(a.tfs[f])).join("")}<td class="num ${cl(a.score)}"><b>${sgn(a.score, 0)}</b></td></tr>`).join("");
+    rows.map((a, k) => (k === 0 || rows[k - 1].cls !== a.cls ? `<tr class="grp"><td colspan="7">${L(GNAME[a.cls]) || a.cls} · ${rows.filter((x) => x.cls === a.cls).length}</td></tr>` : "") + `<tr class="click ${A && A.symbol === a.symbol ? "sel" : ""}" data-s="${esc(a.symbol)}"><td><b>${esc(a.symbol)}</b></td><td class="num">${px(a.price)}</td>${TFS.map((f) => cell(a.tfs[f])).join("")}<td class="num ${cl(a.score)}"><b>${sgn(a.score, 0)}</b></td></tr>`).join("");
 }
 function renderGrid() {
   if (!IDX) return;

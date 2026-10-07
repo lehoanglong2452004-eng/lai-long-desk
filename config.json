@@ -175,7 +175,8 @@
     "crypto": 0.2,
     "forex": 0.03,
     "commodity": 0.08,
-    "index": 0.02
+    "index": 0.02,
+    "stock": 0.05
   },
   "signal_rules": {
     "min_rr": 2.0,
@@ -209,6 +210,43 @@
       "yahoo": "RTY=F",
       "usd_beta": -0.5,
       "cot": "239742"
+    }
+  ],
+  "stocks": [
+    {
+      "symbol": "AAPL",
+      "yahoo": "AAPL",
+      "usd_beta": -0.5
+    },
+    {
+      "symbol": "MSFT",
+      "yahoo": "MSFT",
+      "usd_beta": -0.5
+    },
+    {
+      "symbol": "NVDA",
+      "yahoo": "NVDA",
+      "usd_beta": -0.5
+    },
+    {
+      "symbol": "GOOGL",
+      "yahoo": "GOOGL",
+      "usd_beta": -0.5
+    },
+    {
+      "symbol": "AMZN",
+      "yahoo": "AMZN",
+      "usd_beta": -0.5
+    },
+    {
+      "symbol": "META",
+      "yahoo": "META",
+      "usd_beta": -0.5
+    },
+    {
+      "symbol": "TSLA",
+      "yahoo": "TSLA",
+      "usd_beta": -0.5
     }
   ]
 }

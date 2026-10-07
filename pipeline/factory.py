@@ -99,6 +99,7 @@ def load_assets(cfg):
     yahoo = {f["symbol"]: (f["yahoo"], f.get("volume_proxy")) for f in cfg["forex"]}
     yahoo |= {c["symbol"]: (c["yahoo"], None) for c in cfg["commodities"]}
     yahoo |= {x["symbol"]: (x["yahoo"], None) for x in cfg.get("indices", [])}
+    yahoo |= {x["symbol"]: (x["yahoo"], None) for x in cfg.get("stocks", [])}
     assets = []
     for sym, cls in universe:
         if cls == "crypto":

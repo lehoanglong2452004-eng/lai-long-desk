@@ -14,7 +14,7 @@ from .signals import Prepared, SETUPS, detect, quiet_volume, score, simulate, tr
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = Path(os.environ.get("LLD_DATA_DIR") or ROOT / "site" / "data")
-CLASSES = ("index", "crypto", "forex", "commodity")
+CLASSES = ("index", "stock", "crypto", "forex", "commodity")
 
 
 def utc(ts):
@@ -133,6 +133,10 @@ def load_universe(cfg):
         assets.append({"symbol": x["symbol"], "cls": "index", "usd_beta": x["usd_beta"],
                        "daily": sources.yahoo_chart(x["yahoo"], "1d", "5y"),
                        "hourly": sources.yahoo_chart(x["yahoo"], "1h", "1mo"), "cot": cot})
+    for x in cfg.get("stocks", []):  # the 7 largest US tech stocks
+        assets.append({"symbol": x["symbol"], "cls": "stock", "usd_beta": x["usd_beta"],
+                       "daily": sources.yahoo_chart(x["yahoo"], "1d", "5y"),
+                       "hourly": sources.yahoo_chart(x["yahoo"], "1h", "1mo"), "cot": None})
     return [a for a in assets if len(a["daily"]) > 230]
 
 

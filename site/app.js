@@ -6,8 +6,8 @@ const T = {
     setups: "CƠ HỘI GIAO DỊCH", macro: "VĨ MÔ · LÃI SUẤT · USD", survival: "SỐNG SÓT · HIỆU QUẢ SAU CHI PHÍ",
     radar: "RADAR KHỐI LƯỢNG BẤT THƯỜNG", crowd: "CRYPTO · ĐÁM ĐÔNG (FUNDING)", cot: "VỊ THẾ ĐẦU CƠ (CFTC COT)",
     journal: "NHẬT KÝ TÍN HIỆU (THEO DÕI THẬT)", backtest: "BACKTEST TỪNG LOẠI TÍN HIỆU", market: "BẢNG THỊ TRƯỜNG",
-    showC: "hiện hạng C",
-    setupsHint: "Hạng A ≥ 70 điểm, B ≥ 55. Chỉ dùng nến ngày đã đóng. Loại tín hiệu nào backtest lỗ sau chi phí sẽ bị khóa ở hạng C. Bấm vào dòng để xem chi tiết. Bạn luôn là người quyết định.",
+    showC: "hiện cả tín hiệu yếu (hạng C)",
+    setupsHint: "Mỗi tín hiệu được chấm điểm 0–100 rồi xếp hạng. Hạng A (từ 70 điểm): mạnh, đủ chuẩn để cân nhắc vào lệnh. Hạng B (55–69): khá, nên chờ thêm xác nhận. Hạng C (dưới 55, hoặc loại tín hiệu đã lỗ sau chi phí trong backtest): yếu, mặc định được ẩn cho đỡ nhiễu. Tick ô \"hiện cả tín hiệu yếu\" nếu muốn xem để tham khảo. Chỉ dùng nến ngày đã đóng. Bấm vào dòng để xem chi tiết. Bạn luôn là người quyết định.",
     equityHint: "Đường vốn backtest của toàn bộ tín hiệu, đơn vị R (1R = số tiền rủi ro mỗi lệnh), đã trừ phí và trượt giá.",
     radarHint: "Khối lượng gấp nhiều lần bình thường. \"Lặng lẽ\" = khối lượng lớn nhưng giá gần như không đổi: có người đang gom hoặc xả.",
     crowdHint: "Funding dương lớn = phe mua đông và trả phí cao (dễ bị quét). Âm lớn = phe bán đông. Nguồn: Hyperliquid.",
@@ -47,7 +47,8 @@ const T = {
     m_dxy: "Sức mạnh USD so với 6 đồng tiền lớn. Tăng = áp lực lên EURUSD, GBPUSD, vàng, crypto.", m_vix: "Mức sợ hãi trên S&P 500. Trên 25 = thị trường căng thẳng, nên giảm khối lượng.",
     m_bias: "Kết luận của bộ phận Vĩ mô: thang -2 (USD yếu) đến +2 (USD mạnh). Dùng để cộng/trừ điểm tín hiệu.",
     srcCol: "Nguồn / độ trễ", synth: "ước tính từ Kraken",
-    index: "CHỈ SỐ MỸ",
+    index: "CHỈ SỐ MỸ", stock: "CỔ PHIẾU MỸ TOP 7", catalog: "DANH MỤC SẢN PHẨM ĐANG THEO DÕI", hiddenC: (n) => `Đang ẩn ${n} tín hiệu yếu (hạng C).`,
+    catalogHint: "Bấm vào một sản phẩm để mở quy trình xử lý của nó trong trang Nhà máy.",
     bonds: "TRÁI PHIẾU TOÀN CẦU · DÂN TRÁI PHIẾU ĐANG LÀM GÌ", cbanks: "10 NGÂN HÀNG TRUNG ƯƠNG · LÃI SUẤT ĐIỀU HÀNH",
     usfut: "CHỈ SỐ MỸ · HỢP ĐỒNG TƯƠNG LAI (CME)", liq: "THANH KHOẢN · LẠM PHÁT KỲ VỌNG · RỦI RO TÍN DỤNG", cderiv: "CRYPTO TOÀN THỊ TRƯỜNG · PHÁI SINH · THANH LÝ",
     bondsHint: "Lợi suất tăng = giá trái phiếu giảm = có người đang bán trái phiếu. Cột \"1 tháng\" so với cùng kỳ tháng trước, đơn vị bp (0,01%). Trạng thái đường cong được đọc từ thay đổi 1 tháng của kỳ hạn ngắn (2 năm, Anh dùng 5 năm) và 10 năm. Số liệu chính thức cuối ngày của Bộ Tài chính / ngân hàng trung ương nên trễ 1 ngày làm việc.",
@@ -65,8 +66,8 @@ const T = {
     setups: "TRADE SETUPS", macro: "MACRO · RATES · USD", survival: "SURVIVAL · EDGE AFTER COSTS",
     radar: "ABNORMAL VOLUME RADAR", crowd: "CRYPTO · CROWDING (FUNDING)", cot: "SPECULATOR POSITIONING (CFTC COT)",
     journal: "SIGNAL JOURNAL (LIVE TRACKING)", backtest: "BACKTEST BY SIGNAL TYPE", market: "MARKET WATCH",
-    showC: "show grade C",
-    setupsHint: "Grade A ≥ 70 points, B ≥ 55. Closed daily bars only. Signal types that lose money after costs in the backtest are capped at C. Click a row for details. You always make the call.",
+    showC: "also show weak signals (grade C)",
+    setupsHint: "Every signal is scored 0–100 and graded. Grade A (70+): strong, good enough to consider. Grade B (55–69): decent, wait for more confirmation. Grade C (under 55, or a signal type that lost money after costs in the backtest): weak, hidden by default to cut noise. Tick \"also show weak signals\" to see them for reference. Closed daily bars only. Click a row for details. You always make the call.",
     equityHint: "Backtest equity of every signal, in R (1R = the amount risked per trade), after fees and slippage.",
     radarHint: "Volume many times normal. \"Quiet\" = big volume while price barely moved: someone is accumulating or distributing.",
     crowdHint: "Large positive funding = crowded longs paying up (squeeze risk). Large negative = crowded shorts. Source: Hyperliquid.",
@@ -106,7 +107,8 @@ const T = {
     m_dxy: "Dollar strength against 6 majors. Rising = pressure on EURUSD, GBPUSD, gold, crypto.", m_vix: "Fear priced into the S&P 500. Above 25 = stressed market; size down.",
     m_bias: "The Macro department's verdict: -2 (weak USD) to +2 (strong USD). It adds or removes signal points.",
     srcCol: "Source / delay", synth: "estimated from Kraken",
-    index: "US INDICES",
+    index: "US INDICES", stock: "US TOP 7 STOCKS", catalog: "PRODUCTS WE FOLLOW", hiddenC: (n) => `${n} weak signal(s) (grade C) hidden.`,
+    catalogHint: "Click a product to open its process on the Factory page.",
     bonds: "GLOBAL BONDS · WHAT BOND TRADERS ARE DOING", cbanks: "10 CENTRAL BANKS · POLICY RATES",
     usfut: "US INDICES · FUTURES (CME)", liq: "LIQUIDITY · INFLATION EXPECTATIONS · CREDIT RISK", cderiv: "CRYPTO MARKET-WIDE · DERIVATIVES · LIQUIDATIONS",
     bondsHint: "Rising yield = falling bond price = someone is selling bonds. \"1 month\" compares with a month ago, in bp (0.01%). The curve state reads the 1-month change of the short tenor (2Y; 5Y for the UK) against the 10Y. Official end-of-day data from treasuries and central banks, one business day behind.",
@@ -149,7 +151,24 @@ const VI_NOTES = [
 let lang = safeGet("lld-lang") || "vi";
 let clsFilter = safeGet("lld-cls") || "all";
 let D = null, S = null, LOG = [], G = null, LJ = null;
-const CLASSES = ["index", "crypto", "forex", "commodity"];
+const CLASSES = ["index", "stock", "crypto", "forex", "commodity"];
+// full product names, so a symbol is never a riddle
+const NAMES = {
+  SP500: ["S&P 500 (HĐTL E-mini ES)", "S&P 500 (E-mini ES futures)"], NASDAQ100: ["Nasdaq 100 (HĐTL NQ)", "Nasdaq 100 (NQ futures)"],
+  DOW: ["Dow Jones (HĐTL YM)", "Dow Jones (YM futures)"], RUSSELL2000: ["Russell 2000 (HĐTL RTY)", "Russell 2000 (RTY futures)"],
+  AAPL: ["Apple"], MSFT: ["Microsoft"], NVDA: ["Nvidia"], GOOGL: ["Alphabet (Google)"], AMZN: ["Amazon"], META: ["Meta (Facebook)"], TSLA: ["Tesla"],
+  EURUSD: ["Euro / Đô la Mỹ", "Euro / US dollar"], GBPUSD: ["Bảng Anh / Đô la Mỹ", "Pound / US dollar"], AUDUSD: ["Đô la Úc / Đô la Mỹ", "Aussie / US dollar"],
+  NZDUSD: ["Đô la New Zealand / Đô la Mỹ", "Kiwi / US dollar"], USDJPY: ["Đô la Mỹ / Yên Nhật", "US dollar / Yen"], USDCAD: ["Đô la Mỹ / Đô la Canada", "US dollar / Canadian dollar"],
+  USDCHF: ["Đô la Mỹ / Franc Thụy Sĩ", "US dollar / Swiss franc"], USDCNY: ["Đô la Mỹ / Nhân dân tệ", "US dollar / Yuan"], USDHKD: ["Đô la Mỹ / Đô la Hồng Kông", "US dollar / HK dollar"],
+  USDSGD: ["Đô la Mỹ / Đô la Singapore", "US dollar / Singapore dollar"],
+  GOLD: ["Vàng (COMEX GC)", "Gold (COMEX GC)"], SILVER: ["Bạc (COMEX SI)", "Silver (COMEX SI)"], PLATINUM: ["Bạch kim (NYMEX PL)", "Platinum (NYMEX PL)"],
+  COPPER: ["Đồng (COMEX HG)", "Copper (COMEX HG)"], WTI: ["Dầu WTI (NYMEX CL)", "WTI crude (NYMEX CL)"], BRENT: ["Dầu Brent (ICE BZ)", "Brent crude (ICE BZ)"],
+  NATGAS: ["Khí tự nhiên (NYMEX NG)", "Natural gas (NYMEX NG)"], CORN: ["Ngô (CBOT ZC)", "Corn (CBOT ZC)"], WHEAT: ["Lúa mì (CBOT ZW)", "Wheat (CBOT ZW)"],
+  SOYBEAN: ["Đậu tương (CBOT ZS)", "Soybeans (CBOT ZS)"], COFFEE: ["Cà phê Arabica (ICE KC)", "Arabica coffee (ICE KC)"], SUGAR: ["Đường (ICE SB)", "Sugar (ICE SB)"],
+  COCOA: ["Ca cao (ICE CC)", "Cocoa (ICE CC)"],
+};
+const nameOf = (sym, cls) => { const n = NAMES[sym]; return n ? (lang === "vi" ? n[0] : n[1] || n[0]) : cls === "crypto" ? `${sym} / USDT (Binance)` : sym; };
+const clsRank = (c) => CLASSES.indexOf(c);
 let marketSort = { key: "rvol", dir: -1 };
 
 function safeGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -193,14 +212,15 @@ function render() {
     $("t-setups").innerHTML = `<tr><td class="empty">${t("noData")}</td></tr>`;
     return;
   }
-  renderAge(); renderDash(); renderGlobal(); renderSetups(); renderMacro(); renderSurvival(); renderRadar();
+  renderAge(); renderDash(); renderGlobal(); renderCatalog(); renderSetups(); renderMacro(); renderSurvival(); renderRadar();
   renderCrowd(); renderCot(); renderJournal(); renderBacktest(); renderMarket();
   $("errors").textContent = D.errors && D.errors.length ? `${t("errors")}: ${D.errors.join(" · ")}` : "";
 }
 
 function renderTabs() {
+  const cnt = (c) => (D ? (D.market || []).filter((m) => c === "all" || m.cls === c).length : 0);
   $("cls-tabs").innerHTML = ["all", ...CLASSES].map((c) =>
-    `<button class="tab ${c === clsFilter ? "on" : ""}" data-cls="${c}">${t(c)}</button>`).join("");
+    `<button class="tab ${c === clsFilter ? "on" : ""}" data-cls="${c}">${t(c)}${D ? ` <span class="n">${cnt(c)}</span>` : ""}</button>`).join("");
 }
 
 function renderAge() {
@@ -218,7 +238,7 @@ function biasWord(b) { return b > 0 ? t("usdStrong") : b < 0 ? t("usdWeak") : t(
 // crypto from Binance, FX from Kraken, commodities from Hyperliquid's perps. Rates come from
 // live.json (refreshed every 5 minutes on the live-data branch) with the time of each quote.
 const KR_PAIRS = { EURUSD: "EUR/USD", GBPUSD: "GBP/USD", AUDUSD: "AUD/USD", USDJPY: "USD/JPY", USDCAD: "USD/CAD", USDCHF: "USD/CHF" };
-const HL_COM = { GOLD: "GOLD", SILVER: "SILVER", PLATINUM: "PLATINUM", COPPER: "COPPER", WTI: "CL", BRENT: "BRENTOIL", NATGAS: "NATGAS", CORN: "CORN" };
+const HL_COM = { SP500: "SP500", NASDAQ100: "XYZ100", AAPL: "AAPL", MSFT: "MSFT", NVDA: "NVDA", GOOGL: "GOOGL", AMZN: "AMZN", META: "META", TSLA: "TSLA", GOLD: "GOLD", SILVER: "SILVER", PLATINUM: "PLATINUM", COPPER: "COPPER", WTI: "CL", BRENT: "BRENTOIL", NATGAS: "NATGAS", CORN: "CORN" };
 const DXY_W = { "EUR/USD": -0.576, "USD/JPY": 0.136, "GBP/USD": -0.119, "USD/CAD": 0.091, "USD/CHF": 0.036 };  // ICE weights without SEK
 const KEYS = ["BTC", "ETH", "SOL", "GOLD", "SILVER", "WTI", "EURUSD", "GBPUSD", "USDJPY"];
 const LV = {}, KRX = {}, BNX = {}, HLX = {};
@@ -650,17 +670,24 @@ function renderGlobal() {
   renderBonds(); renderBanks(); renderUsFut(); renderLiq(); renderCrypto();
 }
 
+function renderCatalog() {
+  const groups = CLASSES.map((c) => [c, (D.market || []).filter((m) => m.cls === c)]).filter(([, l]) => l.length);
+  $("catalog").innerHTML = groups.map(([c, l]) => `<div class="cat"><h3 class="sub">${t(c)} · ${l.length}</h3>` +
+    l.map((m) => `<a href="factory/#${encodeURIComponent(m.symbol)}"><b>${esc(m.symbol)}</b> <span class="dim">${esc(nameOf(m.symbol, m.cls))}</span></a>`).join("") + `</div>`).join("");
+}
+
 function filtered(rows) { return clsFilter === "all" ? rows : rows.filter((r) => r.cls === clsFilter); }
 
 function renderSetups() {
   const showC = $("show-c").checked;
-  const rows = filtered(D.setups || []).filter((s) => showC || s.grade !== "C");
-  if (!rows.length) { $("t-setups").innerHTML = `<tr><td class="empty">${t("none")}</td></tr>`; return; }
+  const all = filtered(D.setups || []), rows = all.filter((s) => showC || s.grade !== "C");
+  const hid = showC ? 0 : all.length - rows.length, hidTxt = hid ? ` <span class="dim">${t("hiddenC")(hid)}</span>` : "";
+  if (!rows.length) { $("t-setups").innerHTML = `<tr><td class="empty">${t("none")}${hidTxt}</td></tr>`; return; }
   const head = ["grade", "asset", "setup", "dir", "entry", "stop", "target", "rr", "rvol", "macroCol", "hist", "score"];
   $("t-setups").innerHTML = `<tr>${head.map((h, k) => `<th class="${k > 3 ? "num" : ""}">${t(h)}</th>`).join("")}</tr>` +
     rows.map((s, k) => `<tr class="click" data-setup="${D.setups.indexOf(s)}">
       <td><span class="grade ${s.grade}">${s.grade}</span></td>
-      <td><b>${esc(s.symbol)}</b> <span class="dim">${t(s.cls)}</span></td>
+      <td><b>${esc(s.symbol)}</b> <span class="dim">${esc(nameOf(s.symbol, s.cls))}</span></td>
       <td title="${esc(t(s.setup))}">${esc(t(s.setup))}</td><td>${dirTag(s.dir)}</td>
       <td class="num">${px(s.entry)}</td><td class="num down">${px(s.stop)}</td><td class="num up">${px(s.target)}</td>
       <td class="num">${s.rr.toFixed(1)}</td><td class="num">${s.rvol ? s.rvol.toFixed(1) : "–"}</td>
@@ -775,10 +802,11 @@ function renderMarket() {
   const rows = filtered(D.market || []).filter((m) => !q || m.symbol.includes(q));
   const { key, dir } = marketSort;
   const val = (m, k) => (k === "price" || k === "chg_pct" ? quote(m)[k] : m[k]);
-  rows.sort((a, b) => ((val(a, key) ?? -1e18) > (val(b, key) ?? -1e18) ? 1 : -1) * dir);
+  rows.sort((a, b) => clsRank(a.cls) - clsRank(b.cls) || ((val(a, key) ?? -1e18) > (val(b, key) ?? -1e18) ? 1 : -1) * dir);
   const cols = [["symbol", "asset"], ["price", "price"], ["chg_pct", "chg"], ["trend", "trend"], ["rvol", "rvol"], ["atr_pct", "atr"], ["funding_apr", "funding"]];
   $("t-market").innerHTML = `<tr>${cols.map(([k, l], n) => `<th class="sort ${n ? "num" : ""}" data-sort="${k}">${t(l)}${key === k ? (dir > 0 ? " ▲" : " ▼") : ""}</th>`).join("")}<th></th><th>${t("srcCol")}</th></tr>` +
-    rows.map((m) => { const q = quote(m); return `<tr><td><b>${esc(m.symbol)}</b> <span class="dim">${t(m.cls)}</span></td><td class="num" data-k="m:${esc(m.symbol)}">${px(q.price)}</td>
+    rows.map((m, k) => { const q = quote(m); return (k === 0 || rows[k - 1].cls !== m.cls ? `<tr class="grp"><td colspan="9">${t(m.cls)} · ${rows.filter((x) => x.cls === m.cls).length}</td></tr>` : "") +
+      `<tr><td><b>${esc(m.symbol)}</b> <span class="dim">${esc(nameOf(m.symbol, m.cls))}</span></td><td class="num" data-k="m:${esc(m.symbol)}">${px(q.price)}</td>
       <td class="num ${cl(q.chg_pct)}" data-c="m:${esc(m.symbol)}">${pct(q.chg_pct)}</td><td class="num ${m.trend === "up" ? "up" : m.trend === "down" ? "down" : "dim"}">${t(m.trend)}</td>
       <td class="num ${m.rvol >= 2 ? "amber" : ""}">${m.rvol != null ? m.rvol.toFixed(2) : "–"}</td><td class="num">${m.atr_pct}</td>
       <td class="num ${cl(m.funding_apr)}">${m.funding_apr != null ? sgn(m.funding_apr, 1) : ""}</td>
