@@ -95,8 +95,8 @@ body[data-mode=fp] #dash:not(.dock){display:none!important}
 .pkex button[aria-pressed="true"] small{color:var(--dia)}
 .pkrow{display:flex;gap:8px;align-items:center}.pkrow input{flex:1;width:auto;min-width:0;padding:7px 9px}
 .pkrow .seg button:disabled{opacity:.35;cursor:not-allowed}
-.pklist{flex:1;min-height:120px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;background:#080b11;display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));align-content:start;gap:4px;padding:6px}
-.pklist button{border:1px solid transparent;background:transparent;text-align:left;font:600 12.5px var(--mono);padding:6px 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pklist{flex:1;min-height:120px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;background:#080b11;display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));align-content:start;grid-auto-rows:max-content;gap:4px;padding:6px}
+.pklist button{min-height:30px;line-height:1.3;border:1px solid transparent;background:transparent;text-align:left;font:600 12.5px var(--mono);padding:6px 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pklist button:hover{background:#111722}
 .pklist button[aria-pressed="true"]{background:#16303a;border-color:var(--dia);color:var(--dia)}
 .pke{grid-column:1/-1;color:var(--muted);padding:14px 8px;font-size:12.5px}
