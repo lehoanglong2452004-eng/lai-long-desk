@@ -20,7 +20,7 @@ concurrency:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
@@ -40,6 +40,9 @@ jobs:
       - name: Global desk data (bond curves, central banks, CFTC, macro, crypto-wide)
         continue-on-error: true
         run: python -m pipeline.global_desk
+      - name: Factory (Wyckoff + MSS + volume/market profile, 4 timeframes, backtest log)
+        continue-on-error: true
+        run: python -m pipeline.factory
       - name: News desk data (prices, headlines, calendar)
         continue-on-error: true
         run: python -m pipeline.news_desk

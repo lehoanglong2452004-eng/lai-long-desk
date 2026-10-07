@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Lai Long Desk Factory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<script>
+window.addEventListener("error", function (e) {
+  var b = document.getElementById("lld-err");
+  if (!b) { b = document.createElement("div"); b.id = "lld-err"; b.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:99;background:#b91c1c;color:#fff;font:13px/1.4 sans-serif;padding:8px 12px"; (document.body || document.documentElement).appendChild(b); }
+  b.textContent = "Lỗi trang / page error: " + (e.message || "unknown") + " (" + navigator.userAgent + ")";
+});
+</script>
+<style>
+.flow { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin: 6px 0 10px; }
+.dept { position: relative; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: #0a0e14; white-space: normal; font-size: 12px; }
+.dept:not(:last-child)::after { content: "▶"; position: absolute; right: -10px; top: 50%; transform: translateY(-50%); color: var(--amber); font-size: 10px; }
+.dept h4 { margin: 0 0 4px; font-size: 10.5px; letter-spacing: .06em; color: var(--amber); font-weight: 700; text-transform: uppercase; }
+.dept .big { font-size: 14px; font-weight: 700; margin: 2px 0; }
+.dept .row { color: var(--dim); font-size: 11px; margin: 2px 0; }
+.dept.ok { border-color: rgba(34, 197, 94, .6); }
+.dept.bad { border-color: rgba(240, 82, 79, .6); }
+.dept.prod { border-color: var(--amber); }
+.tfbar { display: flex; gap: 4px; flex-wrap: wrap; }
+.tfc { display: inline-block; min-width: 62px; font-size: 11px; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; vertical-align: 0; background: var(--dim); }
+.dot.up { background: var(--green); } .dot.down { background: var(--red); }
+.sig { display: inline-block; font-size: 10px; padding: 0 4px; border-radius: 3px; background: var(--amber); color: #000; font-weight: 700; margin-left: 2px; }
+#chart { height: 440px; margin-top: 4px; cursor: crosshair; }
+.legend { font-size: 11px; color: var(--dim); display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 4px; }
+.legend i { display: inline-block; width: 14px; height: 2px; vertical-align: 3px; margin-right: 4px; }
+td.why { white-space: normal; min-width: 280px; font-size: 11px; color: var(--dim); }
+td.why b { color: var(--text); font-weight: 400; }
+tr.sel td { background: rgba(255, 176, 0, .12) !important; }
+.statgrid .dept::after { display: none; }
+.statgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.how { white-space: normal; font-size: 12px; }
+.how summary { cursor: pointer; color: var(--amber); }
+.how ol { padding-left: 18px; margin: 6px 0; } .how li { margin: 3px 0; }
+#detail.hidden { display: none; }
+@media (max-width: 1100px) { .flow { grid-template-columns: repeat(3, minmax(0, 1fr)); } .dept:nth-child(3)::after { display: none; } }
+@media (max-width: 720px) {
+  .grid { grid-template-columns: minmax(0, 1fr); padding: 10px 16px; }
+  .span2, .span3 { grid-column: span 1; }
+  .flow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .dept::after { display: none; }
+  .statgrid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  #chart { height: 320px; }
+  .brand .dim { display: none; }
+  .top { position: static; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="logo">龍</span> LAI LONG DESK <span class="dim">▸ NHÀ MÁY / FACTORY</span></div>
+  <div class="top-right">
+    <a class="btn" href="../">QUANT</a>
+    <a class="btn" href="../news/">TIN TỨC</a>
+    <a class="btn" href="../depth/">DEPTH</a>
+    <span id="age" class="pill"></span>
+    <button id="lang" class="btn" title="Language">EN</button>
+  </div>
+</header>
+
+<main class="grid">
+  <section class="panel span3">
+    <details class="how" id="how"></details>
+  </section>
+
+  <section class="panel span3" id="p-list">
+    <div class="ph"><h2 id="h-list"></h2><div class="tabs" id="tabs"></div><input id="q" class="search" placeholder="search…"></div>
+    <div class="scroll tall"><table id="t-list"></table></div>
+    <p class="hint" id="hint-list"></p>
+  </section>
+
+  <section class="panel span3 hidden" id="detail">
+    <div class="ph"><h2 id="d-title"></h2><div class="tfbar" id="tfbar"></div><span class="dim small" id="d-src"></span></div>
+    <div class="flow" id="flow"></div>
+    <canvas id="chart"></canvas>
+    <div class="legend" id="legend"></div>
+    <h3 class="sub" style="margin-top:12px" id="h-stats"></h3>
+    <div class="statgrid" id="stats"></div>
+    <h3 class="sub" style="margin-top:12px" id="h-log"></h3>
+    <div class="scroll tall"><table id="t-log"></table></div>
+    <p class="hint" id="hint-log"></p>
+  </section>
+
+  <section class="panel span3" id="p-grid">
+    <div class="ph"><h2 id="h-grid"></h2></div>
+    <div class="scroll"><table id="t-grid"></table></div>
+    <p class="hint" id="hint-grid"></p>
+  </section>
+</main>
+<footer class="foot"><p id="foot"></p></footer>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+function safeGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function safeSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* private mode */ } }
+let lang = safeGet("lld-lang") || "vi";
+const tt = (vi, en) => (lang === "vi" ? vi : en);
+const TFS = ["1W", "1D", "4H", "1H"];
+let IDX = null, A = null, tf = safeGet("lld-ftf") || "1D", cls = "all", selTrade = null;
+const cache = {};
+
+function px(x) {
+  if (x == null || !isFinite(x)) return "–";
+  const a = Math.abs(x), d = a >= 1000 ? 2 : a >= 10 ? 3 : a >= 1 ? 4 : a >= 0.01 ? 5 : 8;
+  return Number(x).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+}
+const sgn = (x, d = 2) => (x == null ? "–" : `${x > 0 ? "+" : ""}${Number(x).toFixed(d)}`);
+const cl = (x) => (x > 0 ? "up" : x < 0 ? "down" : "");
+function when(t, withTime) {
+  const o = { day: "2-digit", month: "2-digit", year: "2-digit" };
+  if (withTime) Object.assign(o, { hour: "2-digit", minute: "2-digit", hour12: false });
+  return new Date(t * 1000).toLocaleString(lang === "vi" ? "vi-VN" : "en-GB", o);
+}
+const hasTime = (f) => f === "4H" || f === "1H";
+
+const PHASE = {
+  accumulation: ["Tích lũy", "Accumulation", 1], distribution: ["Phân phối", "Distribution", -1],
+  reaccumulation: ["Tái tích lũy", "Re-accumulation", 1], redistribution: ["Tái phân phối", "Re-distribution", -1],
+  markup: ["Đẩy giá lên (Markup)", "Markup", 1], markdown: ["Đạp giá xuống (Markdown)", "Markdown", -1], transition: ["Chuyển tiếp", "Transition", 0],
+};
+const STRUCT = { bull: ["Tăng: đỉnh cao hơn, đáy cao hơn", "Bullish: HH and HL"], bear: ["Giảm: đỉnh thấp hơn, đáy thấp hơn", "Bearish: LH and LL"], mixed: ["Lẫn lộn", "Mixed"] };
+const SETUP = { SPRING: ["Spring (rũ bỏ đáy)", "Spring"], UPTHRUST: ["Upthrust (rũ bỏ đỉnh)", "Upthrust"], MSS_VALUE: ["MSS từ vùng giá trị", "MSS from value"] };
+const EVN = { spring: "Spring", upthrust: "UT", sos: "SOS", sow: "SOW", MSS: "MSS", BOS: "BOS" };
+const biasWord = (b) => (b > 0 ? tt("tăng", "bullish") : b < 0 ? tt("giảm", "bearish") : tt("trung tính", "neutral"));
+const L = (p) => (p ? (lang === "vi" ? p[0] : p[1]) : "–");
+
+function reasonText(r) {
+  const ok = r.plus ? `<b class="up">✓</b> ` : r.plus === false ? `<span class="dim">○</span> ` : "• ";
+  switch (r.k) {
+    case "htf": return ok + tt(`Khung lớn ${r.tf} (Wyckoff) đang <b>${biasWord(r.bias)}</b>`, `Higher timeframe ${r.tf} (Wyckoff) is <b>${biasWord(r.bias)}</b>`);
+    case "spring": return ok + tt(`Spring: thủng đáy vùng ${px(r.level)} rồi đóng cửa quay lại trong vùng, khối lượng ${r.rvol ?? "–"}x${r.top_volume ? ", <b>lớn nhất cả vùng</b>" : ", chưa phải lớn nhất vùng"}`,
+      `Spring: broke the range floor ${px(r.level)} and closed back inside, volume ${r.rvol ?? "–"}x${r.top_volume ? ", <b>highest of the range</b>" : ", not the range's highest"}`);
+    case "upthrust": return ok + tt(`Upthrust: vượt đỉnh vùng ${px(r.level)} rồi đóng cửa quay lại trong vùng, khối lượng ${r.rvol ?? "–"}x${r.top_volume ? ", <b>lớn nhất cả vùng</b>" : ", chưa phải lớn nhất vùng"}`,
+      `Upthrust: poked above the range top ${px(r.level)} and closed back inside, volume ${r.rvol ?? "–"}x${r.top_volume ? ", <b>highest of the range</b>" : ", not the range's highest"}`);
+    case "value_edge": return ok + tt(`Biên vùng ${r.plus ? "trùng" : "không trùng"} biên vùng giá trị (VAL ${px(r.val)} · POC ${px(r.poc)} · VAH ${px(r.vah)})`,
+      `Range edge ${r.plus ? "matches" : "does not match"} the value area (VAL ${px(r.val)} · POC ${px(r.poc)} · VAH ${px(r.vah)})`);
+    case "range": return ok + tt(`Vùng giao dịch ${px(r.lo)} – ${px(r.hi)}, giá đi vào vùng từ ${r.came_from === "down" ? "trên xuống" : r.came_from === "up" ? "dưới lên" : "đi ngang"}`,
+      `Trading range ${px(r.lo)} – ${px(r.hi)}, price entered it ${r.came_from === "down" ? "from above" : r.came_from === "up" ? "from below" : "sideways"}`);
+    case "mss": return ok + tt(`MSS: đóng cửa phá mốc cấu trúc ${px(r.level)} sau nhịp hồi về ${px(r.pullback)}, khối lượng ${r.rvol ?? "–"}x${r.plus ? "" : " (chưa đạt 1,5x)"}`,
+      `MSS: closed through the structure level ${px(r.level)} after a pullback to ${px(r.pullback)}, volume ${r.rvol ?? "–"}x${r.plus ? "" : " (below 1.5x)"}`);
+    case "in_value": return ok + tt(`Nhịp hồi chạm vùng giá trị (VAL ${px(r.val)} · POC ${px(r.poc)} · VAH ${px(r.vah)})`, `Pullback reached value (VAL ${px(r.val)} · POC ${px(r.poc)} · VAH ${px(r.vah)})`);
+    case "phase": return ok + tt(`Pha Wyckoff ở khung này: ${L(PHASE[r.phase])}`, `Wyckoff phase on this timeframe: ${L(PHASE[r.phase])}`);
+    default: return ok + esc(r.k);
+  }
+}
+
+// ---------- static text ----------
+function renderText() {
+  document.documentElement.lang = lang;
+  $("lang").textContent = lang === "vi" ? "EN" : "VI";
+  $("how").innerHTML = `<summary>${tt("Nhà máy hoạt động thế nào? (bấm để xem)", "How does the factory work? (click)")}</summary>` + tt(`
+    <ol>
+      <li><b>P1 Nguyên liệu:</b> nến đã đóng cửa (giá mở, cao, thấp, đóng và khối lượng) của 72 tài sản trên 4 khung: tuần (1W), ngày (1D), 4 giờ (4H), 1 giờ (1H). Nguồn: Binance cho crypto, Yahoo Finance (giá sàn CME/ICE) cho chỉ số, hàng hóa, ngoại hối. Cập nhật mỗi giờ.</li>
+      <li><b>P2 Wyckoff (định hướng xa):</b> tìm vùng giao dịch 40 nến gần nhất, xác định pha (tích lũy, phân phối, đẩy giá lên, đạp giá xuống) và các sự kiện: Spring (thủng đáy rồi quay lại), Upthrust (vượt đỉnh rồi quay lại), SOS (bứt lên khỏi vùng kèm khối lượng), SOW (gãy xuống kèm khối lượng).</li>
+      <li><b>P3 Cấu trúc giá (MSS):</b> đánh dấu đỉnh/đáy swing. Phá đỉnh/đáy cùng chiều xu hướng cũ là BOS (tiếp diễn), phá ngược chiều là MSS (đổi cấu trúc).</li>
+      <li><b>P4 Volume Profile + Market Profile:</b> 120 nến gần nhất, chia giá thành 40 tầng: POC = mức giá khớp nhiều khối lượng nhất, vùng giá trị (VAL–VAH) chứa 70% khối lượng. Market Profile đếm thời gian giá ở mỗi tầng. Đây là hỗ trợ/kháng cự cứng.</li>
+      <li><b>P5 Lắp ráp:</b> chỉ ra lệnh khi các bộ phận đồng ý. Khung lớn hơn quyết định hướng (1H theo 4H, 4H theo 1D, 1D theo 1W). Mẫu hình: <b>Spring/Upthrust</b> ở biên vùng, hoặc <b>MSS từ vùng giá trị</b> (giá hồi về vùng giá trị rồi đổi cấu trúc theo hướng khung lớn). Chốt lời ở mức Volume Profile/biên vùng kế tiếp, R:R tối thiểu 2.</li>
+      <li><b>P6 Thành phẩm + kiểm định:</b> mỗi lệnh được chấm hạng theo số yếu tố đồng thuận (A = 3 yếu tố, B = 2). Cùng quy tắc đó được chạy lại trên toàn bộ lịch sử: vào lệnh ở giá mở nến kế tiếp, cắt lỗ/chốt lời cố định, nếu một nến chạm cả hai thì tính thua, đã trừ phí và trượt giá. Mọi lệnh đều ghi trong nhật ký bên dưới.</li>
+    </ol>
+    <p class="dim">Hệ thống chỉ cảnh báo, không tự đặt lệnh. Bạn là người quyết định.</p>`, `
+    <ol>
+      <li><b>P1 Raw material:</b> closed bars (open, high, low, close, volume) for 72 assets on 4 timeframes: weekly, daily, 4-hour, 1-hour. Binance for crypto, Yahoo Finance (CME/ICE prices) for indices, commodities, FX. Updated hourly.</li>
+      <li><b>P2 Wyckoff (long-range direction):</b> finds the 40-bar trading range, the phase (accumulation, distribution, markup, markdown) and events: Spring, Upthrust, SOS (break up on volume), SOW (break down on volume).</li>
+      <li><b>P3 Market structure (MSS):</b> marks swing highs/lows. A break in the old direction is a BOS, a break against it is an MSS.</li>
+      <li><b>P4 Volume + Market Profile:</b> last 120 bars in 40 price levels: POC = most traded price, value area (VAL–VAH) = 70% of volume. Market Profile counts time at each level. These are the hard support/resistance.</li>
+      <li><b>P5 Assembly:</b> trades only when departments agree. The next timeframe up sets the direction (1H follows 4H, 4H follows 1D, 1D follows 1W). Setups: <b>Spring/Upthrust</b> at the range edge, or <b>MSS from value</b>. Targets at the next profile level or range edge, minimum R:R 2.</li>
+      <li><b>P6 Product + proof:</b> graded by confluence (A = 3 factors, B = 2). The same rules are replayed on all history: entry at the next bar's open, fixed stop/target, stop first if a bar hits both, after fees and slippage. Every trade is in the log below.</li>
+    </ol>
+    <p class="dim">Alerts only, never orders. You make the call.</p>`);
+  $("h-list").textContent = tt("DÂY CHUYỀN · TẤT CẢ TÀI SẢN", "PRODUCTION LINE · ALL ASSETS");
+  $("hint-list").textContent = tt("Mỗi ô: chấm màu = hướng Wyckoff của khung đó, chữ = pha, ô vàng = đang có tín hiệu. Điểm tổng = 1W×3 + 1D×2 + 4H + 1H. Bấm vào một dòng để xem cả quy trình xử lý.",
+    "Each cell: dot = Wyckoff direction on that timeframe, text = phase, amber tag = live signal. Score = 1W×3 + 1D×2 + 4H + 1H. Click a row for the full process.");
+  $("h-grid").textContent = tt("KIỂM ĐỊNH TOÀN BỘ · THEO KHUNG VÀ MẪU HÌNH (ĐÃ TRỪ CHI PHÍ)", "FULL BACKTEST · BY TIMEFRAME AND SETUP (AFTER COSTS)");
+  $("hint-grid").textContent = tt("R = số lần rủi ro: +1R là lãi bằng số tiền đã chấp nhận mất. Kỳ vọng R/lệnh > 0 sau chi phí mới là có lợi thế. Dưới 30 lệnh thì chưa đủ tin cậy.",
+    "R = multiples of risk: +1R earns what you risked. Expectancy R/trade above 0 after costs is an edge. Under 30 trades is not reliable yet.");
+  $("h-stats").textContent = tt("KẾT QUẢ BACKTEST CỦA TÀI SẢN NÀY", "THIS ASSET'S BACKTEST");
+  $("h-log").textContent = tt("NHẬT KÝ TỪNG LỆNH (BACKTEST)", "TRADE LOG (BACKTEST)");
+  $("hint-log").textContent = tt("Giờ hiển thị theo giờ máy của bạn. Vào lệnh ở giá mở của nến ngay sau nến tín hiệu. Bấm vào một lệnh để xem trên biểu đồ (nếu nằm trong 220 nến gần nhất).",
+    "Times in your local time. Entry at the open of the bar after the signal bar. Click a trade to see it on the chart (if within the last 220 bars).");
+  $("foot").textContent = tt("Lai Long Desk chỉ là công cụ cảnh báo cá nhân, không phải lời khuyên đầu tư. Kết quả backtest không bảo đảm tương lai.", "Lai Long Desk is a personal alert tool, not investment advice. Backtests do not guarantee the future.");
+}
+
+// ---------- list ----------
+function renderTabs() {
+  $("tabs").innerHTML = [["all", "TẤT CẢ", "ALL"], ["index", "CHỈ SỐ MỸ", "US INDICES"], ["crypto", "CRYPTO", "CRYPTO"], ["forex", "FOREX", "FOREX"], ["commodity", "HÀNG HÓA", "COMMODITIES"]]
+    .map(([k, vi, en]) => `<button class="tab ${k === cls ? "on" : ""}" data-c="${k}">${tt(vi, en)}</button>`).join("");
+}
+function cell(x) {
+  if (!x) return `<td class="dim">–</td>`;
+  const s = x.signal && x.signal[0];
+  return `<td><span class="tfc"><span class="dot ${cl(x.bias)}"></span>${esc(L(PHASE[x.phase]).replace(/ \(.*\)/, ""))}${s ? `<span class="sig">${s.dir === "long" ? "▲" : "▼"}${s.grade}</span>` : ""}</span></td>`;
+}
+function renderList() {
+  if (!IDX) return;
+  const q = $("q").value.trim().toUpperCase();
+  const rows = IDX.assets.filter((a) => (cls === "all" || a.cls === cls) && (!q || a.symbol.includes(q)))
+    .sort((a, b) => (b.tfs["1D"]?.signal?.length || 0) - (a.tfs["1D"]?.signal?.length || 0) || Math.abs(b.score) - Math.abs(a.score));
+  $("t-list").innerHTML = `<tr><th>${tt("Tài sản", "Asset")}</th><th class="num">${tt("Giá (nến ngày)", "Price (daily)")}</th>${TFS.map((f) => `<th>${f}</th>`).join("")}<th class="num">${tt("Điểm tổng", "Score")}</th></tr>` +
+    rows.map((a) => `<tr class="click ${A && A.symbol === a.symbol ? "sel" : ""}" data-s="${esc(a.symbol)}"><td><b>${esc(a.symbol)}</b> <span class="dim">${esc(a.cls)}</span></td><td class="num">${px(a.price)}</td>${TFS.map((f) => cell(a.tfs[f])).join("")}<td class="num ${cl(a.score)}"><b>${sgn(a.score, 0)}</b></td></tr>`).join("");
+}
+function renderGrid() {
+  if (!IDX) return;
+  const g = IDX.stats, cols = [["all", "Tất cả", "All"], ["SPRING", "Spring", "Spring"], ["UPTHRUST", "Upthrust", "Upthrust"], ["MSS_VALUE", "MSS từ vùng giá trị", "MSS from value"], ["grade_A", "Hạng A", "Grade A"], ["grade_B", "Hạng B", "Grade B"], ["grade_C", "Hạng C", "Grade C"]];
+  const c = (s) => (!s || !s.n ? `<td class="num dim">–</td>` : `<td class="num"><b class="${cl(s.exp_r)}">${sgn(s.exp_r)}R</b><br><small class="dim">${s.n} ${tt("lệnh", "tr")} · ${s.win_rate}% · PF ${s.pf ?? "–"}</small></td>`);
+  $("t-grid").innerHTML = `<tr><th>${tt("Khung", "TF")}</th>${cols.map((x) => `<th class="num">${tt(x[1], x[2])}</th>`).join("")}</tr>` +
+    TFS.map((f) => `<tr><td><b>${f}</b></td>${cols.map((x) => c(g[f] && g[f][x[0]])).join("")}</tr>`).join("");
+}
+
+// ---------- detail ----------
+async function openAsset(sym) {
+  if (!cache[sym]) {
+    const r = await fetch(`../data/factory/${encodeURIComponent(sym)}.json?v=${IDX ? IDX.generated : Date.now()}`);
+    if (!r.ok) return;
+    cache[sym] = await r.json();
+  }
+  A = cache[sym];
+  if (!A.tfs[tf]) tf = Object.keys(A.tfs)[0];
+  selTrade = null;
+  if (location.hash !== "#" + sym) history.replaceState(null, "", "#" + sym);
+  $("detail").classList.remove("hidden");
+  renderDetail();
+  renderList();
+  $("detail").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function dept(cls_, title, body) { return `<div class="dept ${cls_}"><h4>${title}</h4>${body}</div>`; }
+function renderDetail() {
+  if (!A) return;
+  const x = A.tfs[tf];
+  $("d-title").textContent = `${A.symbol} · ${tt("QUY TRÌNH XỬ LÝ", "PROCESS")} · ${tf}`;
+  $("tfbar").innerHTML = TFS.map((f) => `<button class="tab ${f === tf ? "on" : ""}" data-tf="${f}" ${A.tfs[f] ? "" : "disabled"}>${f}</button>`).join("");
+  $("d-src").textContent = `${tt("Nguồn", "Source")}: ${A.source} · ${tt("nến cuối đóng", "last closed bar")} ${when(x.last_t, hasTime(tf))}`;
+  const w = x.wyckoff, ev = w.event, rg = w.range, p = x.profile, sig = x.signals || [];
+  const lastEv = (x.events || []).slice().reverse().find((e) => e.kind in EVN && !["MSS", "BOS"].includes(e.kind));
+  const lastBrk = (x.events || []).slice().reverse().find((e) => e.kind === "MSS" || e.kind === "BOS");
+  const n = x.bars.length;
+  $("flow").innerHTML = [
+    dept("", tt("P1 · Nguyên liệu", "P1 · Raw material"), `<div class="big">${px(x.price)}</div><div class="row">${n} ${tt("nến", "bars")} ${tf} ${tt("trên biểu đồ", "on chart")}</div><div class="row">ATR ${px(x.atr)}</div><div class="row">${esc(A.source)}</div>`),
+    dept(w.bias > 0 ? "ok" : w.bias < 0 ? "bad" : "", tt("P2 · Wyckoff", "P2 · Wyckoff"), `<div class="big ${cl(w.bias)}">${L(PHASE[w.phase])}</div>` +
+      (rg ? `<div class="row">${tt("Vùng", "Range")} ${px(rg.lo)} – ${px(rg.hi)} (${rg.width_atr} ATR)</div>` : `<div class="row">${tt("Không có vùng đi ngang", "No trading range")}</div>`) +
+      (lastEv ? `<div class="row">${tt("Sự kiện gần nhất", "Last event")}: <b>${EVN[lastEv.kind]}</b> ${when(lastEv.t, hasTime(tf))}${lastEv.top_volume ? tt(", KL lớn nhất vùng", ", top volume") : ""}</div>` : "") +
+      `<div class="row">${tt("Hướng", "Bias")}: ${biasWord(w.bias)}</div>`),
+    dept(x.mss_dir > 0 ? "ok" : x.mss_dir < 0 ? "bad" : "", tt("P3 · Cấu trúc (MSS)", "P3 · Structure (MSS)"), `<div class="big">${L(STRUCT[x.structure])}</div>` +
+      (lastBrk ? `<div class="row">${tt("Phá vỡ gần nhất", "Last break")}: <b class="${cl(lastBrk.dir)}">${lastBrk.kind} ${lastBrk.dir > 0 ? "▲" : "▼"}</b> ${px(lastBrk.level)} · ${when(lastBrk.t, hasTime(tf))}</div>` : "") +
+      `<div class="row">${tt("Đỉnh swing", "Swing high")} ${x.swing_high ? px(x.swing_high[1]) : "–"} · ${tt("đáy swing", "swing low")} ${x.swing_low ? px(x.swing_low[1]) : "–"}</div>`),
+    dept("", tt("P4 · Volume + Market Profile", "P4 · Volume + Market Profile"), p ? `<div class="row">POC <b class="amber">${px(p.poc)}</b></div><div class="row">VAH ${px(p.vah)} · VAL ${px(p.val)}</div><div class="row">${tt("POC thời gian (TPO)", "Time POC (TPO)")} ${px(p.tpo_poc)}</div>` +
+      `<div class="row">${x.price > p.vah ? tt("Giá trên vùng giá trị", "Price above value") : x.price < p.val ? tt("Giá dưới vùng giá trị", "Price below value") : tt("Giá trong vùng giá trị", "Price inside value")}${p.has_volume ? "" : tt(" · không có khối lượng, dùng thời gian", " · no volume, time only")}</div>` : "–"),
+    dept(x.htf_bias * w.bias > 0 ? "ok" : x.htf_bias * w.bias < 0 ? "bad" : "", tt("P5 · Lắp ráp", "P5 · Assembly"), `<div class="row">${tt("Khung lớn", "Higher TF")} ${x.htf}: <b class="${cl(x.htf_bias)}">${biasWord(x.htf_bias)}</b></div>` +
+      `<div class="row">${tf}: <b class="${cl(w.bias)}">${biasWord(w.bias)}</b></div><div class="row">${x.htf_bias * w.bias > 0 ? tt("Hai khung đồng thuận", "Timeframes agree") : x.htf_bias * w.bias < 0 ? tt("Hai khung ngược nhau: đứng ngoài", "Timeframes disagree: stand aside") : tt("Chưa đồng thuận rõ", "No clear agreement")}</div>`),
+    dept("prod", tt("P6 · Thành phẩm", "P6 · Product"), (sig.length ? sig.map((s) => `<div class="big ${s.dir === "long" ? "up" : "down"}"><span class="grade ${s.grade}">${s.grade}</span> ${s.dir === "long" ? "▲ " + tt("MUA", "LONG") : "▼ " + tt("BÁN", "SHORT")}</div>
+      <div class="row">${L(SETUP[s.setup])}</div><div class="row">${tt("Vào", "Entry")} ${px(s.entry)} · ${tt("Cắt lỗ", "Stop")} ${px(s.stop)} · ${tt("Chốt", "Target")} ${px(s.target)} · R:R ${s.rr}</div>`).join("")
+      : `<div class="big dim">${tt("Chưa có lệnh", "No trade")}</div><div class="row">${tt("Không đủ điều kiện ở nến cuối. Không có lệnh cũng là một quyết định.", "Nothing qualifies on the last bar. No trade is a decision too.")}</div>`) +
+      (sig.length && IDX && IDX.stats[tf] && IDX.stats[tf][sig[0].setup] ? (() => { const h = IDX.stats[tf][sig[0].setup]; return `<div class="row ${h.exp_r > 0 ? "up" : "down"}">${tt("Mẫu hình này ở khung", "This setup on")} ${tf} (${tt("mọi tài sản", "all assets")}): ${sgn(h.exp_r)}R/${tt("lệnh", "trade")}, ${h.n} ${tt("lệnh", "trades")}${h.exp_r > 0 ? "" : tt(" · <b>đang lỗ sau chi phí, chỉ tham khảo</b>", " · <b>loses after costs, reference only</b>")}</div>`; })() : "") +
+      `<div class="row">${tt("Backtest khung này", "Backtest here")}: ${x.stats.n ? `<b class="${cl(x.stats.exp_r)}">${sgn(x.stats.exp_r)}R</b>/${tt("lệnh", "trade")} · ${x.stats.n} ${tt("lệnh", "trades")}` : "–"}</div>`),
+  ].join("");
+  if (sig.length) $("flow").lastElementChild.insertAdjacentHTML("beforeend", `<div class="row">${sig[0].reasons.map(reasonText).join("<br>")}</div>`);
+
+  const st = (k, s) => `<div class="dept"><h4>${k}</h4>${s && s.n ? `<div class="big ${cl(s.exp_r)}">${sgn(s.exp_r)}R</div><div class="row">${s.n} ${tt("lệnh", "trades")} · ${tt("thắng", "win")} ${s.win_rate}%</div><div class="row">PF ${s.pf ?? "–"} · ${tt("sụt tối đa", "max DD")} ${s.max_dd_r}R · ${tt("tổng", "total")} ${sgn(s.total_r, 1)}R</div>` : `<div class="row">${tt("chưa có lệnh", "no trades")}</div>`}</div>`;
+  $("stats").innerHTML = st(`${tf} · ${tt("tất cả", "all")}`, x.stats) + Object.entries(x.stats_by_setup).map(([k, s]) => st(L(SETUP[k]), s)).join("");
+
+  const tr = (x.trades || []).slice().reverse();
+  const res = { win: tt("thắng", "win"), loss: tt("thua", "loss"), expired: tt("hết hạn", "expired"), skipped: tt("bỏ qua", "skipped") };
+  $("t-log").innerHTML = tr.length ? `<tr><th>${tt("Khung", "TF")}</th><th>${tt("Mẫu hình", "Setup")}</th><th>${tt("Hướng", "Side")}</th><th>${tt("Hạng", "Grade")}</th><th>${tt("Nến tín hiệu", "Signal bar")}</th><th>${tt("Giờ vào", "Entry time")}</th><th class="num">${tt("Giá vào", "Entry")}</th><th class="num">${tt("Cắt lỗ", "Stop")}</th><th class="num">${tt("Chốt lời", "Target")}</th><th>${tt("Giờ thoát", "Exit time")}</th><th class="num">${tt("Giá thoát", "Exit")}</th><th>${tt("Kết quả", "Result")}</th><th class="num">R</th><th>${tt("Lý do vào lệnh", "Why")}</th></tr>` +
+    tr.map((t, k) => `<tr class="click ${selTrade === t ? "sel" : ""}" data-t="${k}"><td>${t.tf}</td><td>${L(SETUP[t.setup])}</td><td class="${t.dir === "long" ? "up" : "down"}">${t.dir === "long" ? "▲ " + tt("MUA", "LONG") : "▼ " + tt("BÁN", "SHORT")}</td><td><span class="grade ${t.grade}">${t.grade}</span></td>
+      <td>${when(t.signal_t, hasTime(tf))}</td><td>${t.entry_t ? when(t.entry_t, hasTime(tf)) : "–"}</td><td class="num">${px(t.entry)}</td><td class="num down">${px(t.stop)}</td><td class="num up">${px(t.target)}</td>
+      <td>${when(t.exit_t, hasTime(tf))} <span class="dim">(${t.bars} ${tt("nến", "bars")})</span></td><td class="num">${px(t.exit)}</td><td class="${t.result === "win" ? "up" : t.result === "loss" ? "down" : ""}">${res[t.result] || t.result}</td>
+      <td class="num ${cl(t.r)}"><b>${sgn(t.r)}</b></td><td class="why">${t.reasons.map(reasonText).join("<br>")}</td></tr>`).join("")
+    : `<tr><td class="empty">${tt("Khung này chưa có lệnh nào trong lịch sử.", "No trades on this timeframe in the history.")}</td></tr>`;
+  $("t-log")._rows = tr;
+  drawChart();
+}
+
+// ---------- chart ----------
+function drawChart() {
+  const cv = $("chart"), x = A && A.tfs[tf];
+  if (!x) return;
+  const dpr = window.devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
+  cv.width = W * dpr; cv.height = H * dpr;
+  const g = cv.getContext("2d");
+  g.scale(dpr, dpr); g.clearRect(0, 0, W, H);
+  const bars = x.bars, n = bars.length, p = x.profile, profW = Math.min(110, W * 0.16), axisW = 64;
+  const plotW = W - profW - axisW, top = 8, priceH = H * 0.76, volTop = priceH + 14, volH = H - volTop - 4;
+  let lo = Math.min(...bars.map((b) => b[3])), hi = Math.max(...bars.map((b) => b[2]));
+  const tr = selTrade && [selTrade.stop, selTrade.target];
+  if (tr) { lo = Math.min(lo, ...tr); hi = Math.max(hi, ...tr); }
+  const pad = (hi - lo) * 0.04; lo -= pad; hi += pad;
+  const y = (v) => top + (hi - v) / (hi - lo) * (priceH - top);
+  const step = plotW / n, xi = (i) => i * step + step / 2;
+  const css = (k) => getComputedStyle(document.documentElement).getPropertyValue(k).trim();
+  const GREEN = css("--green"), RED = css("--red"), AMB = css("--amber"), DIM = css("--dim"), LINE = css("--line"), BLUE = css("--blue");
+  g.font = "10px JetBrains Mono, monospace";
+  // grid + axis
+  g.strokeStyle = LINE; g.fillStyle = DIM; g.lineWidth = 1;
+  for (let k = 0; k <= 5; k++) { const v = lo + (hi - lo) * k / 5, yy = y(v); g.beginPath(); g.moveTo(0, yy); g.lineTo(plotW, yy); g.stroke(); g.fillText(px(v), plotW + profW + 4, yy + 3); }
+  // trading range box
+  const rg = x.wyckoff.range;
+  if (rg) {
+    const i0 = Math.max(0, bars.findIndex((b) => b[0] >= rg.since));
+    g.fillStyle = "rgba(74,168,255,.07)"; g.fillRect(xi(i0) - step / 2, y(rg.hi), plotW - xi(i0) + step / 2, y(rg.lo) - y(rg.hi));
+    g.strokeStyle = BLUE; g.setLineDash([2, 3]); g.strokeRect(xi(i0) - step / 2, y(rg.hi), plotW - xi(i0) + step / 2, y(rg.lo) - y(rg.hi)); g.setLineDash([]);
+  }
+  // volume profile on the right
+  if (p) {
+    const mx = Math.max(...p.bins.map((b) => b[1])), bh = Math.max(1, (y(p.lo) - y(p.hi)) / p.bins.length);
+    p.bins.forEach(([pr, v]) => { const inVA = pr >= p.val && pr <= p.vah; g.fillStyle = inVA ? "rgba(255,176,0,.35)" : "rgba(107,119,133,.35)"; g.fillRect(plotW + profW - v / mx * (profW - 6), y(pr) - bh / 2, v / mx * (profW - 6), Math.max(1, bh - 1)); });
+    [[p.poc, AMB, "POC", []], [p.vah, AMB, "VAH", [4, 3]], [p.val, AMB, "VAL", [4, 3]], [p.tpo_poc, DIM, "TPO", [1, 3]]].forEach(([v, c, lbl, dash]) => {
+      g.strokeStyle = c; g.setLineDash(dash); g.beginPath(); g.moveTo(0, y(v)); g.lineTo(plotW + profW, y(v)); g.stroke(); g.setLineDash([]);
+      g.fillStyle = c; g.fillText(lbl, 2, y(v) - 2);
+    });
+  }
+  // candles + volume
+  const vmax = Math.max(...bars.map((b) => b[5])) || 1, cw = Math.max(1, step * 0.65);
+  bars.forEach((b, i) => {
+    const up = b[4] >= b[1], c = up ? GREEN : RED, xx = xi(i);
+    g.strokeStyle = c; g.beginPath(); g.moveTo(xx, y(b[2])); g.lineTo(xx, y(b[3])); g.stroke();
+    g.fillStyle = c; g.fillRect(xx - cw / 2, Math.min(y(b[1]), y(b[4])), cw, Math.max(1, Math.abs(y(b[1]) - y(b[4]))));
+    g.globalAlpha = 0.5; g.fillRect(xx - cw / 2, volTop + volH - b[5] / vmax * volH, cw, b[5] / vmax * volH); g.globalAlpha = 1;
+  });
+  const idx = (t) => { let k = bars.findIndex((b) => b[0] >= t); if (k < 0) return null; if (bars[k][0] > t && k > 0) k--; return k; };
+  // swings
+  (x.swings || []).forEach(([t, v, k]) => { const i = idx(t); if (i == null) return; g.fillStyle = DIM; g.fillText(k === "H" ? "▾" : "▴", xi(i) - 3, k === "H" ? y(v) - 3 : y(v) + 10); });
+  // events
+  (x.events || []).forEach((e) => {
+    const i = idx(e.t); if (i == null) return;
+    const upish = e.kind === "spring" || e.kind === "sos" || e.dir > 0, b = bars[i];
+    g.fillStyle = e.kind === "MSS" ? AMB : e.kind === "BOS" ? DIM : upish ? GREEN : RED;
+    const lbl = EVN[e.kind] || e.kind;
+    g.fillText(lbl, xi(i) - lbl.length * 3, upish ? y(b[3]) + 22 : y(b[2]) - 14);
+  });
+  // trades in view
+  (x.trades || []).forEach((t) => {
+    const a = idx(t.entry_t), z = idx(t.exit_t);
+    if (a == null || bars[0][0] > t.entry_t) return;
+    const c = t.r > 0 ? GREEN : RED, sel = selTrade === t;
+    g.strokeStyle = c; g.lineWidth = sel ? 2 : 1; g.setLineDash(sel ? [] : [3, 2]);
+    g.beginPath(); g.moveTo(xi(a), y(t.entry)); g.lineTo(xi(z ?? n - 1), y(t.exit)); g.stroke(); g.setLineDash([]); g.lineWidth = 1;
+    g.fillStyle = t.dir === "long" ? GREEN : RED;
+    g.beginPath(); const yy = y(t.entry), xx = xi(a);
+    if (t.dir === "long") { g.moveTo(xx, yy); g.lineTo(xx - 5, yy + 8); g.lineTo(xx + 5, yy + 8); } else { g.moveTo(xx, yy); g.lineTo(xx - 5, yy - 8); g.lineTo(xx + 5, yy - 8); }
+    g.fill();
+    if (sel) {
+      [[t.stop, RED], [t.target, GREEN]].forEach(([v, col]) => { g.strokeStyle = col; g.setLineDash([5, 3]); g.beginPath(); g.moveTo(xi(a), y(v)); g.lineTo(xi(z ?? n - 1), y(v)); g.stroke(); g.setLineDash([]); });
+    }
+  });
+  // live signal levels
+  (x.signals || []).forEach((s) => [[s.entry, AMB], [s.stop, RED], [s.target, GREEN]].forEach(([v, col]) => {
+    if (v < lo || v > hi) return; g.strokeStyle = col; g.setLineDash([6, 4]); g.beginPath(); g.moveTo(xi(n - 12), y(v)); g.lineTo(plotW, y(v)); g.stroke(); g.setLineDash([]);
+  }));
+  $("legend").innerHTML = [
+    `<span><i style="background:${AMB}"></i>POC / VAH / VAL (Volume Profile)</span>`, `<span><i style="background:${DIM}"></i>TPO POC (Market Profile)</span>`,
+    `<span><i style="background:${BLUE}"></i>${tt("vùng giao dịch Wyckoff", "Wyckoff trading range")}</span>`,
+    `<span>▲▼ ${tt("lệnh backtest (xanh = lãi, đỏ = lỗ)", "backtest trades (green = profit, red = loss)")}</span>`,
+    `<span>Spring · UT · SOS · SOW · MSS · BOS · ▾▴ swing</span>`,
+  ].join("");
+}
+
+// ---------- boot ----------
+async function load() {
+  try {
+    const r = await fetch(`../data/factory/index.json?v=${Date.now()}`, { cache: "no-store" });
+    IDX = r.ok ? await r.json() : null;
+  } catch (e) { IDX = null; }
+  if (!IDX) { $("t-list").innerHTML = `<tr><td class="empty">${tt("Nhà máy chưa chạy lần nào. Dữ liệu sẽ có sau lần quét tiếp theo (mỗi giờ).", "The factory has not run yet. Data arrives with the next hourly scan.")}</td></tr>`; return; }
+  const mins = Math.round((Date.now() / 1000 - IDX.generated) / 60);
+  $("age").textContent = tt(`cập nhật ${mins < 60 ? mins + " phút" : Math.round(mins / 60) + " giờ"} trước`, `updated ${mins < 60 ? mins + "m" : Math.round(mins / 60) + "h"} ago`);
+  $("age").className = "pill " + (mins > 180 ? "stale" : "ok");
+  renderList(); renderGrid();
+  const h = decodeURIComponent(location.hash.slice(1));
+  if (h && IDX.assets.some((a) => a.symbol === h)) openAsset(h);
+}
+function renderAll() { renderText(); renderTabs(); renderList(); renderGrid(); renderDetail(); }
+
+document.addEventListener("click", (e) => {
+  const row = e.target.closest("[data-s]"), tab = e.target.closest("[data-c]"), tfb = e.target.closest("[data-tf]"), trw = e.target.closest("[data-t]");
+  if (tab) { cls = tab.dataset.c; renderTabs(); renderList(); }
+  else if (tfb && !tfb.disabled) { tf = tfb.dataset.tf; safeSet("lld-ftf", tf); selTrade = null; renderDetail(); }
+  else if (trw) { const t = $("t-log")._rows[+trw.dataset.t]; selTrade = selTrade === t ? null : t; renderDetail(); $("chart").scrollIntoView({ behavior: "smooth", block: "center" }); }
+  else if (row) openAsset(row.dataset.s);
+});
+$("q").addEventListener("input", renderList);
+$("lang").addEventListener("click", () => { lang = lang === "vi" ? "en" : "vi"; safeSet("lld-lang", lang); renderAll(); });
+window.addEventListener("resize", () => A && drawChart());
+renderText(); renderTabs(); load();
+setInterval(load, 15 * 60 * 1000);
+</script>
+</body>
+</html>
