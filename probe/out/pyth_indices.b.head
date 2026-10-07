@@ -1,1 +1,0 @@
-Failed to deserialize query string: asset_type: unknown variant `indices`, expected one of `crypto`, `fx`, `equity`, `metal`, `rates`, `crypto_redemption_rate`, `commodities`, `crypto_index`, `crypto_nav`, `eco`, `kalshi`
