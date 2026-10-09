@@ -131,8 +131,8 @@ def load_assets(cfg):
 
 # bars kept per timeframe for the MIDOTI and Traditional pages (about 12 months of 1H, 3 of 15m, 1 of 5m, 1 week of 1m)
 BARS_N = {"1m": 10080, "5m": 8640, "15m": 8640, "30m": 6000, "1H": 9000}
-INTRADAY = {"5m": (300, "60d"), "15m": (900, "60d"), "30m": (1800, "60d")}  # Yahoo's limits
-BINANCE_PAGES = {"5m": 9, "15m": 9}  # 1m ({"1m": 11} / (60, "7d")) waits on a timing probe
+INTRADAY = {"1m": (60, "7d"), "5m": (300, "60d"), "15m": (900, "60d"), "30m": (1800, "60d")}  # Yahoo's limits
+BINANCE_PAGES = {"1m": 11, "5m": 9, "15m": 9}
 
 
 def intraday(a):
