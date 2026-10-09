@@ -173,7 +173,7 @@ def crypto():
             out.append({"id": f"cry:{c['id']}", "label": c["symbol"].upper(), "sub": c["name"],
                         "price": c["current_price"], "changePct": c["price_change_percentage_24h"],
                         "volume": c["total_volume"], "marketCap": c["market_cap"]})
-        return out[:50]
+        return out[:20]  # top 20 by market cap, like the rest of the system
 
     return _safe("coingecko", run, [])
 
