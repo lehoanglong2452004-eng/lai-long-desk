@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Lai Long Desk Truyền thống</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<script>
+window.addEventListener("error", function (e) {
+  var b = document.getElementById("lld-err");
+  if (!b) { b = document.createElement("div"); b.id = "lld-err"; b.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:99;background:#b91c1c;color:#fff;font:13px/1.4 sans-serif;padding:8px 12px"; (document.body || document.documentElement).appendChild(b); }
+  b.textContent = "Lỗi trang: " + (e.message || "unknown") + " (" + navigator.userAgent + ")";
+});
+</script>
+<style>
+:root { --s1: #22c55e; --s2: #ffb000; --s3: #f0524f; --g1: #ffb000; --g2: #4aa8ff; --g3: #c77dff; }
+.ctl { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.ctl label, .ctl-l { font-size: 11px; color: var(--dim); display: inline-flex; align-items: center; gap: 6px; }
+select, .ctl input { background: #000; color: var(--text); border: 1px solid var(--line); border-radius: 3px; font: inherit; font-size: 12px; padding: 3px 6px; }
+.ctl input[type=number] { width: 78px; text-align: right; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; flex-wrap: wrap; }
+.seg button { font: inherit; font-size: 12px; background: none; color: var(--dim); border: 0; border-right: 1px solid var(--line); padding: 3px 9px; cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button.on { background: var(--amber); color: #000; font-weight: 700; }
+.chk { display: inline-flex; gap: 6px; align-items: center; font-size: 11px; color: var(--dim); cursor: pointer; }
+/* council */
+.council { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; margin: 4px 0 10px; }
+.vote { border: 1px solid var(--line); border-radius: 6px; padding: 8px; text-align: center; background: #0a0e14; opacity: .15; transform: translateY(6px); transition: opacity .35s, transform .35s; }
+.vote.show { opacity: 1; transform: none; }
+.vote .tf { font-size: 11px; color: var(--dim); }
+.vote .v { font-size: 18px; font-weight: 700; margin: 2px 0; }
+.vote .w { font-size: 10px; color: var(--dim); }
+.vote.big { border-color: var(--amber); }
+.vote.up .v { color: var(--green); } .vote.down .v { color: var(--red); } .vote.flat .v { color: var(--dim); }
+.tally { display: flex; height: 26px; border-radius: 4px; overflow: hidden; gap: 2px; background: var(--panel); }
+.tally div { display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #000; min-width: 0; overflow: hidden; white-space: nowrap; transition: flex-grow .6s; }
+.tally .u { background: var(--green); } .tally .f { background: #39424f; color: var(--text); } .tally .d { background: var(--red); }
+.verdict { margin-top: 8px; }
+/* heatmap */
+table.hm td, table.hm th { text-align: center; padding: 4px 3px; font-size: 11px; }
+table.hm td.m { text-align: left; white-space: nowrap; }
+table.hm td.c { min-width: 62px; border: 2px solid var(--panel); border-radius: 4px; cursor: default; color: var(--text); }
+table.hm td.c b { display: block; font-size: 12px; }
+table.hm td.c span { color: rgba(214, 221, 230, .75); }
+table.hm td.c.na { color: #39424f; }
+table.hm tr.g td { text-align: left; color: var(--amber); font-size: 10.5px; letter-spacing: .06em; padding-top: 8px; }
+.tip { position: fixed; z-index: 30; pointer-events: none; background: rgba(13, 17, 23, .96); border: 1px solid var(--line); border-radius: 4px; padding: 6px 8px; font-size: 11px; max-width: 320px; white-space: normal; display: none; }
+#cv { width: 100%; height: 460px; display: block; touch-action: none; background: #05070a; border-radius: 4px; cursor: crosshair; }
+canvas.sm { width: 100%; height: 220px; display: block; }
+.legend { font-size: 11px; color: var(--dim); display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; }
+.legend i { display: inline-block; width: 14px; height: 3px; vertical-align: 3px; margin-right: 4px; }
+.scen { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+.sc { border: 1px solid var(--line); border-left: 4px solid; border-radius: 4px; padding: 6px 8px; white-space: normal; font-size: 12px; }
+.sc h4 { margin: 0 0 4px; font-size: 12px; display: flex; justify-content: space-between; }
+.sc.s1 { border-left-color: var(--s1); } .sc.s2 { border-left-color: var(--s2); } .sc.s3 { border-left-color: var(--s3); }
+.why { white-space: normal; font-size: 12px; } .why li { margin: 2px 0; }
+td.rs { white-space: normal; min-width: 240px; font-size: 11px; color: var(--dim); }
+td.rs b { color: var(--text); font-weight: 600; }
+tr.sel td { background: rgba(255, 176, 0, .12) !important; }
+.kpis6 { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.kpi b { display: block; font-size: 16px; margin-top: 2px; }
+tr.grp td { color: var(--amber); font-size: 11px; letter-spacing: .08em; font-weight: 700; background: #0a0e14; padding-top: 8px; }
+.how { white-space: normal; font-size: 12px; } .how h4 { margin: 10px 0 4px; color: var(--amber); font-size: 12px; } .how p { margin: 4px 0; }
+.busy { color: var(--amber); font-size: 12px; }
+@media (max-width: 1100px) { .kpis6 { grid-template-columns: repeat(3, minmax(0, 1fr)); } .council { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 720px) {
+  .grid { grid-template-columns: minmax(0, 1fr); padding: 10px 16px; }
+  .span2, .span3 { grid-column: span 1; }
+  .council { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .scen { grid-template-columns: minmax(0, 1fr); }
+  #cv { height: 340px; }
+  .brand .dim { display: none; }
+  .top { position: static; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="logo">龍</span> LAI LONG DESK <span class="dim">▸ TRUYỀN THỐNG</span></div>
+  <div class="top-right">
+    <a class="btn" href="../">QUANT</a>
+    <a class="btn" href="../factory/">NHÀ MÁY</a>
+    <a class="btn" href="../traditional/" style="color:var(--amber);border-color:var(--amber)">TRUYỀN THỐNG</a>
+    <a class="btn" href="../midoti/">MIDOTI</a>
+    <a class="btn" href="../news/">TIN TỨC</a>
+    <a id="sys" class="pill" data-base="../" href="../status/" title="Tình trạng hệ thống">…</a>
+    <span id="age" class="pill"></span>
+  </div>
+</header>
+
+<main class="grid">
+  <section class="panel span3">
+    <div class="ctl">
+      <label>Sản phẩm <select id="asset"></select></label>
+      <span class="ctl-l">Khung <span class="seg" id="tfs"></span></span>
+      <span class="ctl-l">Giai đoạn <span class="seg" id="wins"></span></span>
+    </div>
+    <div class="ctl" style="margin-top:8px">
+      <label>Vốn ($) <input type="number" id="cap" step="1000" min="1"></label>
+      <label>Rủi ro mỗi lệnh (%) <input type="number" id="risk" step="0.1" min="0.1"></label>
+      <label>Đòn bẩy (x) <input type="number" id="lev" step="1" min="1"></label>
+      <label>Phí + trượt giá khứ hồi (%) <input type="number" id="cost" step="0.01" min="0"></label>
+      <label class="chk"><input type="checkbox" id="agree"> Chỉ tính lệnh thuận hội đồng ≥ <input type="number" id="cmin" step="5" min="50" max="100" style="width:56px"> %</label>
+      <span class="busy" id="busy"></span>
+    </div>
+  </section>
+
+  <section class="panel span3">
+    <div class="ph"><h2>HỘI ĐỒNG BỎ PHIẾU XU HƯỚNG</h2><span class="dim small">khung nhỏ bỏ phiếu trước, Ngày và Tuần bỏ phiếu sau cùng · Tuần 25% · Ngày 25% · các khung còn lại 10%</span><button class="btn" id="revote">BỎ PHIẾU LẠI</button></div>
+    <div class="council" id="council"></div>
+    <div class="tally" id="tally"></div>
+    <p class="verdict" id="verdict"></p>
+  </section>
+
+  <section class="panel span3">
+    <div class="ph"><h2 id="h-hm">CHIẾN LƯỢC NÀO ĐANG HIỆU QUẢ?</h2><span class="seg" id="scope"><button data-s="one" class="on">Mã này</button><button data-s="all">Cả hệ thống</button></span></div>
+    <div class="scroll"><table class="hm" id="hm"></table></div>
+    <p class="hint">Mỗi ô: R trung bình mỗi lệnh (đã trừ phí), tỷ lệ thắng và số lệnh trong giai đoạn đang chọn. Xanh là đang kiếm tiền, đỏ là đang mất tiền, xám là chưa đủ 8 lệnh để kết luận. "Cả hệ thống" gộp mọi mã, máy chủ tính mỗi giờ.</p>
+  </section>
+
+  <section class="panel span3">
+    <div class="ph"><h2 id="h-chart">BIỂU ĐỒ</h2><span class="seg"><button id="zin">＋</button><button id="zout">－</button><button id="zend">▶|</button></span><span class="dim small">kéo để xem quá khứ</span></div>
+    <canvas id="cv"></canvas>
+    <div class="legend">
+      <span><i style="background:#8a93a6"></i>Đỉnh/đáy sóng (zigzag 2 ATR)</span>
+      <span><i style="background:var(--s1)"></i>Kịch bản 1</span><span><i style="background:var(--s2)"></i>Kịch bản 2</span><span><i style="background:var(--s3)"></i>Kịch bản 3</span>
+      <span><i style="background:#4aa8ff"></i>Biên đang chạy (đỉnh · giữa · đáy)</span><span><i style="background:#c77dff"></i>Hộp Darvas</span><span><i style="background:#ffb000"></i>Mức đã phá vỡ, đang chờ test lại</span>
+    </div>
+  </section>
+
+  <section class="panel span3">
+    <div class="ph"><h2>① ELLIOTT · 3 KỊCH BẢN</h2><span class="dim small" id="el-sub"></span></div>
+    <div id="ell"></div>
+  </section>
+
+  <section class="panel span2">
+    <div class="ph"><h2>② PHÁ VỠ VÀ CÁC LẦN TEST LẠI</h2><span class="dim small">thắng = chạm 2R trước khi chạm SL</span></div>
+    <canvas class="sm" id="bo"></canvas>
+    <div class="legend"><span><i style="background:#ffb000"></i>Có xác nhận khối lượng (RVOL ≥ 1,5)</span><span><i style="background:#4aa8ff"></i>Không có xác nhận</span></div>
+    <div class="why" id="bo-txt"></div>
+  </section>
+  <section class="panel">
+    <div class="ph"><h2>③ GIAO DỊCH TRONG BIÊN</h2></div>
+    <div id="rg"></div>
+  </section>
+
+  <section class="panel span3">
+    <div class="ph"><h2>KẾT QUẢ THEO CHIẾN LƯỢC</h2><span class="dim small" id="eq-sub"></span></div>
+    <div class="kpis6" id="kpis"></div>
+    <canvas class="sm" id="eq"></canvas>
+    <div class="legend"><span><i style="background:var(--g1)"></i>① Elliott · Wyckoff · Darvas</span><span><i style="background:var(--g2)"></i>② Phá vỡ và test lại</span><span><i style="background:var(--g3)"></i>③ Trong biên</span></div>
+  </section>
+
+  <section class="panel span3">
+    <div class="ph"><h2>NHẬT KÝ TỪNG LỆNH</h2><div class="tabs" id="logf"></div><span class="dim small" id="log-n"></span></div>
+    <div class="scroll tall"><table id="log"></table></div>
+    <p class="hint">Giờ GMT+7. Vào lệnh ở giá mở của nến ngay sau nến tín hiệu. $ tính theo vốn, % rủi ro và đòn bẩy bạn nhập; đòn bẩy chỉ giới hạn khối lượng tối đa khi SL quá gần. Bấm một dòng để xem trên biểu đồ.</p>
+  </section>
+
+  <section class="panel span3">
+    <div class="ph"><h2>XẾP HẠNG CẢ HỆ THỐNG</h2><span class="dim small" id="rk-sub"></span></div>
+    <div class="scroll tall"><table id="rank"></table></div>
+  </section>
+
+  <section class="panel span3">
+    <details class="how" id="how"><summary class="amber" style="cursor:pointer">Nền tảng lý thuyết và cách hệ thống đo (bấm để đọc)</summary>
+      <h4>Hội đồng bỏ phiếu</h4>
+      <p>Mỗi khung đọc cấu trúc sóng của riêng nó: đỉnh sau cao hơn đỉnh trước và đáy sau cao hơn đáy trước là phiếu TĂNG; ngược lại là GIẢM; giá đóng cửa vượt đỉnh/đáy sóng gần nhất thì đổi phiếu ngay. Đỉnh/đáy sóng được xác nhận khi giá đảo chiều 2 lần ATR(14), nên không có chuyện "nhìn trước tương lai". Phiếu Tuần và Ngày nặng 25% mỗi phiếu, 5 khung còn lại 10% mỗi phiếu. Khi bật "chỉ tính lệnh thuận hội đồng", lệnh chỉ được tính khi phe cùng hướng đạt từ ngưỡng % trở lên tại thời điểm vào lệnh.</p>
+      <h4>① Elliott</h4>
+      <p>Quy tắc cứng: sóng 2 không vượt điểm đầu sóng 1, sóng 3 không phải sóng ngắn nhất, sóng 4 không đi vào vùng giá sóng 1. Hướng dẫn Fibonacci: sóng 2 hồi 50–61,8%, sóng 3 dài 1,618 lần sóng 1, sóng 4 hồi 23,6–50% sóng 3, sóng 5 thường bằng sóng 1, sóng C thường bằng sóng A. Bốn cách đọc: sau sóng 2 (chờ sóng 3), sau sóng 4 (chờ sóng 5), sau sóng 5 (chờ điều chỉnh A-B-C), sau A-B-C (xu hướng cũ quay lại). Kịch bản 1 = giá chạm mục tiêu theo lý thuyết trước; kịch bản 2 = không chạm mục tiêu cũng không phá điểm vô hiệu trong thời gian cho phép (đi ngang, tái tích lũy); kịch bản 3 = giá đóng cửa qua điểm vô hiệu (đếm sai, giá đi ngược).</p>
+      <h4>① Wyckoff</h4>
+      <p>Trong một vùng tích lũy/phân phối (biên giá), Spring là cú thủng đáy biên rồi đóng cửa trở lại trong biên: dấu hiệu bên mua hấp thụ. Upthrust là cú vượt đỉnh biên rồi đóng cửa trở lại: bên bán hấp thụ. Chốt 50% ở giữa biên, phần còn lại ở biên đối diện.</p>
+      <h4>① Hộp Darvas</h4>
+      <p>Giá lập đỉnh mới cao nhất 50 nến; đỉnh giữ 3 nến thì thành nóc hộp, sau đó đáy giữ 3 nến thì thành đáy hộp. Mua khi giá đóng cửa vượt nóc hộp, cắt lỗ dưới đáy hộp, và dời cắt lỗ lên đáy của mỗi hộp mới để cưỡi hết xu hướng. Chiều bán làm ngược lại.</p>
+      <h4>② Phá vỡ</h4>
+      <p>Mức = đỉnh/đáy sóng đã xác nhận. Phá vỡ = nến đầu tiên đóng cửa vượt mức hơn 0,1 ATR. Test lại = giá quay về cách mức trong 0,25 ATR rồi đóng cửa bị từ chối về phía phá vỡ; mỗi lần phải rời xa mức ít nhất 0,5 ATR mới tính lần tiếp theo; đếm tới lần 4. Phá vỡ giả = giá đóng cửa quay lại phía trong quá 0,25 ATR, khi đó hệ thống đánh theo hướng đảo chiều. Mọi lệnh ở phần này dùng mục tiêu cố định 2R để so sánh xác suất giữa các lần.</p>
+      <h4>③ Trong biên</h4>
+      <p>Biên = 30 nến mà cao–thấp chỉ dao động 2–6 lần ATR và chạm mỗi mép ít nhất 2 lần. Mua khi giá chạm 15% dưới của biên rồi đóng nến tăng; bán khi chạm 15% trên rồi đóng nến giảm. TP1 giữa biên (chốt 50%, dời SL về hòa vốn), TP2 mép đối diện. Xu hướng trước biên = giá 30 nến trước khi biên hình thành đã đi lên hay xuống hơn 2 ATR.</p>
+      <p class="dim">Mọi kết quả là thống kê quá khứ, đã trừ phí. Dưới 30 lệnh thì tỷ lệ thắng chưa đáng tin. Dữ liệu: Binance (crypto), Yahoo Finance (còn lại); 1 phút giữ 1 tuần, 5 phút 1 tháng, 15 phút 3 tháng, H1 trở lên 12 tháng.</p>
+    </details>
+  </section>
+</main>
+<footer class="foot"><p>Phân tích thuần giá và khối lượng. Chỉ để tham khảo, người ra quyết định là bạn.</p></footer>
+<div class="tip" id="tip"></div>
+
+<script src="engine.js"></script>
+<script src="trad.js"></script>
+<script>
+(function () {
+  var a = document.getElementById("sys"), base = a.getAttribute("data-base");
+  fetch(base + "data/health.json?v=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (h) {
+    if (!h) { a.textContent = "? STATUS"; return; }
+    var bad = h.sources.filter(function (s) { return s.status !== "ok"; }).length, long = h.sources.filter(function (s) { return s.fails_in_row >= 3; }).length;
+    var old = Date.now() / 1000 - h.generated > 3 * 3600;
+    a.className = "pill " + (long || old ? "stale" : bad ? "warn" : "ok");
+    a.textContent = long || old ? "✕ CÓ SỰ CỐ" : bad ? "▲ " + bad + " NGUỒN LỖI" : "● HỆ THỐNG ỔN";
+  }).catch(function () { a.textContent = "? STATUS"; });
+})();
+</script>
+</body>
+</html>
