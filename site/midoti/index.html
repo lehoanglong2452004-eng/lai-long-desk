@@ -186,6 +186,11 @@ tr.grp td { color: var(--amber); font-size: 11px; letter-spacing: .08em; font-we
   </section>
 
   <section class="panel span3">
+    <div class="ph"><h2>SỔ GIAO DỊCH GIẤY · KẾT QUẢ THẬT, KHÔNG PHẢI BACKTEST</h2></div>
+    <div id="paper"></div>
+  </section>
+
+  <section class="panel span3">
     <div class="ph"><h2>CHẠY CHO TẤT CẢ CÁC MÃ</h2><button class="btn" id="runall">CHẠY</button><span class="dim small" id="ra-note">cùng khung và cùng bộ điều kiện đang chọn, mỗi mã dùng nguồn mặc định của nó</span></div>
     <div class="prog"><i id="ra-prog"></i></div>
     <div class="scroll tall"><table id="ra"></table></div>
@@ -208,6 +213,7 @@ tr.grp td { color: var(--amber); font-size: 11px; letter-spacing: .08em; font-we
 
 <script src="engine.js"></script>
 <script src="feeds.js"></script>
+<script src="../paper.js"></script>
 <script src="midoti.js"></script>
 <script>
 /* system status pill: green when every source worked in the last scan */

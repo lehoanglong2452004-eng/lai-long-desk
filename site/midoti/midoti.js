@@ -578,6 +578,9 @@
   // sources without streaming: reload the server file every 5 minutes
   setInterval(() => { if (B && !F.SRC[B.src].live && !document.hidden) load(); }, 300000);
 
+  // ---------- paper journal ----------
+  if (window.PAPER) PAPER.mount($("paper"), "MIDOTI", { base: "../", symbol: () => S.sym, risk: () => { const o = cur(); return [o.bal, o.riskD]; } });
+
   // ---------- start ----------
   $("view").value = S.view; $("hist").value = String(S.hist);
   if (!$("hist").value) { S.hist = 5000; $("hist").value = "5000"; }

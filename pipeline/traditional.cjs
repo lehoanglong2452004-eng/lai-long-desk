@@ -5,10 +5,13 @@
 const fs = require("fs");
 const path = require("path");
 const T = require("../site/traditional/engine.js");
+const M = require("../site/midoti/engine.js");
+const P = require("./paper.cjs");
 
 const DATA = process.env.LLD_DATA_DIR ? path.resolve(process.env.LLD_DATA_DIR) : path.join(__dirname, "..", "site", "data");
 const BARS = path.join(DATA, "bars");
 const OUT = path.join(DATA, "trad");
+const PAPER = path.join(DATA, "paper");
 const MIN_N = 8;  // fewer trades than this is not a result
 
 const r2 = (x) => (x == null || !isFinite(x) ? null : Math.round(x * 100) / 100);
@@ -39,12 +42,15 @@ function main() {
   const idx = JSON.parse(fs.readFileSync(path.join(BARS, "index.json"), "utf8"));
   fs.mkdirSync(OUT, { recursive: true });
   const assets = [], pooled = {}, errors = [], val = { asset: [], cls: [] };
+  const J = P.open(PAPER, Math.floor(Date.now() / 1000));
   for (const [w] of T.WINDOWS) pooled[w] = [];
   for (const a of idx.assets) {
     try {
       const bars = load(a.symbol);
       if (!Object.keys(bars).length) continue;
       const A = T.runAsset(bars, { costPct: T.COST[a.cls] ?? 0.05 });
+      // paper journal: write down this hour's signals, score the open ones
+      try { P.recordTrad(J, T, a.symbol, a.cls, A); P.recordMidoti(J, M, a.symbol, a.cls, bars, T.COST[a.cls] ?? 0.05); } catch (e) { errors.push(`${a.symbol} paper: ${e.message}`); }
       // validation sample: council-aligned closed trades of the last 12 months
       const vt = A.trades.filter((x) => x.agree && !x.open && x.t >= A.now - 365 * 86400);
       for (const x of T.PEGGED.includes(a.symbol) ? [] : vt) {  // pegged currencies stay out of the validation pools
@@ -95,7 +101,11 @@ function main() {
     keys.forEach((k, i) => grid[w][k].push(Math.round(q[i] * 1e4) / 1e4));
   }
   const t1 = Date.now();
-  const validation = { generated: Math.floor(Date.now() / 1000), asset: summary(T.validate(val.asset)), cls: summary(T.validate(val.cls)) };
+  const vA = T.validate(val.asset);
+  const star = new Set(vA ? vA.sig.map((c) => c.key) : []);
+  const validation = { generated: Math.floor(Date.now() / 1000), asset: summary(vA), cls: summary(T.validate(val.cls)) };
+  const ps = P.finish(J, star);
+  console.log(`paper: TRAD ${ps.sys.TRAD.all.signals} signals (${ps.sys.TRAD.all.closed} closed), MIDOTI ${ps.sys.MIDOTI.all.signals} (${ps.sys.MIDOTI.all.closed} closed)`);
   fs.writeFileSync(path.join(OUT, "validate.json"), JSON.stringify(validation));
   console.log(`validation ${((Date.now() - t1) / 1000).toFixed(1)}s: asset-level tested=${validation.asset && validation.asset.tested} significant=${validation.asset && validation.asset.nsig}`);
   fs.writeFileSync(path.join(OUT, "index.json"), JSON.stringify({ generated: Math.floor(Date.now() / 1000), runtime_s: (Date.now() - t0) / 1000, assets, grid, errors }));

@@ -36,6 +36,14 @@ class TraditionalTests(unittest.TestCase):
             self.assertEqual(set(a["win"]), {"12m", "6m", "3m", "1m", "1w", "1d"})
             self.assertAlmostEqual(a["council"]["up"] + a["council"]["dn"] <= 100, True)
             self.assertTrue(any(out["grid"]["12m"]))
+            # paper journal: written, and a second run over the same bars adds nothing
+            paper = json.loads((Path(d) / "paper" / "summary.json").read_text())
+            self.assertEqual(set(paper["sys"]), {"TRAD", "MIDOTI"})
+            subprocess.run([NODE, str(ROOT / "pipeline" / "traditional.cjs")], check=True, env={**os.environ, "LLD_DATA_DIR": d}, capture_output=True)
+            again = json.loads((Path(d) / "paper" / "summary.json").read_text())
+            for k in ("TRAD", "MIDOTI"):
+                self.assertEqual(again["sys"][k]["all"]["signals"], paper["sys"][k]["all"]["signals"])
+            self.assertEqual(again["started"], paper["started"])
 
     def test_signals_do_not_look_ahead(self):
         # every signal found on bars 0..k must be found identically when the run only sees bars 0..k

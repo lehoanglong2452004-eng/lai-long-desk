@@ -763,6 +763,9 @@
   }
   $("rank").addEventListener("click", (e) => { const tr = e.target.closest("tr[data-s]"); if (!tr || !ASSETS.find((a) => a.symbol === tr.dataset.s)) return; S.sym = tr.dataset.s; save(); $("asset").value = S.sym; load(); confirmMsg(`đổi sang ${esc(S.sym)} từ bảng xếp hạng.`); window.scrollTo({ top: 0, behavior: "smooth" }); });
 
+  // ---------- paper journal ----------
+  const paper = window.PAPER ? PAPER.mount($("paper"), "TRAD", { base: "../", symbol: () => S.sym, risk: () => [S.cap, S.risk] }) : null;
+
   // ---------- start ----------
   fillControls();
   (async () => {
