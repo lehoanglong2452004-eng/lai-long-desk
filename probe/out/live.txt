@@ -1,16 +1,7 @@
-200 8097 
-200 19635 orderflow/
-200 69871 orderflow/of.js
-200 24467 orderflow/ofcore.js
-200 24048 traditional/
-200 114778 data/trad/index.json
+200 3705 fs.js
+200 20145 orderflow/
  1
 traditional/ 1
 midoti/ 1
-news/ 1
 factory/ 1
-status/ 1
-spot aggTrades 200
-fapi 451
-HLXYZ ['xyz:XYZ100', 'xyz:TSLA', 'xyz:NVDA', 'xyz:GOLD', 'xyz:HOOD', 'xyz:INTC', 'xyz:PLTR', 'xyz:COIN', 'xyz:META', 'xyz:AAPL', 'xyz:MSFT', 'xyz:ORCL', 'xyz:GOOGL', 'xyz:AMZN', 'xyz:AMD', 'xyz:MU', 'xyz:SNDK', 'xyz:MSTR', 'xyz:CRCL', 'xyz:NFLX', 'xyz:COST', 'xyz:LLY', 'xyz:SKHX', 'xyz:TSM', 'xyz:JPY', 'xyz:EUR', 'xyz:SILVER', 'xyz:RIVN', 'xyz:BABA', 'xyz:CL', 'xyz:COPPER', 'xyz:NATGAS', 'xyz:URANIUM', 'xyz:ALUMINIUM', 'xyz:SMSN', 'xyz:PLATINUM', 'xyz:USAR', 'xyz:CRWV', 'xyz:URNM', 'xyz:PALLADIUM', 'xyz:DXY', 'xyz:GME', 'xyz:KR200', 'xyz:SOFTBANK', 'xyz:JP225', 'xyz:HYUNDAI', 'xyz:KIOXIA', 'xyz:EWY', 'xyz:EWJ', 'xyz:BRENTOIL', 'xyz:VIX', 'xyz:HIMS', 'xyz:SP500', 'xyz:DKNG', 'xyz:LITE', 'xyz:CORN', 'xyz:XLE', 'xyz:WHEAT', 'xyz:TTF', 'xyz:BX']
-[{"t":1791583200000,"T":1791583499999,"s":"xyz:GOLD","i":"5m","o":"4190.8","c":"4190.3","h":"4190.9","l":"4190.2","v":"1.9744","n":40},{"t":1791583500000,"T":1791583799999,"s":"xyz:GOLD","i":"5m","o":
+orderflow/ 1
