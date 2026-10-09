@@ -9,10 +9,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: rm -rf probe/out && mkdir -p probe/out && (LLD_DATA_DIR=probe/out/data timeout 1200 python3 -m pipeline.run > probe/out/run.log 2>&1; LLD_DATA_DIR=probe/out/data /usr/bin/time -v timeout 2400 python3 -m pipeline.factory > probe/out/factory.log 2>&1; LLD_DATA_DIR=probe/out/data python3 -m probe.crypto15 >> probe/out/factory.log 2>&1; LLD_DATA_DIR=probe/out/data /usr/bin/time -v node pipeline/traditional.cjs > probe/out/trad.log 2>&1; true)
       - run: |
-          cd probe/out/data && du -sh bars factory trad >> ../factory.log; ls -la bars | head -400 > ../bars_ls.txt
-          find bars -type f ! -name 'BTC_*' ! -name 'EURUSD_*' ! -name 'GOLD_*' ! -name 'NVDA_*' ! -name 'SP500_*' ! -name 'index.json' -delete; rm -rf factory
+          mkdir -p probe/out; B=https://lehoanglong2452004-eng.github.io/lai-long-desk
+          { for u in "" traditional/ traditional/trad.js traditional/engine.js data/trad/index.json data/bars/index.json data/bars/BTC_1W.json data/bars/BTC_5m.json data/bars/GOLD_1H.json; do curl -s -o /dev/null -w "%{http_code} %{size_download} $u\n" "$B/$u"; done
+            curl -s $B/ | grep -o 'TRUYỀN THỐNG' | head -1
+            curl -s $B/data/trad/index.json | python3 -c "import json,sys;d=json.load(sys.stdin);print(len(d['assets']),d['errors'][:3],d['runtime_s']);print([a['symbol'] for a in d['assets']]);print(sum(len(v) for v in d['grid'].values()))"
+            curl -s $B/data/latest.json | python3 -c "import json,sys;d=json.load(sys.stdin);print('market',len(d['market']),sum(m['cls']=='crypto' for m in d['market']))"
+          } > probe/out/live.txt 2>&1
       - run: |
           git config user.name probe; git config user.email probe@users.noreply.github.com
-          git add -A probe/out; git commit -m "probe results" -q; git push -q
+          git add -A probe/out; git commit -m "probe live" -q; git push -q
