@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: |
           mkdir -p probe/out; B=https://lehoanglong2452004-eng.github.io/lai-long-desk
-          { for u in "" traditional/ traditional/trad.js traditional/engine.js data/trad/index.json data/bars/index.json data/bars/BTC_1W.json data/bars/BTC_5m.json data/bars/GOLD_1H.json; do curl -s -o /dev/null -w "%{http_code} %{size_download} $u\n" "$B/$u"; done
+          { for u in "" traditional/ traditional/trad.js traditional/engine.js data/trad/index.json data/bars/index.json data/bars/BTC_1W.json data/bars/BTC_5m.json data/bars/GOLD_1H.json data/bars/BTC_1m.json data/bars/GOLD_1m.json; do curl -s -o /dev/null -w "%{http_code} %{size_download} $u\n" "$B/$u"; done
             curl -s $B/ | grep -o 'TRUYỀN THỐNG' | head -1
             curl -s $B/data/trad/index.json | python3 -c "import json,sys;d=json.load(sys.stdin);print(len(d['assets']),d['errors'][:3],d['runtime_s']);print([a['symbol'] for a in d['assets']]);print(sum(len(v) for v in d['grid'].values()))"
             curl -s $B/data/latest.json | python3 -c "import json,sys;d=json.load(sys.stdin);print('market',len(d['market']),sum(m['cls']=='crypto' for m in d['market']))"
