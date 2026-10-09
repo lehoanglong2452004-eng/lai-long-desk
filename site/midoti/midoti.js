@@ -141,6 +141,14 @@
       h += `<button class="chip ${chipOn(k, o) ? "on" : ""} ${na ? "na" : ""}" data-k="${k}" title="${esc(tip)}">${esc(label)}</button>`;
     }
     $("chips").innerHTML = h + "</div>";
+    // what is applied right now, in words
+    const on = CH.filter(([k, , , grp]) => chipOn(k, o) && !(grp.startsWith("Thời gian") && swing)).map(([, l]) => l);
+    $("cond-ok").innerHTML = `<b>✓ Đang áp dụng ${on.length} điều kiện</b> (${esc(S.preset === "tuy" ? "tự chọn" : PRESETS[S.preset] ? PRESETS[S.preset].name : "tự chọn")}): ${on.map(esc).join(" · ") || "không có điều kiện nào"}`;
+  }
+  let toastT = null;
+  function toast(html) {
+    const t = $("toast"); t.innerHTML = html; t.classList.add("on");
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 3500);
   }
   $("presets").addEventListener("click", (e) => {
     const b = e.target.closest("button[data-p]");
@@ -150,6 +158,7 @@
     COND_KEYS.forEach((k) => delete keep[k]);
     S.opt = Object.assign(keep, PRESETS[b.dataset.p].set);
     S.preset = b.dataset.p; save(); renderPresets(); renderChips(); rerun(true);
+    toast(`<b class="ok">✓ Đã chọn bộ "${esc(PRESETS[b.dataset.p].name)}":</b> ${esc(PRESETS[b.dataset.p].note)} Kết quả bên dưới đã tính lại.`);
   });
   $("chips").addEventListener("click", (e) => {
     const b = e.target.closest(".chip");
@@ -159,6 +168,8 @@
     else if (k === "warm") S.opt.warmMin = o.warmMin > 0 ? 0 : 30;
     else S.opt[k] = !o[k];
     S.preset = "tuy"; save(); renderPresets(); renderChips(); rerun(true);
+    const c = CH.find((x) => x[0] === k), now = chipOn(k, cur());
+    toast(`<b class="${now ? "ok" : "off"}">${now ? "✓ Đã BẬT" : "✕ Đã TẮT"}:</b> ${esc(c[1])}${c[2] ? ` · ${esc(c[2])}` : ""} Kết quả bên dưới đã tính lại.`);
   });
   function renderParams() {
     const o = cur(), a = asset();
@@ -172,6 +183,7 @@
     if (!k || !isFinite(v)) return;
     if (k === "costPct") S.costs[asset().cls] = v; else S.opt[k] = v;
     save(); rerun(true);
+    toast(`<b class="ok">✓ Đã đặt:</b> ${esc((PARAMS.find((x) => x[0] === k) || [k, k])[1])} = ${v}. Kết quả bên dưới đã tính lại.`);
   });
 
   // ---------- loading and live ----------

@@ -65,6 +65,11 @@ tr.sel td { background: rgba(255, 176, 0, .12) !important; }
 tr.grp td { color: var(--amber); font-size: 11px; letter-spacing: .08em; font-weight: 700; background: #0a0e14; padding-top: 8px; }
 .how { white-space: normal; font-size: 12px; } .how h4 { margin: 10px 0 4px; color: var(--amber); font-size: 12px; } .how p { margin: 4px 0; }
 .busy { color: var(--amber); font-size: 12px; }
+.confirm { margin-top: 8px; font-size: 12px; color: var(--text); background: rgba(34,197,94,.08); border: 1px solid rgba(34,197,94,.35); border-radius: 4px; padding: 6px 10px; white-space: normal; }
+.confirm b { color: var(--green); }
+.toast { position: fixed; left: 50%; bottom: 18px; transform: translate(-50%, 20px); opacity: 0; z-index: 40; max-width: min(560px, calc(100vw - 32px)); background: #0d1117; border: 1px solid var(--green); color: var(--text); border-radius: 6px; padding: 8px 12px; font-size: 12px; white-space: normal; transition: opacity .25s, transform .25s; pointer-events: none; }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+.toast b { color: var(--green); }
 /* validation */
 .funnel { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin: 4px 0 10px; }
 .fn { border: 1px solid var(--line); border-radius: 4px; padding: 6px 8px; font-size: 11px; color: var(--dim); white-space: normal; }
@@ -118,6 +123,7 @@ table.hm td.c { position: relative; }
       <label class="chk"><input type="checkbox" id="agree"> Chỉ tính lệnh thuận hội đồng ≥ <input type="number" id="cmin" step="5" min="50" max="100" style="width:56px"> %</label>
       <span class="busy" id="busy"></span>
     </div>
+    <div class="confirm" id="confirm"></div>
   </section>
 
   <section class="panel span3">
@@ -128,13 +134,13 @@ table.hm td.c { position: relative; }
   </section>
 
   <section class="panel span3">
-    <div class="ph"><h2 id="h-hm">CHIẾN LƯỢC NÀO ĐANG HIỆU QUẢ?</h2><span class="seg" id="scope"><button data-s="one" class="on">Mã này</button><button data-s="all">Cả hệ thống</button></span></div>
+    <div class="ph"><h2 id="h-hm">CHIẾN LƯỢC NÀO ĐANG HIỆU QUẢ?</h2><span class="seg" id="scope"><button data-s="one" class="on">Chỉ mã đang chọn</button><button data-s="all">Gộp cả hệ thống</button></span></div>
     <div class="scroll"><table class="hm" id="hm"></table></div>
-    <p class="hint">Mỗi ô: R trung bình mỗi lệnh (đã trừ phí), tỷ lệ thắng và số lệnh trong giai đoạn đang chọn. Xanh là đang kiếm tiền, đỏ là đang mất tiền, xám là chưa đủ 8 lệnh để kết luận. ★ = vượt kiểm định thống kê (xem phần KIỂM ĐỊNH bên dưới); ô xanh không có ★ có thể chỉ là may mắn. "Cả hệ thống" gộp mọi mã, máy chủ tính mỗi giờ.</p>
+    <p class="hint">Mỗi ô: R trung bình mỗi lệnh (đã trừ phí), tỷ lệ thắng và số lệnh trong giai đoạn đang chọn. Xanh là đang kiếm tiền, đỏ là đang mất tiền, xám là chưa đủ 8 lệnh để kết luận. ★ = vượt kiểm định thống kê (xem phần KIỂM ĐỊNH bên dưới); ô xanh không có ★ có thể chỉ là may mắn. Nút "Chỉ …" tính riêng mã đang chọn ở ô Sản phẩm; nút "Gộp … mã" cộng dồn kết quả của mọi mã trong hệ thống (máy chủ tính mỗi lần quét) để xem mô hình nào hiệu quả chung.</p>
   </section>
 
   <section class="panel span3" id="val">
-    <div class="ph"><h2 id="h-val">KIỂM ĐỊNH: Ô XANH NÀO ĐÁNG TIN?</h2><span class="seg" id="vscope"><button data-s="one" class="on">Mã này</button><button data-s="all">Cả hệ thống</button></span><span class="dim small" id="v-sub"></span></div>
+    <div class="ph"><h2 id="h-val">KIỂM ĐỊNH: Ô XANH NÀO ĐÁNG TIN?</h2><span class="seg" id="vscope"><button data-s="one" class="on">Chỉ mã đang chọn</button><button data-s="all">Gộp cả hệ thống</button></span><span class="dim small" id="v-sub"></span></div>
     <div class="funnel" id="funnel"></div>
     <div class="vgrid">
       <div><h3 class="vh">Ảo tưởng và thực tế: cùng một bộ lệnh, 4 cách chọn</h3><canvas class="sm" id="wf"></canvas>
@@ -215,6 +221,7 @@ table.hm td.c { position: relative; }
 </main>
 <footer class="foot"><p>Phân tích thuần giá và khối lượng. Chỉ để tham khảo, người ra quyết định là bạn.</p></footer>
 <div class="tip" id="tip"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="engine.js"></script>
 <script src="trad.js"></script>

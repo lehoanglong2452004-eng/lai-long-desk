@@ -42,12 +42,27 @@
   }
 
   // ---------- controls ----------
+  // ---------- confirmation of what is applied ----------
+  let toastT = null;
+  function confirmMsg(msg) {
+    const t = $("toast");
+    t.innerHTML = `<b>✓ Đã áp dụng:</b> ${msg}`; t.classList.add("on");
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 3500);
+    renderConfirm();
+  }
+  function renderConfirm() {
+    const n = (SRV && SRV.assets && SRV.assets.length) || ASSETS.length;
+    $("confirm").innerHTML = `<b>✓ Đang áp dụng:</b> ${esc(S.sym)} · khung ${TFL[S.tf]} · giai đoạn ${WL[S.win]} · vốn $${(+S.cap).toLocaleString("en-US")} · rủi ro ${S.risk}% mỗi lệnh ($${Math.round(S.cap * S.risk / 100).toLocaleString("en-US")}) · đòn bẩy tối đa ${S.lev}x · phí ${asset ? costOf(asset) : "–"}% · ${S.agree ? `chỉ tính lệnh thuận hội đồng ≥ ${S.cmin}%` : "tính mọi lệnh, kể cả ngược hội đồng"} · bảng màu: ${S.scope === "all" ? `gộp ${n} mã` : `chỉ ${esc(S.sym)}`} · kiểm định: ${S.vscope === "all" ? `gộp ${n} mã` : `chỉ ${esc(S.sym)}`}`;
+  }
   function fillControls() {
     $("tfs").innerHTML = T.TFS.map((tf) => `<button data-tf="${tf}" class="${tf === S.tf ? "on" : ""}">${tf}</button>`).join("");
     $("wins").innerHTML = T.WINDOWS.map(([w]) => `<button data-w="${w}" class="${w === S.win ? "on" : ""}">${WL[w]}</button>`).join("");
     $("cap").value = S.cap; $("risk").value = S.risk; $("lev").value = S.lev; $("agree").checked = S.agree; $("cmin").value = S.cmin;
     $("scope").querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.s === S.scope));
     $("vscope").querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.s === S.vscope));
+    const n = (SRV && SRV.assets && SRV.assets.length) || ASSETS.length || "";
+    for (const id of ["scope", "vscope"]) { const bs = $(id).querySelectorAll("button"); bs[0].textContent = `Chỉ ${S.sym}`; bs[1].textContent = `Gộp ${n} mã`; bs[0].title = `Chỉ tính trên ${S.sym}, mã đang chọn ở ô Sản phẩm`; bs[1].title = "Cộng dồn kết quả của mọi mã trong hệ thống, máy chủ tính mỗi lần quét"; }
+    renderConfirm();
   }
   function fillAssets() {
     const by = {};
@@ -57,16 +72,16 @@
     $("asset").value = S.sym;
   }
   $("tfs").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; setTf(b.dataset.tf); });
-  $("wins").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; S.win = b.dataset.w; save(); fillControls(); renderAll(false); });
-  $("scope").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; S.scope = b.dataset.s; save(); fillControls(); renderHeat(); });
-  $("vscope").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; S.vscope = b.dataset.s; save(); fillControls(); renderVal(); });
-  $("asset").addEventListener("change", () => { S.sym = $("asset").value; save(); load(); });
-  for (const id of ["cap", "risk", "lev"]) $(id).addEventListener("change", () => { const v = +$(id).value; if (v > 0) { S[id] = v; save(); renderKpis(); renderLog(); } });
-  $("cost").addEventListener("change", () => { const v = +$("cost").value; if (v >= 0 && asset) { S.costs[asset.cls] = v; save(); run(); } });
-  $("agree").addEventListener("change", () => { S.agree = $("agree").checked; save(); renderAll(false); });
-  $("cmin").addEventListener("change", () => { const v = +$("cmin").value; if (v >= 50 && v <= 100) { S.cmin = v; save(); run(); } });
+  $("wins").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; S.win = b.dataset.w; save(); fillControls(); renderAll(false); confirmMsg(`giai đoạn ${WL[S.win]}: bảng màu, phá vỡ, biên, kết quả và nhật ký chỉ tính các lệnh trong ${WL[S.win]} gần nhất.`); });
+  $("scope").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; S.scope = b.dataset.s; save(); fillControls(); renderHeat(); confirmMsg(S.scope === "all" ? "bảng màu gộp kết quả của mọi mã trong hệ thống." : `bảng màu chỉ tính riêng ${esc(S.sym)}.`); });
+  $("vscope").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; S.vscope = b.dataset.s; save(); fillControls(); renderVal(); confirmMsg(S.vscope === "all" ? "kiểm định trên mọi mã trong hệ thống (mỗi ô là một mã × mô hình × khung)." : `kiểm định chỉ trên ${esc(S.sym)}.`); });
+  $("asset").addEventListener("change", () => { S.sym = $("asset").value; save(); load(); confirmMsg(`đổi sang ${esc(S.sym)}: đang tải nến 7 khung và chạy lại toàn bộ backtest.`); });
+  for (const id of ["cap", "risk", "lev"]) $(id).addEventListener("change", () => { const v = +$(id).value; if (v > 0) { S[id] = v; save(); renderKpis(); renderLog(); confirmMsg(`vốn $${(+S.cap).toLocaleString("en-US")}, rủi ro ${S.risk}% = $${Math.round(S.cap * S.risk / 100).toLocaleString("en-US")} mỗi lệnh, đòn bẩy tối đa ${S.lev}x. Cột $ và lãi/lỗ đã tính lại.`); } });
+  $("cost").addEventListener("change", () => { const v = +$("cost").value; if (v >= 0 && asset) { S.costs[asset.cls] = v; save(); run(); confirmMsg(`phí + trượt giá ${v}% cho mọi mã nhóm ${CLS[asset.cls] || asset.cls}; backtest đang chạy lại.`); } });
+  $("agree").addEventListener("change", () => { S.agree = $("agree").checked; save(); renderAll(false); confirmMsg(S.agree ? `chỉ tính lệnh cùng hướng với phe chiếm ≥ ${S.cmin}% hội đồng.` : "tính mọi lệnh, kể cả lệnh ngược hội đồng."); });
+  $("cmin").addEventListener("change", () => { const v = +$("cmin").value; if (v >= 50 && v <= 100) { S.cmin = v; save(); run(); confirmMsg(`ngưỡng hội đồng ${v}%: một phe phải chiếm từ ${v}% phiếu trở lên mới được vào lệnh theo hướng đó.`); } });
   $("revote").addEventListener("click", () => renderCouncil(true));
-  function setTf(tf) { S.tf = tf; save(); fillControls(); sel = null; view.end = null; renderAll(false); }
+  function setTf(tf) { S.tf = tf; save(); fillControls(); sel = null; view.end = null; renderAll(false); confirmMsg(`khung ${TFL[tf]}: biểu đồ, Elliott, phá vỡ và biên chuyển sang khung ${TFL[tf]}.`); }
 
   // ---------- load and run ----------
   async function load() {
@@ -689,7 +704,7 @@
     }
     $("rank").innerHTML = h;
   }
-  $("rank").addEventListener("click", (e) => { const tr = e.target.closest("tr[data-s]"); if (!tr || !ASSETS.find((a) => a.symbol === tr.dataset.s)) return; S.sym = tr.dataset.s; save(); $("asset").value = S.sym; load(); window.scrollTo({ top: 0, behavior: "smooth" }); });
+  $("rank").addEventListener("click", (e) => { const tr = e.target.closest("tr[data-s]"); if (!tr || !ASSETS.find((a) => a.symbol === tr.dataset.s)) return; S.sym = tr.dataset.s; save(); $("asset").value = S.sym; load(); confirmMsg(`đổi sang ${esc(S.sym)} từ bảng xếp hạng.`); window.scrollTo({ top: 0, behavior: "smooth" }); });
 
   // ---------- start ----------
   fillControls();
@@ -700,7 +715,7 @@
     } catch (e) { /* fall back to the bar index */ }
     if (!ASSETS.length) try { const j = await getJSON(`../data/bars/index.json?v=${ver()}`); ASSETS = j.assets.map((a) => ({ symbol: a.symbol, cls: a.cls })); } catch (e) { /* nothing yet */ }
     fillAssets();
-    getJSON(`../data/trad/index.json?v=${ver()}`).then((j) => { SRV = j; renderHeat(); renderRank(); }).catch(() => { renderRank(); });
+    getJSON(`../data/trad/index.json?v=${ver()}`).then((j) => { SRV = j; fillControls(); renderHeat(); renderRank(); }).catch(() => { renderRank(); });
     getJSON(`../data/trad/validate.json?v=${ver()}`).then((j) => { SRVV = j; renderVal(); }).catch(() => { renderVal(); });
     load();
   })();
