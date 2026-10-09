@@ -75,11 +75,19 @@ RETENTION_MS = 8 * 3600 * 1000
 PAUSE = 0.2  # seconds between contract lookups, to stay polite with Yahoo
 
 
-def yahoo_quote(ticker):
-    """Latest price, change vs previous close and session volume from Yahoo's chart metadata."""
+def yahoo_quote(ticker, probe=False):
+    """Latest price, change vs previous close and session volume from Yahoo's chart metadata.
+
+    probe=True: the ticker is a guessed futures expiry; a 404 means "not listed" and is not a source error.
+    """
     def run():
         t = urllib.parse.quote(ticker)
-        raw = _get(f"https://query1.finance.yahoo.com/v8/finance/chart/{t}?range=5d&interval=1d", retries=2)
+        try:
+            raw = _get(f"https://query1.finance.yahoo.com/v8/finance/chart/{t}?range=5d&interval=1d", retries=2)
+        except Exception as e:  # noqa: BLE001
+            if probe and "404" in str(e):
+                return None
+            raise
         res = json.loads(raw)["chart"]["result"][0]
         m = res["meta"]
         closes = [c for c in res["indicators"]["quote"][0].get("close") or [] if c is not None]
@@ -134,7 +142,7 @@ def futures_curves(now=None):
                 m, y = 1, y + 1
         got = []
         for sym, label in cands:
-            q = yahoo_quote(sym)
+            q = yahoo_quote(sym, probe=True)
             if q and q["price"]:
                 got.append({"symbol": sym, "code": label, "price": q["price"], "changePct": q["changePct"],
                             "volume": q["volume"] or 0})

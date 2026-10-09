@@ -37,7 +37,7 @@ class NewsDeskTests(unittest.TestCase):
 
     def test_futures_curve_picks_active_contract(self):
         vols = {}
-        def fake(sym):
+        def fake(sym, probe=False):
             v = vols.setdefault(sym, 1000 - 100 * len(vols))
             return {"price": 100 + len(vols), "changePct": 0.1, "volume": v}
         orig = news_desk.yahoo_quote
