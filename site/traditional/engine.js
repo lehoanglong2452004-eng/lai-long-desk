@@ -234,13 +234,14 @@
     const out = [];
     for (const g of R) {
       let busy = -1;
-      for (let i = g.found + 1; i <= Math.min(g.end, B.c.length - 2); i++) {
+      // an open range also scans its last bar, so a signal on the newest closed bar shows (it fills at the next open)
+      for (let i = g.found + 1; i <= (g.open ? B.c.length - 1 : Math.min(g.end, B.c.length - 2)); i++) {
         if (i <= busy) continue;
         const spring = B.l[i] < g.bot - 0.1 * A[i] && B.c[i] > g.bot;
         const ut = B.h[i] > g.top + 0.1 * A[i] && B.c[i] < g.top;
         if (!spring && !ut) continue;
         const dir = spring ? 1 : -1;
-        const sl = widen(dir === 1 ? B.l[i] - 0.1 * A[i] : B.h[i] + 0.1 * A[i], B.o[i + 1], dir, A[i]);
+        const sl = widen(dir === 1 ? B.l[i] - 0.1 * A[i] : B.h[i] + 0.1 * A[i], i + 1 < B.c.length ? B.o[i + 1] : B.c[i], dir, A[i]);
         const tr = simulate(B, i + 1, dir, sl, [[g.mid, 0.5], [dir === 1 ? g.top : g.bot, 0.5]], o);
         out.push({ kind: spring ? "SPRING" : "UPTHRUST", i, t: B.t[i], dir, vol: RV[i] >= o.volMin, rv: RV[i], range: g, prior: g.prior, trade: tr });
         if (tr) busy = tr.open ? Infinity : tr.exitI;
@@ -277,7 +278,7 @@
       let busy = -1;
       for (const box of boxes) {
         const i = box.brk;
-        if (i === undefined || i <= busy || i + 1 >= B.c.length) continue;
+        if (i === undefined || i <= busy) continue;
         const tr = simulate(B, i + 1, dir, box.bot - dir * 0.1 * A[i], [], o, (j) => {
           const b = boxes[lastIdx(at, j)];
           return b && b.at > i ? b.bot - dir * 0.1 * A[j] : NaN;
@@ -352,13 +353,13 @@
     for (const g of R) {
       let busy = -1;
       const h = g.top - g.bot;
-      for (let i = g.found + 1; i <= Math.min(g.end - 1, B.c.length - 2); i++) {
+      for (let i = g.found + 1; i <= (g.open ? B.c.length - 1 : Math.min(g.end - 1, B.c.length - 2)); i++) {
         if (i <= busy) continue;
         const atBot = B.l[i] <= g.bot + 0.15 * h && B.c[i] > B.o[i] && B.c[i] > g.bot;
         const atTop = B.h[i] >= g.top - 0.15 * h && B.c[i] < B.o[i] && B.c[i] < g.top;
         if (!atBot && !atTop) continue;
         const dir = atBot ? 1 : -1;
-        const sl = widen(dir === 1 ? Math.min(B.l[i], g.bot) - 0.25 * A[i] : Math.max(B.h[i], g.top) + 0.25 * A[i], B.o[i + 1], dir, A[i]);
+        const sl = widen(dir === 1 ? Math.min(B.l[i], g.bot) - 0.25 * A[i] : Math.max(B.h[i], g.top) + 0.25 * A[i], i + 1 < B.c.length ? B.o[i + 1] : B.c[i], dir, A[i]);
         const tr = simulate(B, i + 1, dir, sl, [[g.mid, 0.5], [dir === 1 ? g.top : g.bot, 0.5]], o);
         out.push({ kind: dir === 1 ? "R_LONG" : "R_SHORT", i, t: B.t[i], dir, vol: RV[i] >= o.volMin, rv: RV[i], range: g, prior: g.prior, trade: tr });
         if (tr) busy = tr.open ? Infinity : tr.exitI;

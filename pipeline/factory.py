@@ -17,6 +17,7 @@ they are rebuilt every hour). Run after pipeline.run:
     python -m pipeline.factory
 """
 import bisect
+import concurrent.futures as cf
 import datetime as dt
 import json
 import time
@@ -159,8 +160,10 @@ def write_bars(assets):
     out = DATA / "bars"
     out.mkdir(parents=True, exist_ok=True)
     index = []
+    # intraday downloads are I/O bound: a few at a time keeps the hourly scan inside its time limit
+    with cf.ThreadPoolExecutor(6) as pool:
+        list(pool.map(intraday, assets))
     for a in assets:
-        intraday(a)
         tfs = {}
         for f, bars in a.get("bars", {}).items():
             if not bars:
