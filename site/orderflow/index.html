@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Lai Long Desk Order Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<script>
+window.addEventListener("error", function (e) {
+  var b = document.getElementById("lld-err");
+  if (!b) { b = document.createElement("div"); b.id = "lld-err"; b.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:99;background:#b91c1c;color:#fff;font:13px/1.4 sans-serif;padding:8px 12px"; (document.body || document.documentElement).appendChild(b); }
+  b.textContent = "Lỗi trang: " + (e.message || "unknown") + " (" + navigator.userAgent + ")";
+});
+</script>
+<style>
+:root { --buy: #22c55e; --sell: #f0524f; --ln: #22c55e; --sn: #f0524f; --sc: #4aa8ff; --lc: #ffb000; --ice: #4aa8ff; --sw: #22e3ff; --stop: #e879f9; --pat: #c77dff; }
+.ctl { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.ctl label, .ctl-l { font-size: 11px; color: var(--dim); display: inline-flex; align-items: center; gap: 6px; }
+select, .ctl input { background: #000; color: var(--text); border: 1px solid var(--line); border-radius: 3px; font: inherit; font-size: 12px; padding: 3px 6px; }
+.ctl input[type=number] { width: 90px; text-align: right; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; flex-wrap: wrap; }
+.seg button { font: inherit; font-size: 12px; background: none; color: var(--dim); border: 0; border-right: 1px solid var(--line); padding: 3px 9px; cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button.on { background: var(--amber); color: #000; font-weight: 700; }
+.lgrp { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
+.lgrp .gl { font-size: 10.5px; color: var(--amber); letter-spacing: .06em; min-width: 150px; }
+.chip { font: inherit; font-size: 11px; border: 1px solid var(--line); background: none; color: var(--dim); border-radius: 999px; padding: 2px 9px; cursor: pointer; }
+.chip.on { border-color: var(--amber); color: var(--text); background: rgba(255,176,0,.1); }
+.chip.on::before { content: "✓ "; color: var(--green); }
+.chip small { color: var(--dim); }
+.confirm { margin-top: 8px; font-size: 12px; color: var(--text); background: rgba(34,197,94,.08); border: 1px solid rgba(34,197,94,.35); border-radius: 4px; padding: 6px 10px; white-space: normal; }
+.confirm b { color: var(--green); }
+.toast { position: fixed; left: 50%; bottom: 18px; transform: translate(-50%, 20px); opacity: 0; z-index: 40; max-width: min(560px, calc(100vw - 32px)); background: #0d1117; border: 1px solid var(--green); color: var(--text); border-radius: 6px; padding: 8px 12px; font-size: 12px; white-space: normal; transition: opacity .25s, transform .25s; pointer-events: none; }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+.toast b { color: var(--green); }
+.stat { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 11px; color: var(--dim); margin-top: 8px; }
+.stat b { color: var(--text); font-weight: 600; }
+.ld.ok::before { background: var(--green); } .ld.bad::before { background: var(--red); animation: none; }
+#cv { width: 100%; height: 600px; display: block; touch-action: pan-y; background: #05070a; border-radius: 4px; cursor: crosshair; }
+.zoom { display: inline-flex; gap: 4px; }
+.zoom button { font: inherit; font-size: 12px; background: none; border: 1px solid var(--line); color: var(--text); border-radius: 3px; padding: 2px 9px; cursor: pointer; }
+.legend { font-size: 11px; color: var(--dim); display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-right: 4px; }
+.legend i.ln { height: 3px; vertical-align: 3px; width: 14px; }
+.tip { position: fixed; z-index: 30; pointer-events: none; background: rgba(13, 17, 23, .96); border: 1px solid var(--line); border-radius: 4px; padding: 6px 8px; font-size: 11px; max-width: 300px; white-space: normal; display: none; }
+.tip b { color: var(--text); }
+.read { white-space: normal; font-size: 12.5px; }
+.read li { margin: 3px 0; }
+.read .bias { font-size: 15px; font-weight: 700; margin: 4px 0 8px; }
+.badge { font-size: 10px; border: 1px solid var(--line); border-radius: 3px; padding: 0 5px; color: var(--dim); margin-left: 6px; letter-spacing: 0; font-weight: 400; }
+.badge.ex { border-color: rgba(34,197,94,.5); color: var(--green); }
+.badge.es { border-color: rgba(255,176,0,.5); color: var(--amber); }
+table.lad { width: 100%; border-collapse: collapse; font-size: 11px; }
+table.lad td { padding: 1px 4px; text-align: right; position: relative; white-space: nowrap; }
+table.lad td.px { text-align: center; color: var(--text); width: 28%; }
+table.lad td.bq, table.lad td.aq { width: 22%; }
+table.lad td .bar { position: absolute; top: 1px; bottom: 1px; opacity: .28; }
+table.lad td.bq .bar { right: 0; background: var(--buy); }
+table.lad td.aq .bar { left: 0; background: var(--sell); }
+table.lad td span { position: relative; }
+table.lad tr.mid td { border-top: 1px solid var(--amber); }
+table.lad tr.wall td.px { color: var(--amber); font-weight: 700; }
+table.lad tr.ice td.px::after { content: " I"; color: var(--ice); font-weight: 700; }
+table.lad td.tv { color: var(--dim); font-size: 10px; }
+.pw { display: flex; height: 18px; border-radius: 3px; overflow: hidden; margin: 6px 0; font-size: 11px; font-weight: 700; color: #000; }
+.pw div { display: flex; align-items: center; justify-content: center; min-width: 0; overflow: hidden; white-space: nowrap; }
+canvas.sm { width: 100%; height: 180px; display: block; background: #05070a; border-radius: 4px; }
+#tape { height: 230px; }
+#tpo { height: 520px; width: 100%; display: block; background: #05070a; }
+.tpo-wrap { overflow-x: auto; }
+.evs { max-height: 330px; overflow: auto; }
+table.ev td { font-size: 11px; padding: 2px 6px; }
+table.ev tr { cursor: pointer; }
+table.ev tr:hover td { background: rgba(255,176,0,.08); }
+table.cs { border-collapse: collapse; font-size: 11px; }
+table.cs th, table.cs td { padding: 2px 6px; text-align: right; border: 1px solid #10151c; white-space: nowrap; }
+table.cs th { position: sticky; left: 0; background: var(--panel); text-align: left; color: var(--dim); font-weight: 400; z-index: 1; }
+.cs-wrap { overflow-x: auto; }
+.kv { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.kv div { border: 1px solid var(--line); border-radius: 4px; padding: 6px 8px; font-size: 11px; color: var(--dim); }
+.kv b { display: block; font-size: 15px; color: var(--text); margin-top: 2px; }
+.how { white-space: normal; font-size: 12px; } .how h4 { margin: 10px 0 4px; color: var(--amber); font-size: 12px; } .how p { margin: 4px 0; }
+table.src td { white-space: normal; font-size: 11px; }
+.busy { color: var(--amber); font-size: 12px; }
+@media (max-width: 1100px) { .kv { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 720px) {
+  .grid { grid-template-columns: minmax(0, 1fr); padding: 10px 16px; }
+  .span2, .span3 { grid-column: span 1; }
+  #cv { height: 520px; }
+  .brand .dim { display: none; }
+  .top { position: static; }
+  .lgrp .gl { min-width: 0; width: 100%; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="logo">龍</span> LAI LONG DESK <span class="dim">▸ ORDER FLOW</span></div>
+  <div class="top-right">
+    <a class="btn" href="../">QUANT</a>
+    <a class="btn" href="../factory/">NHÀ MÁY</a>
+    <a class="btn" href="../traditional/">TRUYỀN THỐNG</a>
+    <a class="btn" href="../orderflow/" style="color:var(--amber);border-color:var(--amber)">ORDER FLOW</a>
+    <a class="btn" href="../midoti/">MIDOTI</a>
+    <a class="btn" href="../news/">TIN TỨC</a>
+    <a id="sys" class="pill" data-base="../" href="../status/" title="Tình trạng hệ thống">…</a>
+  </div>
+</header>
+
+<main class="grid">
+  <section class="panel span3">
+    <div class="ctl">
+      <label>Sản phẩm <select id="sym"></select></label>
+      <label>Sàn <select id="venue">
+        <option value="auto">Tự động</option>
+        <option value="bf">Binance Futures</option>
+        <option value="bs">Binance Spot</option>
+        <option value="hl">Hyperliquid</option>
+      </select></label>
+      <span class="ctl-l">Khung <span class="seg" id="tfs"></span></span>
+      <span class="ctl-l">Bước giá mỗi ô <span class="seg" id="rows"></span></span>
+      <span class="ctl-l">Big trades <span class="seg" id="bigm"><button data-v="a">Thích ứng</button><button data-v="f">Cố định</button></span></span>
+      <label>Ngưỡng cố định ($) <input type="number" id="bigu" min="0" step="10000" placeholder="tự động"></label>
+      <label>Tỷ lệ imbalance <select id="imb"><option>2</option><option>2.5</option><option>3</option><option>4</option></select></label>
+    </div>
+    <div id="layers"></div>
+    <div class="confirm" id="confirm"></div>
+    <div class="stat" id="stat"></div>
+  </section>
+
+  <section class="panel span3">
+    <div class="ph"><h2 id="h-chart">FOOTPRINT</h2>
+      <span class="zoom"><button id="zout" title="Thu nhỏ">−</button><button id="zin" title="Phóng to">+</button><button id="vin" title="Giãn giá theo chiều dọc">↕+</button><button id="vout" title="Co giá theo chiều dọc">↕−</button><button id="znow">Về hiện tại</button></span>
+      <span class="dim small">Kéo ngang để xem quá khứ · + và ↕+ để phóng to tới khi thấy số trong từng ô (bán × mua)</span></div>
+    <canvas id="cv"></canvas>
+    <div class="legend" id="legend"></div>
+  </section>
+
+  <section class="panel span3">
+    <div class="ph"><h2>ĐỌC NHANH DÒNG LỆNH</h2><span class="dim small">tự cập nhật mỗi 2 giây · chỉ là cảnh báo, người quyết định là bạn</span></div>
+    <div class="read" id="read"></div>
+  </section>
+
+  <section class="panel">
+    <div class="ph"><h2>DOM · SỔ LỆNH</h2><span class="badge ex">dữ liệu sàn</span></div>
+    <div class="dim small" id="pw-l">DOM Power: tiền đặt mua so với đặt bán trong 20 mức giá gần nhất</div>
+    <div class="pw" id="pw"></div>
+    <canvas class="sm" id="pwc" style="height:70px"></canvas>
+    <table class="lad" id="lad"></table>
+    <p class="hint">Cột giữa là giá (gộp theo bước giá của biểu đồ). Màu vàng: DOM Level (lệnh chờ lớn gấp 4 lần mức thường). Chữ I xanh: iceberg. 12 mức giá mỗi bên. Cột mờ: khối lượng đã khớp ở giá đó 5 phút qua (bán · mua).</p>
+  </section>
+
+  <section class="panel">
+    <div class="ph"><h2>BĂNG LỆNH · ORDER FLOW</h2><span class="badge ex">từng lệnh khớp</span></div>
+    <div class="kv" id="spd"></div>
+    <canvas class="sm" id="tape"></canvas>
+    <p class="hint">Trên: Order Flow, mỗi bong bóng là một lệnh chủ động trong 2 phút qua (xanh mua, đỏ bán, to = nhiều tiền). Dưới: Order Flow Rhythm, số lệnh mua (lên) và bán (xuống) từng giây.</p>
+  </section>
+
+  <section class="panel">
+    <div class="ph"><h2>SỰ KIỆN</h2></div>
+    <span class="seg" id="evf"></span>
+    <div class="evs"><table class="ev" id="ev"></table></div>
+    <p class="hint">Bấm một dòng để nhảy biểu đồ tới thời điểm đó.</p>
+  </section>
+
+  <section class="panel span2">
+    <div class="ph"><h2>OI ANALYZER · HỢP ĐỒNG MỞ</h2><span class="badge ex" id="oi-src">dữ liệu sàn</span></div>
+    <div class="kv" id="oikv"></div>
+    <canvas class="sm" id="oic" style="margin-top:8px"></canvas>
+    <div class="legend"><span><i style="background:var(--ln)"></i>Giá lên + OI tăng: long mới vào</span><span><i style="background:var(--sn)"></i>Giá xuống + OI tăng: short mới vào</span><span><i style="background:var(--sc)"></i>Giá lên + OI giảm: short đóng lệnh</span><span><i style="background:var(--lc)"></i>Giá xuống + OI giảm: long đóng lệnh</span></div>
+    <p class="hint" id="oi-read"></p>
+  </section>
+
+  <section class="panel">
+    <div class="ph"><h2>VÙNG THANH LÝ ƯỚC TÍNH</h2><span class="badge es">ước tính</span></div>
+    <div id="lz"></div>
+    <p class="hint">Thay cho Margin Zones (cần dữ liệu ký quỹ CME có phí). Mỗi lần OI tăng, hệ thống giả định vị thế mới mở ở giá nến đó với đòn bẩy 5x 10%, 10x 30%, 25x 30%, 50x 20%, 100x 10%, rồi tính giá bị thanh lý. Vùng bị giá quét qua thì xoá. Giá hay bị hút về vùng dày.</p>
+  </section>
+
+  <section class="panel span3">
+    <div class="ph"><h2>MARKET PROFILE · TPO</h2><span class="seg" id="tpod"><button data-v="0" class="on">Hôm nay</button><button data-v="1">Hôm qua</button></span><span class="badge ex">nến 1 phút</span><span class="dim small" id="tpo-sum"></span></div>
+    <div class="tpo-wrap"><canvas id="tpo"></canvas></div>
+    <p class="hint">Mỗi chữ cái là 30 phút giá đi qua mức đó (A = 07:00 giờ VN, phiên tính theo ngày UTC). Vùng sáng là Value Area (70% thời gian), vạch vàng là POC, khung xanh là Initial Balance (giờ đầu tiên).</p>
+  </section>
+
+  <section class="panel span3">
+    <div class="ph"><h2>CLUSTER STATISTIC</h2><span class="dim small">mỗi cột là một nến, mới nhất bên phải; màu đậm = giá trị lớn so với các nến khác</span></div>
+    <div class="cs-wrap" id="csw"><table class="cs" id="cs"></table></div>
+  </section>
+
+  <section class="panel span3">
+    <div class="ph"><h2>CÁCH ĐỌC VÀ ĐỘ CHÍNH XÁC</h2></div>
+    <details class="how" open>
+      <summary class="dim">Công cụ nào là dữ liệu thật, công cụ nào là ước tính</summary>
+      <div class="scroll"><table class="src">
+        <tr><th>Công cụ</th><th>Cách làm</th><th>Độ chính xác</th></tr>
+        <tr><td>Footprint, Delta, CVD, Cluster Search, Cluster Statistic</td><td>Cộng từng lệnh khớp theo giá và theo bên chủ động (mua quét giá bán hay bán đập giá mua). Khi mở trang, hệ thống tải lại lệnh khớp tới 4 giờ trước (Binance) rồi nối với dữ liệu trực tiếp. Nến cũ hơn vẫn có delta chính xác từ khối lượng mua chủ động của sàn, chỉ không có số trong từng ô.</td><td>Chính xác (Binance). Hyperliquid chỉ có lệnh khớp từ lúc mở trang; delta nến cũ là ước tính.</td></tr>
+        <tr><td>Bar's Volume Filter</td><td>Nến có khối lượng cao nhất 10% được viền vàng, nến thấp nhất 30% bị làm mờ.</td><td>Chính xác.</td></tr>
+        <tr><td>Big Trades / Adaptive Big Trades</td><td>Gộp các lệnh khớp cùng mili giây cùng bên thành một lệnh lớn. Cố định: lớn hơn 99,95% số lệnh đã tải (hoặc số $ bạn nhập). Thích ứng: lớn hơn 99,8% của 8.000 lệnh gần nhất, tự co giãn theo nhịp thị trường.</td><td>Chính xác.</td></tr>
+        <tr><td>Speed of Tape, Order Flow, Order Flow Rhythm</td><td>Đếm số lệnh và khối lượng từng giây.</td><td>Chính xác.</td></tr>
+        <tr><td>Spread Volumes</td><td>Khối lượng khớp ngay lúc giá nhảy sang bước mới, chỉ hiện 1% lớn nhất.</td><td>Chính xác.</td></tr>
+        <tr><td>Tape Patterns</td><td>Cùng một khối lượng, cùng một bên, lặp lại ít nhất 8 lần trong 30 giây: dấu vết thuật toán chia lệnh.</td><td>Chính xác về dữ liệu, kết luận là suy luận.</td></tr>
+        <tr><td>DOM, DOM Levels, DOM Power</td><td>Sổ lệnh 20 mức giá mỗi bên, cập nhật 10 lần mỗi giây (Binance) hoặc mỗi lần thay đổi (Hyperliquid).</td><td>Chính xác, chỉ có từ lúc mở trang.</td></tr>
+        <tr><td>Sweeps Tracker</td><td>Một lệnh chủ động ăn qua từ 3 mức giá trở lên trong cùng một mili giây, cỡ lệnh thuộc 3% lớn nhất.</td><td>Chính xác.</td></tr>
+        <tr><td>Iceberg Tracker</td><td>Ở một giá, bị đánh vào ít nhất 3 lần, khối lượng khớp gấp 2 lần lượng từng hiển thị mà mức giá vẫn còn lệnh: phần chênh là lệnh ẩn.</td><td>Ước tính (sàn crypto không công bố dữ liệu từng lệnh MBO).</td></tr>
+        <tr><td>Stop Runs Tracker</td><td>Một giây có khối lượng lớn hơn 99,5% các giây khác, một bên chiếm từ 75%, và giá vượt đỉnh/đáy của 20 nến trước: quét lệnh dừng lỗ. Thanh lý thật của Binance hiện bằng dấu ✕.</td><td>Ước tính, thanh lý là dữ liệu thật.</td></tr>
+        <tr><td>Open Interest (OI Analyzer)</td><td>Binance Futures: lịch sử 5 phút và cập nhật 15 giây một lần. Hyperliquid: chỉ từ lúc mở trang.</td><td>Chính xác.</td></tr>
+        <tr><td>Market Profile / TPO, POC/VAH/VAL động, VWAP ±σ</td><td>Tính từ nến 1 phút của phiên (ngày UTC). VWAP dùng giá điển hình; dải ±1σ, ±2σ, ±3σ là độ lệch chuẩn có trọng số khối lượng.</td><td>Chính xác ở mức nến 1 phút.</td></tr>
+        <tr><td>Stacked Imbalances</td><td>Ô mua lớn gấp N lần ô bán ở ô thấp hơn một bậc (so chéo), ít nhất 3 ô liền nhau. Vùng còn hiệu lực tới khi một nến đóng cửa xuyên qua.</td><td>Chính xác (cần footprint).</td></tr>
+        <tr><td>Fair Value Gaps</td><td>Khoảng trống giữa nến 1 và nến 3 lớn hơn 0,1 lần biên độ trung bình; thu hẹp dần khi giá lấp.</td><td>Chính xác.</td></tr>
+        <tr><td>Vùng thanh lý (thay Margin Zones)</td><td>Từ OI tăng và giả định đòn bẩy, xem khung bên trên.</td><td>Ước tính.</td></tr>
+      </table></div>
+      <p class="dim">Trang này chạy hoàn toàn trên trình duyệt của bạn, lấy dữ liệu công khai miễn phí trực tiếp từ sàn. Không cần máy chủ, không cần Claude. Forex và vàng/dầu CME thật cần trả phí dữ liệu, nên vàng, bạc, dầu, chỉ số và cổ phiếu lấy từ hợp đồng vĩnh cửu trên Hyperliquid.</p>
+    </details>
+  </section>
+</main>
+<footer class="foot"><p>Dữ liệu trực tiếp từ sàn. Chỉ để tham khảo, người ra quyết định là bạn.</p></footer>
+<div class="tip" id="tip"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="ofcore.js"></script>
+<script src="of.js"></script>
+<script>
+(function () {
+  var a = document.getElementById("sys"), base = a.getAttribute("data-base");
+  fetch(base + "data/health.json?v=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (h) {
+    if (!h) { a.textContent = "? STATUS"; return; }
+    var bad = h.sources.filter(function (s) { return s.status !== "ok"; }).length, long = h.sources.filter(function (s) { return s.fails_in_row >= 3; }).length;
+    var old = Date.now() / 1000 - h.generated > 3 * 3600;
+    a.className = "pill " + (long || old ? "stale" : bad ? "warn" : "ok");
+    a.textContent = long || old ? "✕ CÓ SỰ CỐ" : bad ? "▲ " + bad + " NGUỒN LỖI" : "● HỆ THỐNG ỔN";
+  }).catch(function () { a.textContent = "? STATUS"; });
+})();
+</script>
+</body>
+</html>
