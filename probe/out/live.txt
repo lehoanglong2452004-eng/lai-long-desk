@@ -2,13 +2,15 @@
 200 16665 traditional/
 200 49875 traditional/trad.js
 200 26179 traditional/engine.js
-200 93197 data/trad/index.json
-200 15300 data/bars/index.json
+200 105826 data/trad/index.json
+200 17086 data/bars/index.json
 200 27703 data/bars/BTC_1W.json
-200 483716 data/bars/BTC_5m.json
-200 414663 data/bars/GOLD_1H.json
+200 483717 data/bars/BTC_5m.json
+200 414669 data/bars/GOLD_1H.json
+200 555722 data/bars/BTC_1m.json
+200 349136 data/bars/GOLD_1m.json
 TRUYỀN THỐNG
-52 [] 5.872
+52 [] 9.765
 ['BTC', 'ETH', 'BNB', 'XRP', 'SOL', 'TRX', 'ZEC', 'DOGE', 'XMR', 'LINK', 'ADA', 'XLM', 'NEAR', 'BCH', 'LTC', 'UNI', 'AVAX', 'SUI', 'EURUSD', 'GBPUSD', 'AUDUSD', 'NZDUSD', 'USDJPY', 'USDCAD', 'USDCHF', 'USDCNY', 'USDHKD', 'USDSGD', 'GOLD', 'SILVER', 'PLATINUM', 'COPPER', 'WTI', 'BRENT', 'NATGAS', 'CORN', 'WHEAT', 'SOYBEAN', 'COFFEE', 'SUGAR', 'COCOA', 'SP500', 'NASDAQ100', 'DOW', 'RUSSELL2000', 'AAPL', 'MSFT', 'NVDA', 'GOOGL', 'AMZN', 'META', 'TSLA']
-414
+504
 market 52 18
