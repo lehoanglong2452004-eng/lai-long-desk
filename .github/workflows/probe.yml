@@ -11,11 +11,12 @@ jobs:
       - uses: actions/checkout@v4
       - run: |
           mkdir -p probe/out; B=https://lehoanglong2452004-eng.github.io/lai-long-desk
-          { for u in "" traditional/ traditional/trad.js traditional/engine.js data/trad/index.json data/bars/index.json data/bars/BTC_1W.json data/bars/BTC_5m.json data/bars/GOLD_1H.json data/bars/BTC_1m.json data/bars/GOLD_1m.json; do curl -s -o /dev/null -w "%{http_code} %{size_download} $u\n" "$B/$u"; done
-            curl -s $B/ | grep -o 'TRUYỀN THỐNG' | head -1
-            curl -s $B/data/trad/index.json | python3 -c "import json,sys;d=json.load(sys.stdin);print(len(d['assets']),d['errors'][:3],d['runtime_s']);print([a['symbol'] for a in d['assets']]);print(sum(len(v) for v in d['grid'].values()))"
-            curl -s $B/data/trad/validate.json | python3 -c "import json,sys;d=json.load(sys.stdin);a=d['asset'];print('VAL',a['tested'],a['green'],a['nsig'],a['sig'][:8]);print({k:a['wf'][k] for k in ['hind','naive','sel','all']});c=d['cls'];print('CLS',c['tested'],c['green'],c['nsig'],c['sig'][:8]);print({k:c['wf'][k] for k in ['hind','naive','sel','all']})"
-            curl -s $B/data/latest.json | python3 -c "import json,sys;d=json.load(sys.stdin);print('market',len(d['market']),sum(m['cls']=='crypto' for m in d['market']))"
+          { for u in "" orderflow/ orderflow/of.js orderflow/ofcore.js traditional/ data/trad/index.json; do curl -s -o /dev/null -w "%{http_code} %{size_download} $u\n" "$B/$u"; done
+            for p in "" traditional/ midoti/ news/ factory/ status/; do echo "$p $(curl -s $B/$p | grep -c 'orderflow/')"; done
+            curl -s -o /dev/null -w "spot aggTrades %{http_code}\n" "https://data-api.binance.vision/api/v3/aggTrades?symbol=BTCUSDT&limit=5"
+            curl -s -o /dev/null -w "fapi %{http_code}\n" "https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT"
+            curl -s -X POST -H 'Content-Type: application/json' -d '{"type":"metaAndAssetCtxs","dex":"xyz"}' https://api.hyperliquid.xyz/info | python3 -c "import json,sys;d=json.load(sys.stdin);print('HLXYZ',[u['name'] for u in d[0]['universe']][:60])"
+            curl -s -X POST -H 'Content-Type: application/json' -d '{"type":"candleSnapshot","req":{"coin":"xyz:GOLD","interval":"5m","startTime":'$(( ($(date +%s)-3600)*1000 ))'}}' https://api.hyperliquid.xyz/info | head -c 200; echo
           } > probe/out/live.txt 2>&1
       - run: |
           git config user.name probe; git config user.email probe@users.noreply.github.com
