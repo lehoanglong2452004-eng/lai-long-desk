@@ -17,6 +17,7 @@ they are rebuilt every hour). Run after pipeline.run:
     python -m pipeline.factory
 """
 import bisect
+import concurrent.futures as cf
 import datetime as dt
 import json
 import time
@@ -104,9 +105,9 @@ def load_assets(cfg):
     for sym, cls in universe:
         if cls == "crypto":
             pair = f"{sym}{cfg['crypto']['quote']}"
-            h = binance_hist(pair, "1h", 6)
+            h = binance_hist(pair, "1h", 9)
             tf = {"1W": binance_hist(pair, "1w", 1), "1D": binance_hist(pair, "1d", 2),
-                  "4H": binance_hist(pair, "4h", 2), "1H": h[-3000:]}
+                  "4H": binance_hist(pair, "4h", 3), "1H": h[-3000:]}
             src = "Binance"
         elif sym in yahoo:
             tk, vp = yahoo[sym]
@@ -123,24 +124,31 @@ def load_assets(cfg):
             continue
         # the MIDOTI page replays its own rules in the browser, on a longer hourly history
         assets.append({"symbol": sym, "cls": cls, "source": src, "tf": tf, "yahoo": yahoo.get(sym) if cls != "crypto" else None,
-                       "bars": {"1H": h[-BARS_N:], "4H": tf["4H"], "1D": tf["1D"]}})
+                       "bars": {"1H": h[-BARS_N["1H"]:], "4H": tf["4H"], "1D": tf["1D"], "1W": tf["1W"]},
+                       "pair": pair if cls == "crypto" else None})
     return assets
 
 
-BARS_N = 6000  # bars kept per timeframe for the MIDOTI page
-INTRADAY = {"5m": 300, "15m": 900, "30m": 1800}  # Yahoo keeps 60 days of these
+# bars kept per timeframe for the MIDOTI and Traditional pages (about 12 months of 1H, 3 of 15m, 1 of 5m, 1 week of 1m)
+BARS_N = {"1m": 10080, "5m": 8640, "15m": 8640, "30m": 6000, "1H": 9000}
+INTRADAY = {"5m": (300, "60d"), "15m": (900, "60d"), "30m": (1800, "60d")}  # Yahoo's limits
+BINANCE_PAGES = {"5m": 9, "15m": 9}  # 1m ({"1m": 11} / (60, "7d")) waits on a timing probe
 
 
 def intraday(a):
-    """5m/15m/30m Yahoo bars for the non-crypto assets (the browser fetches crypto from the exchanges itself)."""
+    """Intraday bars: Binance for crypto, Yahoo (60 days, 7 for 1m) for everything else."""
+    if a.get("pair"):
+        for iv, pages in BINANCE_PAGES.items():
+            a["bars"][iv] = binance_hist(a["pair"], iv, pages)[-BARS_N[iv]:]
+        return
     if not a.get("yahoo"):
         return
     tk, vp = a["yahoo"]
-    for iv, secs in INTRADAY.items():
-        b = sources.yahoo_chart(tk, iv, "60d")
+    for iv, (secs, rng) in INTRADAY.items():
+        b = sources.yahoo_chart(tk, iv, rng)
         if vp:
-            b = with_volume(b, sources.yahoo_chart(vp, iv, "60d"), lambda t, s=secs: t // s)
-        a["bars"][iv] = b[-BARS_N:]
+            b = with_volume(b, sources.yahoo_chart(vp, iv, rng), lambda t, s=secs: t // s)
+        a["bars"][iv] = b[-BARS_N[iv]:]
 
 
 def sig(x, n=7):
@@ -152,8 +160,10 @@ def write_bars(assets):
     out = DATA / "bars"
     out.mkdir(parents=True, exist_ok=True)
     index = []
+    # intraday downloads are I/O bound: a few at a time keeps the hourly scan inside its time limit
+    with cf.ThreadPoolExecutor(6) as pool:
+        list(pool.map(intraday, assets))
     for a in assets:
-        intraday(a)
         tfs = {}
         for f, bars in a.get("bars", {}).items():
             if not bars:

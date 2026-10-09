@@ -1,6 +1,6 @@
 {
   "crypto": {
-    "top_n": 50,
+    "top_n": 20,
     "quote": "USDT",
     "exclude": [
       "USDC",

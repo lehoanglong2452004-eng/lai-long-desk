@@ -44,6 +44,10 @@ jobs:
         continue-on-error: true
         timeout-minutes: 30
         run: python -m pipeline.factory
+      - name: Traditional desk (council, Elliott/Wyckoff/Darvas, breakouts, ranges on 7 timeframes)
+        continue-on-error: true
+        timeout-minutes: 10
+        run: node pipeline/traditional.cjs
       - name: News desk data (prices, headlines, calendar)
         continue-on-error: true
         run: python -m pipeline.news_desk
