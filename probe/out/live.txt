@@ -1,20 +1,20 @@
 200 7966 
-200 21144 traditional/
-200 61630 traditional/trad.js
-200 31342 traditional/engine.js
-200 112339 data/trad/index.json
-200 17086 data/bars/index.json
+200 23700 traditional/
+200 72054 traditional/trad.js
+200 35902 traditional/engine.js
+200 112475 data/trad/index.json
+200 17087 data/bars/index.json
 200 27703 data/bars/BTC_1W.json
-200 483712 data/bars/BTC_5m.json
-200 414678 data/bars/GOLD_1H.json
-200 555709 data/bars/BTC_1m.json
-200 349931 data/bars/GOLD_1m.json
+200 483711 data/bars/BTC_5m.json
+200 414663 data/bars/GOLD_1H.json
+200 555703 data/bars/BTC_1m.json
+200 349185 data/bars/GOLD_1m.json
 TRUYỀN THỐNG
-52 [] 9.369
+52 [] 10.139
 ['BTC', 'ETH', 'BNB', 'XRP', 'SOL', 'TRX', 'ZEC', 'DOGE', 'XMR', 'LINK', 'ADA', 'XLM', 'NEAR', 'BCH', 'LTC', 'AVAX', 'UNI', 'SUI', 'EURUSD', 'GBPUSD', 'AUDUSD', 'NZDUSD', 'USDJPY', 'USDCAD', 'USDCHF', 'USDCNY', 'USDHKD', 'USDSGD', 'GOLD', 'SILVER', 'PLATINUM', 'COPPER', 'WTI', 'BRENT', 'NATGAS', 'CORN', 'WHEAT', 'SOYBEAN', 'COFFEE', 'SUGAR', 'COCOA', 'SP500', 'NASDAQ100', 'DOW', 'RUSSELL2000', 'AAPL', 'MSFT', 'NVDA', 'GOOGL', 'AMZN', 'META', 'TSLA']
 501
-VAL 1680 510 2 [['AAPL|T1|4H', 15, 0.867, 1.568, 5.6, 0.067], ['XRP|FAIL|4H', 46, 0.717, 0.757, 4.3, 0.067]]
-{'hind': {'n': 19181, 'win': 0.447, 'avgR': 0.171, 'totalR': 3278.41, 'p': 0}, 'naive': {'n': 18841, 'win': 0.353, 'avgR': -0.108, 'totalR': -2032.86, 'p': 1}, 'sel': {'n': 276, 'win': 0.355, 'avgR': -0.065, 'totalR': -17.95, 'p': 0.785}, 'all': {'n': 77401, 'win': 0.35, 'avgR': -0.137, 'totalR': -10583.35, 'p': 1}}
-CLS 359 68 0 []
-{'hind': {'n': 9608, 'win': 0.422, 'avgR': 0.093, 'totalR': 889.62, 'p': 0}, 'naive': {'n': 13845, 'win': 0.359, 'avgR': -0.116, 'totalR': -1611.18, 'p': 1}, 'sel': {'n': 1155, 'win': 0.348, 'avgR': -0.157, 'totalR': -181.58, 'p': 1}, 'all': {'n': 77401, 'win': 0.35, 'avgR': -0.137, 'totalR': -10583.35, 'p': 1}}
+VAL 1674 502 1 [['XRP|FAIL|4H', 46, 0.717, 0.757, 4.3, 0.083]]
+{'hind': {'n': 18810, 'win': 0.446, 'avgR': 0.172, 'totalR': 3234.13, 'p': 0}, 'naive': {'n': 18540, 'win': 0.352, 'avgR': -0.111, 'totalR': -2061.61, 'p': 1}, 'sel': {'n': 228, 'win': 0.351, 'avgR': -0.124, 'totalR': -28.36, 'p': 0.923}, 'all': {'n': 77342, 'win': 0.35, 'avgR': -0.138, 'totalR': -10672.21, 'p': 1}}
+CLS 358 75 0 []
+{'hind': {'n': 10328, 'win': 0.418, 'avgR': 0.088, 'totalR': 905.92, 'p': 0}, 'naive': {'n': 13698, 'win': 0.358, 'avgR': -0.12, 'totalR': -1643.17, 'p': 1}, 'sel': {'n': 1140, 'win': 0.35, 'avgR': -0.152, 'totalR': -173.21, 'p': 1}, 'all': {'n': 77342, 'win': 0.35, 'avgR': -0.138, 'totalR': -10672.21, 'p': 1}}
 market 52 18
