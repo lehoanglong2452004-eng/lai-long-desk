@@ -58,6 +58,21 @@ console.log(JSON.stringify({ bad, tot }));
         self.assertEqual(res["bad"], 0, r.stderr)
         self.assertGreater(res["tot"], 20)
 
+    def test_validation_on_pure_luck(self):
+        # 300 cells of coin-flip trades with no edge: the test must reject nearly all of them, while picking
+        # green cells with hindsight looks profitable and the walk-forward version of the same pick does not
+        script = r"""
+const T = require(process.argv[1]); let s = 3; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+const tr = []; for (let k = 0; k < 300; k++) for (let i = 0; i < 40; i++) { const t = 1.7e9 + r() * 3e7; tr.push({ key: "c" + k, t, exitT: t + 3600, R: r() < 1 / 3 ? 2 : -1 }); }
+const v = T.validate(tr); console.log(JSON.stringify({ sig: v.sig.length, tested: v.tested, hind: v.wf.hind.avgR, naive: v.wf.naive.avgR }));
+"""
+        r = subprocess.run([NODE, "-e", script, str(ROOT / "site" / "traditional" / "engine.js")], capture_output=True, text=True, check=True)
+        res = json.loads(r.stdout)
+        self.assertEqual(res["tested"], 300)
+        self.assertLessEqual(res["sig"], 3)
+        self.assertGreater(res["hind"], 0.15)
+        self.assertLess(res["naive"], res["hind"] - 0.1)
+
 
 if __name__ == "__main__":
     unittest.main()

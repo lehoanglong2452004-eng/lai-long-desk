@@ -22,6 +22,7 @@
     councilMin: 60,   // % of the council needed to trade in a direction
     costPct: 0.1,     // round-trip cost in % of price
     maxHold: 120,
+    maxCostR: 0.25,   // skip trades whose round-trip cost exceeds 25% of the risk
   };
 
   // ---------- helpers ----------
@@ -101,6 +102,7 @@
     if (i0 >= n) return null;
     const entry = B.o[i0], r = Math.abs(entry - sl);
     if (!(r > 0) || (dir === 1 ? sl >= entry : sl <= entry)) return null;
+    if (entry * o.costPct / 100 > o.maxCostR * r) return null;  // the stop is so close that costs would eat over a quarter of the risk: not tradable
     let stop = sl, left = 1, got = 0, k = 0, mfe = 0, mae = 0, exitI = -1, exitPx = NaN, why = "";
     for (let i = i0; i < n && i - i0 <= o.maxHold; i++) {
       mfe = Math.max(mfe, dir === 1 ? (B.h[i] - entry) / r : (entry - B.l[i]) / r);
@@ -435,7 +437,84 @@
     const done = tr.filter((x) => !x.open), n = done.length, w = done.filter((x) => x.R > 0).length;
     let s = 0, gw = 0, gl = 0, peak = 0, dd = 0;
     for (const x of done) { s += x.R; if (x.R > 0) gw += x.R; else gl -= x.R; peak = Math.max(peak, s); dd = Math.max(dd, peak - s); }
-    return { n, win: n ? w / n : null, avgR: n ? s / n : null, totalR: s, pf: gl ? gw / gl : gw ? Infinity : null, dd, open: tr.length - n };
+    const m = n ? s / n : null, sd = n > 1 ? Math.sqrt(done.reduce((a, x) => a + (x.R - m) ** 2, 0) / (n - 1)) : null;
+    const t = n > 1 && sd > 0 ? m / (sd / Math.sqrt(n)) : null;
+    return { n, win: n ? w / n : null, avgR: m, totalR: s, pf: gl ? gw / gl : gw ? Infinity : null, dd, open: tr.length - n, sd, t, p: t == null ? null : pT(t, n - 1) };
+  }
+
+  // ---------- validation: is a green cell skill or luck? ----------
+  // one-sided p-value of "mean R > 0" from Student's t (normal approximation with a small-sample correction)
+  function pT(t, df) {
+    const z = t * (1 - 1 / (4 * df)) / Math.sqrt(1 + t * t / (2 * df));
+    return 1 - normCdf(z);
+  }
+  function normCdf(z) {
+    const k = 1 / (1 + 0.2316419 * Math.abs(z)), d = 0.3989423 * Math.exp(-z * z / 2);
+    const q = d * k * (0.3193815 + k * (-0.3565638 + k * (1.781478 + k * (-1.821256 + k * 1.330274))));
+    return z >= 0 ? 1 - q : q;
+  }
+  // Benjamini-Hochberg: q-values that control the share of false discoveries when many cells are tested at once
+  function bh(ps) {
+    const idx = ps.map((p, i) => [p, i]).sort((a, b) => a[0] - b[0]), m = ps.length, q = new Array(m);
+    let min = 1;
+    for (let r = m - 1; r >= 0; r--) { min = Math.min(min, idx[r][0] * m / (r + 1)); q[idx[r][1]] = min; }
+    return q;
+  }
+  // trades: closed trades with { key, t (entry), exitT, R }. Returns
+  //   cells   : every key tested over the whole sample, with t-stat, p and BH q
+  //   wf      : walk-forward. Each week, keep only the keys that passed the test on trades closed BEFORE that week,
+  //             then take their trades of that week. Compared with trading every key, and with "hindsight"
+  //             (keys picked with the whole sample, the usual illusion of a backtest table)
+  //   split   : each key's average R in the first 2/3 of the time versus the last 1/3
+  function validate(trades, o) {
+    o = Object.assign({ minN: 8, q: 0.2, step: 7 * 86400, warm: 0.33 }, o);
+    const T = trades.filter((x) => !x.open).sort((a, b) => a.t - b.t);
+    if (T.length < 2) return null;
+    const t0 = T[0].t, t1 = Math.max(...T.map((x) => x.exitT));
+    const by = new Map();
+    for (const x of T) { if (!by.has(x.key)) by.set(x.key, []); by.get(x.key).push(x); }
+    const cells = [];
+    for (const [key, a] of by) { const s = stats(a); if (s.n >= o.minN && s.p != null) cells.push(Object.assign({ key }, s)); }
+    const qs = bh(cells.map((c) => c.p));
+    cells.forEach((c, i) => { c.q = qs[i]; c.sig = qs[i] < o.q && c.avgR > 0; });
+    // "hindsight" = what reading a backtest table does: keep every green cell, judged on the very trades it is then scored on
+    const hind = new Set(cells.filter((c) => c.avgR > 0).map((c) => c.key));
+    // walk-forward with running sums per key, advanced as each week's boundary moves
+    const byExit = T.slice().sort((a, b) => a.exitT - b.exitT), acc = new Map();
+    let k = 0, j = 0;
+    const start = t0 + o.warm * (t1 - t0), sel = [], all = [], hin = [], nai = [], weeks = [];
+    for (let b = start; b < t1; b += o.step) {
+      while (k < byExit.length && byExit[k].exitT < b) {
+        const x = byExit[k++], a = acc.get(x.key) || { n: 0, s: 0, ss: 0 };
+        a.n++; a.s += x.R; a.ss += x.R * x.R; acc.set(x.key, a);
+      }
+      const test = [];
+      for (const [key, a] of acc) {
+        if (a.n < o.minN) continue;
+        const m = a.s / a.n, sd = Math.sqrt(Math.max(0, (a.ss - a.n * m * m) / (a.n - 1)));
+        if (sd > 0) test.push({ key, m, p: pT(m / (sd / Math.sqrt(a.n)), a.n - 1) });
+      }
+      const q = bh(test.map((x) => x.p)), pick = new Set(test.filter((x, i) => q[i] < o.q && x.m > 0).map((x) => x.key));
+      const green = new Set(test.filter((x) => x.m > 0).map((x) => x.key));  // naive: green so far, no test
+      weeks.push([b, pick.size, green.size]);
+      while (j < T.length && T[j].t < b) j++;
+      for (; j < T.length && T[j].t < b + o.step; j++) {
+        const x = T[j];
+        all.push(x);
+        if (pick.has(x.key)) sel.push(x);
+        if (green.has(x.key)) nai.push(x);
+        if (hind.has(x.key)) hin.push(x);
+      }
+    }
+    const curve = (a) => { let c = 0; return a.slice().sort((p, q) => p.exitT - q.exitT).map((x) => [x.exitT, (c += x.R)]); };
+    // first 2/3 versus last 1/3 of the time, per key
+    const mid = t0 + (t1 - t0) * 2 / 3, split = [];
+    for (const [key, a] of by) {
+      const is = stats(a.filter((x) => x.exitT < mid)), oos = stats(a.filter((x) => x.t >= mid));
+      if (is.n >= o.minN && oos.n >= 3) split.push([key, is.avgR, oos.avgR, is.n, oos.n, is.p]);
+    }
+    return { cells, tested: cells.length, green: cells.filter((c) => c.avgR > 0).length, sig: cells.filter((c) => c.sig),
+      start, end: t1, weeks, wf: { sel: stats(sel), all: stats(all), hind: stats(hin), naive: stats(nai), selC: curve(sel), allC: curve(all), hindC: curve(hin), naiveC: curve(nai) }, split, mid };
   }
   function windowed(trades, now, days, f) {
     return trades.filter((x) => x.t >= now - days * 86400 && (!f || f(x)));
@@ -487,7 +566,7 @@
     return { tf, last, trend: r.trend[n - 1], elliott: ell && n - 1 - ell.i < 200 ? ell : null, pivots: lastPiv, range: rg && rg.open ? rg : null, boxes: box, watch: r.watch, atr: r.A[n - 1] };
   }
 
-  const api = { TFS, TF_SEC, WEIGHT, COST, WINDOWS, DEFAULTS, MODELS, GROUP, runTF, runAsset, council, stats, tables, windowed, current, zigzag, atr, matchWave };
+  const api = { TFS, TF_SEC, WEIGHT, COST, WINDOWS, DEFAULTS, MODELS, GROUP, runTF, runAsset, council, stats, tables, windowed, current, zigzag, atr, matchWave, validate, bh, pT };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.TRAD = api;
 })(typeof self !== "undefined" ? self : this);

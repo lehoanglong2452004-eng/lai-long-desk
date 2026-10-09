@@ -29,11 +29,11 @@
   async function getJSON(u) { const r = await fetch(u, { cache: "no-store" }); if (!r.ok) throw new Error(`${r.status} ${u}`); return r.json(); }
 
   // ---------- settings ----------
-  const S = Object.assign({ sym: "BTC", tf: "1H", win: "3m", cap: 10000, risk: 2.5, lev: 10, costs: {}, agree: true, cmin: 60, scope: "one", logf: "all" },
+  const S = Object.assign({ sym: "BTC", tf: "1H", win: "3m", cap: 10000, risk: 2.5, lev: 10, costs: {}, agree: true, cmin: 60, scope: "one", vscope: "one", logf: "all" },
     (() => { try { return JSON.parse(localStorage.getItem("lld-trad")) || {}; } catch (e) { return {}; } })());
   const save = () => { try { localStorage.setItem("lld-trad", JSON.stringify(S)); } catch (e) { /* private mode */ } };
 
-  let ASSETS = [], A = null, asset = null, SRV = null, sel = null, TB = {};
+  let ASSETS = [], A = null, asset = null, SRV = null, SRVV = null, sel = null, TB = {}, VAL = {};
   const costOf = (a) => (S.costs[a.cls] ?? T.COST[a.cls] ?? 0.05);
   const filt = () => (S.agree ? (x) => x.agree : null);
   function tb(win) {
@@ -47,6 +47,7 @@
     $("wins").innerHTML = T.WINDOWS.map(([w]) => `<button data-w="${w}" class="${w === S.win ? "on" : ""}">${WL[w]}</button>`).join("");
     $("cap").value = S.cap; $("risk").value = S.risk; $("lev").value = S.lev; $("agree").checked = S.agree; $("cmin").value = S.cmin;
     $("scope").querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.s === S.scope));
+    $("vscope").querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.s === S.vscope));
   }
   function fillAssets() {
     const by = {};
@@ -58,6 +59,7 @@
   $("tfs").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; setTf(b.dataset.tf); });
   $("wins").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; S.win = b.dataset.w; save(); fillControls(); renderAll(false); });
   $("scope").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; S.scope = b.dataset.s; save(); fillControls(); renderHeat(); });
+  $("vscope").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; S.vscope = b.dataset.s; save(); fillControls(); renderVal(); });
   $("asset").addEventListener("change", () => { S.sym = $("asset").value; save(); load(); });
   for (const id of ["cap", "risk", "lev"]) $(id).addEventListener("change", () => { const v = +$(id).value; if (v > 0) { S[id] = v; save(); renderKpis(); renderLog(); } });
   $("cost").addEventListener("change", () => { const v = +$("cost").value; if (v >= 0 && asset) { S.costs[asset.cls] = v; save(); run(); } });
@@ -87,7 +89,7 @@
     setTimeout(() => {
       const t0 = performance.now();
       A = T.runAsset(load.bars, { costPct: costOf(asset), councilMin: S.cmin });
-      TB = {};
+      TB = {}; VAL = {};
       if (!A.res[S.tf]) S.tf = T.TFS.find((tf) => A.res[tf]) || S.tf;
       $("busy").textContent = `${A.trades.length.toLocaleString("vi-VN")} lệnh mô phỏng trên ${Object.keys(A.res).filter((k) => A.res[k]).length} khung trong ${((performance.now() - t0) / 1000).toFixed(1)} giây`;
       sel = null; view.end = null;
@@ -95,7 +97,7 @@
     }, 20);
   }
   function renderAll(anim) {
-    renderAge(); renderCouncil(anim); renderHeat(); drawChart(); renderElliott(); renderBo(); renderRange(); renderKpis(); renderLog(); renderRank();
+    renderAge(); renderCouncil(anim); renderHeat(); renderVal(); drawChart(); renderElliott(); renderBo(); renderRange(); renderKpis(); renderLog(); renderRank();
   }
   function renderAge() {
     if (!A) { $("age").textContent = ""; return; }
@@ -146,10 +148,12 @@
     if (all) {
       if (!SRV || !SRV.grid) { $("hm").innerHTML = '<tr><td class="dim">Máy chủ chưa có kết quả gộp. Bảng này xuất hiện sau lần chạy lịch kế tiếp.</td></tr>'; return; }
       const g = SRV.grid[S.win] || {};
-      get = (m, tf) => { const p = g[`${m}|${tf}`]; return p ? { n: p[0], win: p[1], avgR: p[2], totalR: p[3] } : { n: 0 }; };
+      get = (m, tf) => { const p = g[`${m}|${tf}`]; return p ? { n: p[0], win: p[1], avgR: p[2], totalR: p[3], p: p[4], q: p[5] } : { n: 0 }; };
     } else {
       if (!A) { $("hm").innerHTML = ""; return; }
       const grid = tb(S.win).grid;
+      // q-values across this table's cells (testing many cells at once)
+      if (!grid._q) { const ks = Object.keys(grid).filter((k) => grid[k].n >= MIN_N && grid[k].p != null), q = T.bh(ks.map((k) => grid[k].p)); ks.forEach((k, i) => { grid[k].q = q[i]; }); grid._q = true; }
       get = (m, tf) => grid[`${m}|${tf}`];
     }
     let h = `<tr><th></th>${T.TFS.map((tf) => `<th>${tf}</th>`).join("")}</tr>`, g0 = 0;
@@ -159,7 +163,8 @@
         const s = get(m, tf);
         if (!s || !s.n) return `<td class="c na" data-m="${m}" data-tf="${tf}">·</td>`;
         const thin = s.n < MIN_N;
-        return `<td class="c ${thin ? "na" : ""}" style="background:${cellColor(s.avgR, s.n)}" data-m="${m}" data-tf="${tf}"><b>${thin ? "·" : fR(s.avgR)}</b><span>${thin ? s.n + " lệnh" : pct(s.win) + " · " + s.n}</span></td>`;
+        const star = !thin && s.q != null && s.q < 0.2 && s.avgR > 0 ? '<i class="star">★</i>' : "";
+        return `<td class="c ${thin ? "na" : ""}" style="background:${cellColor(s.avgR, s.n)}" data-m="${m}" data-tf="${tf}">${star}<b>${thin ? "·" : fR(s.avgR)}</b><span>${thin ? s.n + " lệnh" : pct(s.win) + " · " + s.n}</span></td>`;
       }).join("") + "</tr>";
     }
     $("hm").innerHTML = h;
@@ -172,13 +177,130 @@
   $("hm").addEventListener("pointermove", (e) => {
     const td = e.target.closest("td.c"); if (!td || !$("hm").get) { hideTip(); return; }
     const s = $("hm").get(td.dataset.m, td.dataset.tf) || { n: 0 };
-    showTip(e, `<b>${esc(ML[td.dataset.m])}</b> · khung ${TFL[td.dataset.tf]}<br>${s.n ? `${s.n} lệnh · thắng ${pct(s.win)} · TB ${fR(s.avgR)} · tổng ${fR(s.totalR)}` : "chưa có lệnh"}${s.n && s.n < MIN_N ? "<br><span class='amber'>dưới 8 lệnh: chưa đủ để kết luận</span>" : ""}<br><span class="dim">${$("hm").dataset.all ? "gộp mọi mã, chỉ lệnh thuận hội đồng" : "bấm để xem các lệnh này"}</span>`);
+    showTip(e, `<b>${esc(ML[td.dataset.m])}</b> · khung ${TFL[td.dataset.tf]}<br>${s.n ? `${s.n} lệnh · thắng ${pct(s.win)} · TB ${fR(s.avgR)} · tổng ${fR(s.totalR)}` : "chưa có lệnh"}${s.n && s.n < MIN_N ? "<br><span class='amber'>dưới 8 lệnh: chưa đủ để kết luận</span>" : ""}${s.n >= MIN_N && s.q != null ? `<br>kiểm định: p = ${s.p.toFixed(3)}, q = ${s.q.toFixed(3)} · ${s.q < 0.2 && s.avgR > 0 ? "<b class='up'>★ vượt kiểm định</b>" : s.avgR > 0 ? "<span class='amber'>xanh nhưng có thể do may mắn</span>" : "không có lợi thế"}` : ""}<br><span class="dim">${$("hm").dataset.all ? "gộp mọi mã, chỉ lệnh thuận hội đồng" : "bấm để xem các lệnh này"}</span>`);
   });
   $("hm").addEventListener("pointerleave", hideTip);
   $("hm").addEventListener("click", (e) => {
     const td = e.target.closest("td.c"); if (!td || $("hm").dataset.all || !A || !A.res[td.dataset.tf]) return;
     S.logf = "m:" + td.dataset.m; setTf(td.dataset.tf); $("log").scrollIntoView({ behavior: "smooth", block: "center" });
   });
+
+
+  // ---------- validation: walk-forward and multiple-testing ----------
+  function localVal() {
+    const k = S.agree ? "a" : "";
+    if (VAL[k] !== undefined) return VAL[k];
+    const tr = A.trades.filter((x) => !x.open && x.t >= A.now - 365 * 86400 && (!S.agree || x.agree)).map((x) => ({ key: `${x.kind}|${x.tf}`, t: x.t, exitT: x.exitT, R: x.R }));
+    const v = T.validate(tr);
+    if (!v) return (VAL[k] = null);
+    const st = (x) => ({ n: x.n, win: x.win, avgR: x.avgR, totalR: x.totalR, p: x.p });
+    return (VAL[k] = { tested: v.tested, green: v.green, nsig: v.sig.length, start: v.start, end: v.end, mid: v.mid,
+      sig: v.sig.sort((a, b) => a.q - b.q).map((c) => [c.key, c.n, c.win, c.avgR, c.t, c.q]),
+      wf: { sel: st(v.wf.sel), all: st(v.wf.all), hind: st(v.wf.hind), naive: st(v.wf.naive), selC: v.wf.selC, allC: v.wf.allC, hindC: v.wf.hindC, naiveC: v.wf.naiveC },
+      weeks: v.weeks, split: v.split });
+  }
+  const curV = () => (S.vscope === "all" ? SRVV && SRVV.asset : A && localVal());
+  const keyName = (k) => { const p = k.split("|"); return p.length === 3 ? `${p[0]} · ${MS[p[1]]} ${p[2]}` : `${MS[p[0]]} ${p[1]}`; };
+  function renderVal() {
+    const v = curV(), all = S.vscope === "all";
+    $("h-val").textContent = `KIỂM ĐỊNH: Ô XANH NÀO ĐÁNG TIN? · ${all ? "CẢ HỆ THỐNG" : S.sym}`;
+    if (!v) {
+      $("funnel").innerHTML = `<p class="dim">${all ? "Máy chủ chưa có kết quả kiểm định. Phần này xuất hiện sau lần chạy lịch kế tiếp." : "Chưa đủ lệnh để kiểm định."}</p>`;
+      $("sv").innerHTML = ""; $("sc-txt").textContent = ""; $("v-sub").textContent = ""; drawWf(); drawSc(); return;
+    }
+    $("v-sub").textContent = `${all ? "mỗi ô = một mã × mô hình × khung" : "mỗi ô = mô hình × khung"} · 12 tháng · walk-forward từ ${fTs(v.start).slice(0, 5)}`;
+    const w = v.wf, sR = (x) => (x.n ? `${x.totalR >= 0 ? "+" : ""}${x.totalR.toFixed(0)}R` : "–");
+    const box = (l, val, sub, c) => `<div class="fn">${l}<b class="${c || ""}">${val}</b><small>${sub}</small></div>`;
+    $("funnel").innerHTML = box("Số phép thử", v.tested.toLocaleString("vi-VN"), "ô có từ 8 lệnh trở lên")
+      + box("Ô xanh", v.green.toLocaleString("vi-VN"), `${v.tested ? Math.round(v.green / v.tested * 100) : 0}% số ô, nhìn bảng màu thấy "có lời"`)
+      + box("★ Vượt kiểm định", v.nsig, "R trung bình > 0 không phải do may mắn", v.nsig ? "up" : "down")
+      + box("Ảo tưởng (nhìn lại)", sR(w.hind), `theo ô xanh, chấm bằng chính dữ liệu đã chọn · ${w.hind.n} lệnh`, w.hind.totalR > 0 ? "up" : "down")
+      + box("Thực tế: theo ô xanh", sR(w.naive), `chỉ biết quá khứ, mỗi tuần chọn lại · ${w.naive.n} lệnh · TB ${fR(w.naive.avgR)}`, w.naive.totalR > 0 ? "up" : "down")
+      + box("Thực tế: theo kiểm định", sR(w.sel), `chỉ ô ★ tại thời điểm đó · ${w.sel.n} lệnh · TB ${fR(w.sel.avgR)}`, w.sel.totalR > 0 ? "up" : w.sel.n ? "down" : "");
+    const gap = (w.hind.totalR || 0) - (w.naive.totalR || 0);
+    const verdict = v.nsig === 0
+      ? `<b class="amber">Kết luận: chưa có mô hình nào có lợi thế được chứng minh.</b> Các ô xanh trên bảng màu đều có thể giải thích bằng may mắn. Nếu cứ theo ô xanh mỗi tuần, kết quả thật là ${sR(w.naive)} thay vì ${sR(w.hind)} như backtest hứa: phần chênh ${gap.toFixed(0)}R là "ảo". Nên quan sát, chưa đặt tiền thật.`
+      : `<b class="up">Có ${v.nsig} ô vượt kiểm định.</b> Theo đúng các ô ★ tại từng thời điểm, kết quả thật là ${sR(w.sel)} (${w.sel.n} lệnh), so với ${sR(w.naive)} nếu theo mọi ô xanh. Backtest nhìn lại hứa ${sR(w.hind)}, phần chênh là "ảo".`;
+    $("funnel").insertAdjacentHTML("beforeend", `<p class="why" style="grid-column:1/-1;margin:2px 0 0">${verdict}</p>`);
+    let h = `<tr><th>Ô vượt kiểm định</th><th>Lệnh</th><th>Thắng</th><th>R TB</th><th>t</th><th>q</th></tr>`;
+    if (!v.sig.length) h += `<tr><td colspan="6" class="dim">Không có ô nào. Với ${v.tested} phép thử, cần R trung bình cao và đủ nhiều lệnh mới phân biệt được với may mắn.</td></tr>`;
+    for (const [k, n, win, avg, t, q] of v.sig.slice(0, 30)) h += `<tr><td>${esc(keyName(k))}</td><td>${n}</td><td>${pct(win)}</td><td class="up">${fR(avg)}</td><td>${t == null ? "–" : t.toFixed(2)}</td><td>${q.toFixed(3)}</td></tr>`;
+    $("sv").innerHTML = h;
+    // past versus future
+    const sp = v.split.filter((x) => x[1] != null && x[2] != null);
+    if (sp.length > 2) {
+      const mx = sp.reduce((a, x) => a + x[1], 0) / sp.length, my = sp.reduce((a, x) => a + x[2], 0) / sp.length;
+      let c = 0, vx = 0, vy = 0;
+      for (const x of sp) { c += (x[1] - mx) * (x[2] - my); vx += (x[1] - mx) ** 2; vy += (x[2] - my) ** 2; }
+      const r = vx && vy ? c / Math.sqrt(vx * vy) : 0, g = sp.filter((x) => x[1] > 0), gg = g.filter((x) => x[2] > 0);
+      $("sc-txt").innerHTML = `${sp.length} ô · tương quan quá khứ–tương lai ${r.toFixed(2)} (1 = dự báo hoàn hảo, 0 = không liên quan). Trong ${g.length} ô xanh ở 2/3 đầu, ${gg.length} ô (${g.length ? Math.round(gg.length / g.length * 100) : 0}%) vẫn xanh ở 1/3 sau. Chấm cam: ô có p &lt; 0,05 ở 2/3 đầu.`;
+    } else $("sc-txt").textContent = "Chưa đủ ô có lệnh ở cả hai giai đoạn.";
+    drawWf(); drawSc();
+  }
+  function canvas2(id) {
+    const c = $(id), x = c.getContext("2d"), dpr = window.devicePixelRatio || 1, W = c.clientWidth, H = c.clientHeight;
+    c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, W, H);
+    x.font = "11px JetBrains Mono, monospace";
+    return { x, W, H };
+  }
+  function drawWf() {
+    const { x, W, H } = canvas2("wf"), v = curV();
+    if (!v) return;
+    const w = v.wf, S4 = [["hindC", "#8a93a6", [5, 4], "ảo tưởng"], ["allC", "#4aa8ff", [], "tất cả"], ["naiveC", "#f0524f", [], "ô xanh"], ["selC", "#ffb000", [], "kiểm định"]];
+    const t0 = v.start, t1 = v.end;
+    let lo = 0, hi = 0;
+    for (const [k] of S4) for (const [, y] of w[k]) { lo = Math.min(lo, y); hi = Math.max(hi, y); }
+    const pad = (hi - lo) * 0.08 || 1; lo -= pad; hi += pad;
+    const L = 8, R = Math.min(120, Math.max(...S4.map(([k, , , lab]) => x.measureText(`${lab} -0000R`).width)) + 8), top = 10, bot = H - 20, X = (t) => L + (t - t0) / (t1 - t0 || 1) * (W - L - R), Y = (y) => top + (hi - y) / (hi - lo) * (bot - top);
+    x.strokeStyle = "#141a22"; x.fillStyle = "#6b7785";
+    for (let k = 0; k <= 4; k++) { const y = lo + (hi - lo) * k / 4; x.beginPath(); x.moveTo(L, Y(y)); x.lineTo(W - R, Y(y)); x.stroke(); }
+    x.strokeStyle = "#39424f"; x.beginPath(); x.moveTo(L, Y(0)); x.lineTo(W - R, Y(0)); x.stroke();
+    x.fillText(fTs(t0).slice(0, 5), L, H - 4); x.fillText(fTs(t1).slice(0, 5), W - R - 36, H - 4);
+    const ends = [];
+    for (const [k, col, dash, lab] of S4) {
+      const c = w[k]; if (!c.length) continue;
+      x.strokeStyle = col; x.lineWidth = 2; x.setLineDash(dash); x.beginPath(); x.moveTo(X(t0), Y(0));
+      for (const [t, y] of c) x.lineTo(X(t), Y(y));
+      x.stroke(); x.setLineDash([]); x.lineWidth = 1;
+      const last = c[c.length - 1][1]; ends.push([Y(last), col, `${lab} ${last >= 0 ? "+" : ""}${last.toFixed(0)}R`]);
+    }
+    // end labels, nudged apart so they never overlap
+    ends.sort((a, b) => a[0] - b[0]);
+    for (let i = 1; i < ends.length; i++) ends[i][0] = Math.max(ends[i][0], ends[i - 1][0] + 13);
+    for (const [y, col, lab] of ends) { x.fillStyle = col; x.fillText(lab, W - R + 4, Math.min(H - 6, y + 4)); }
+  }
+  function drawSc() {
+    const { x, W, H } = canvas2("sc"), v = curV();
+    if (!v) return;
+    const sp = v.split.filter((p) => p[1] != null && p[2] != null);
+    if (!sp.length) return;
+    let m = 0.5;
+    for (const p of sp) m = Math.max(m, Math.abs(p[1]), Math.abs(p[2]));
+    m = Math.min(m * 1.05, 4);
+    const L = 34, R = 8, top = 8, bot = H - 26, sz = Math.min(W - L - R, bot - top), ox = L + (W - L - R - sz) / 2;
+    const X = (a) => ox + (Math.max(-m, Math.min(m, a)) + m) / (2 * m) * sz, Y = (b) => top + (m - Math.max(-m, Math.min(m, b))) / (2 * m) * sz;
+    x.fillStyle = "rgba(34,197,94,.06)"; x.fillRect(X(0), Y(m), X(m) - X(0), Y(0) - Y(m));
+    x.fillStyle = "rgba(240,82,79,.06)"; x.fillRect(X(0), Y(0), X(m) - X(0), Y(-m) - Y(0));
+    x.strokeStyle = "#39424f"; x.beginPath(); x.moveTo(X(-m), Y(0)); x.lineTo(X(m), Y(0)); x.moveTo(X(0), Y(-m)); x.lineTo(X(0), Y(m)); x.stroke();
+    x.setLineDash([3, 4]); x.beginPath(); x.moveTo(X(-m), Y(-m)); x.lineTo(X(m), Y(m)); x.stroke(); x.setLineDash([]);
+    x.fillStyle = "#6b7785";
+    x.fillText(`${(-m).toFixed(1)}R`, X(-m), bot + 12); x.fillText(`+${m.toFixed(1)}R`, X(m) - 34, bot + 12);
+    x.fillText("2/3 đầu →", X(0) + 4, bot + 12); x.save(); x.translate(12, Y(0) + 30); x.rotate(-Math.PI / 2); x.fillText("1/3 sau →", 0, 0); x.restore();
+    for (const p of sp) {
+      x.fillStyle = p[5] != null && p[5] < 0.05 && p[1] > 0 ? "rgba(255,176,0,.9)" : "rgba(214,221,230,.45)";
+      x.beginPath(); x.arc(X(p[1]), Y(p[2]), Math.min(6, 2 + Math.sqrt(p[3]) / 4), 0, 7); x.fill();
+    }
+    x.fillStyle = "#22c55e"; x.fillText("vẫn xanh", X(m) - 60, Y(m) + 12); x.fillStyle = "#f0524f"; x.fillText("xanh rồi đỏ", X(m) - 74, Y(-m) - 4);
+    drawSc.pts = sp.map((p) => [X(p[1]), Y(p[2]), p]);
+  }
+  $("sc").addEventListener("pointermove", (e) => {
+    const rc = $("sc").getBoundingClientRect(), px = e.clientX - rc.left, py = e.clientY - rc.top;
+    let best = null, d = 100;
+    for (const q of drawSc.pts || []) { const dd = (q[0] - px) ** 2 + (q[1] - py) ** 2; if (dd < d) { d = dd; best = q[2]; } }
+    if (!best) { hideTip(); return; }
+    showTip(e, `<b>${esc(keyName(best[0]))}</b><br>2/3 đầu: ${fR(best[1])} (${best[3]} lệnh${best[5] != null ? `, p = ${best[5].toFixed(3)}` : ""})<br>1/3 sau: ${fR(best[2])} (${best[4]} lệnh)`);
+  });
+  $("sc").addEventListener("pointerleave", hideTip);
 
   // ---------- chart ----------
   const cv = $("cv"), ctx = cv.getContext("2d");
@@ -308,7 +430,7 @@
   $("zin").onclick = () => { view.n = Math.max(30, Math.round(view.n * 0.75)); drawChart(); };
   $("zout").onclick = () => { view.n = Math.min(1500, Math.round(view.n * 1.33)); drawChart(); };
   $("zend").onclick = () => { view.end = null; drawChart(); };
-  window.addEventListener("resize", () => { drawChart(); drawBo(); drawEq(); });
+  window.addEventListener("resize", () => { drawChart(); drawBo(); drawEq(); drawWf(); drawSc(); });
 
   // ---------- ① Elliott, Wyckoff, Darvas ----------
   // how often each scenario played out for this reading on this timeframe; falls back to 12 months when the window is thin
@@ -578,6 +700,7 @@
     if (!ASSETS.length) try { const j = await getJSON(`../data/bars/index.json?v=${ver()}`); ASSETS = j.assets.map((a) => ({ symbol: a.symbol, cls: a.cls })); } catch (e) { /* nothing yet */ }
     fillAssets();
     getJSON(`../data/trad/index.json?v=${ver()}`).then((j) => { SRV = j; renderHeat(); renderRank(); }).catch(() => { renderRank(); });
+    getJSON(`../data/trad/validate.json?v=${ver()}`).then((j) => { SRVV = j; renderVal(); }).catch(() => { renderVal(); });
     load();
   })();
   // new bars arrive with the server schedule: reload every 10 minutes while the page is visible
