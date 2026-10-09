@@ -595,6 +595,21 @@
   cv.addEventListener("wheel", (e) => { e.preventDefault(); zoom(e.deltaY < 0 ? 1.15 : 1 / 1.15); }, { passive: false });
   function zoom(f) { V.bw = clamp(V.bw * f, 3, 220); dirty = true; tip.style.display = "none"; }
   $("zin").onclick = () => zoom(1.3); $("zout").onclick = () => zoom(1 / 1.3);
+  // full screen: the browser's own when it allows it (desktop, Android), otherwise the panel fills the window (iPhone)
+  const fsBtn = $("fs"), cp = $("chartp");
+  const fsOn = () => document.fullscreenElement === cp || cp.classList.contains("fs");
+  const fsLabel = () => { fsBtn.textContent = fsOn() ? "✕ Thoát toàn màn hình" : "⛶ Toàn màn hình"; dirty = true; };
+  fsBtn.onclick = async () => {
+    if (fsOn()) { if (document.fullscreenElement) await document.exitFullscreen().catch(() => {}); cp.classList.remove("fs"); document.body.style.overflow = ""; }
+    else {
+      let ok = false;
+      if (cp.requestFullscreen) { try { await cp.requestFullscreen(); ok = true; } catch (e) { /* not allowed here */ } }
+      if (!ok) { cp.classList.add("fs"); document.body.style.overflow = "hidden"; }
+    }
+    fsLabel();
+  };
+  document.addEventListener("fullscreenchange", fsLabel);
+  addEventListener("keydown", (e) => { if (e.key === "Escape" && cp.classList.contains("fs")) { cp.classList.remove("fs"); document.body.style.overflow = ""; fsLabel(); } });
   $("znow").onclick = () => { V.off = 0; V.vz = 1; V.vy = 0; dirty = true; };
   $("vin").onclick = () => { V.vz = clamp(V.vz * 1.4, 0.3, 30); dirty = true; };
   $("vout").onclick = () => { V.vz = clamp(V.vz / 1.4, 0.3, 30); dirty = true; };
