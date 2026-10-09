@@ -208,7 +208,7 @@
       $("funnel").innerHTML = `<p class="dim">${all ? "Máy chủ chưa có kết quả kiểm định. Phần này xuất hiện sau lần chạy lịch kế tiếp." : "Chưa đủ lệnh để kiểm định."}</p>`;
       $("sv").innerHTML = ""; $("sc-txt").textContent = ""; $("v-sub").textContent = ""; drawWf(); drawSc(); return;
     }
-    $("v-sub").textContent = `${all ? "mỗi ô = một mã × mô hình × khung" : "mỗi ô = mô hình × khung"} · 12 tháng · walk-forward từ ${fTs(v.start).slice(0, 5)}`;
+    $("v-sub").textContent = `${all ? "mỗi ô = một mã × mô hình × khung (không tính USDCNY, USDHKD bị neo giá)" : "mỗi ô = mô hình × khung"} · 12 tháng · walk-forward từ ${fTs(v.start).slice(0, 5)}`;
     const w = v.wf, sR = (x) => (x.n ? `${x.totalR >= 0 ? "+" : ""}${x.totalR.toFixed(0)}R` : "–");
     const box = (l, val, sub, c) => `<div class="fn">${l}<b class="${c || ""}">${val}</b><small>${sub}</small></div>`;
     $("funnel").innerHTML = box("Số phép thử", v.tested.toLocaleString("vi-VN"), "ô có từ 8 lệnh trở lên")
@@ -221,7 +221,8 @@
     const verdict = v.nsig === 0
       ? `<b class="amber">Kết luận: chưa có mô hình nào có lợi thế được chứng minh.</b> Các ô xanh trên bảng màu đều có thể giải thích bằng may mắn. Nếu cứ theo ô xanh mỗi tuần, kết quả thật là ${sR(w.naive)} thay vì ${sR(w.hind)} như backtest hứa: phần chênh ${gap.toFixed(0)}R là "ảo". Nên quan sát, chưa đặt tiền thật.`
       : `<b class="up">Có ${v.nsig} ô vượt kiểm định.</b> Theo đúng các ô ★ tại từng thời điểm, kết quả thật là ${sR(w.sel)} (${w.sel.n} lệnh), so với ${sR(w.naive)} nếu theo mọi ô xanh. Backtest nhìn lại hứa ${sR(w.hind)}, phần chênh là "ảo".`;
-    $("funnel").insertAdjacentHTML("beforeend", `<p class="why" style="grid-column:1/-1;margin:2px 0 0">${verdict}</p>`);
+    const peg = !all && T.PEGGED.includes(S.sym) ? `<br><b class="down">Lưu ý:</b> ${S.sym} bị ngân hàng trung ương neo giá; dữ liệu rất phẳng và phí thật cao hơn nhiều so với giả định, nên mọi kết quả ở mã này không đáng tin và bị loại khỏi kiểm định cả hệ thống.` : "";
+    $("funnel").insertAdjacentHTML("beforeend", `<p class="why" style="grid-column:1/-1;margin:2px 0 0">${verdict}${peg}</p>`);
     let h = `<tr><th>Ô vượt kiểm định</th><th>Lệnh</th><th>Thắng</th><th>R TB</th><th>t</th><th>q</th></tr>`;
     if (!v.sig.length) h += `<tr><td colspan="6" class="dim">Không có ô nào. Với ${v.tested} phép thử, cần R trung bình cao và đủ nhiều lệnh mới phân biệt được với may mắn.</td></tr>`;
     for (const [k, n, win, avg, t, q] of v.sig.slice(0, 30)) h += `<tr><td>${esc(keyName(k))}</td><td>${n}</td><td>${pct(win)}</td><td class="up">${fR(avg)}</td><td>${t == null ? "–" : t.toFixed(2)}</td><td>${q.toFixed(3)}</td></tr>`;

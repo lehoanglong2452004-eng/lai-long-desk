@@ -12,6 +12,8 @@
   const WEIGHT = { "1W": 25, "1D": 25, "4H": 10, "1H": 10, "15m": 10, "5m": 10, "1m": 10 };
   // round-trip cost (% of price) by asset class: exchange fees + spread + a little slippage on liquid markets
   const COST = { crypto: 0.1, forex: 0.01, commodity: 0.03, index: 0.01, stock: 0.02 };
+  // currencies held by their central bank: the price barely trades freely and retail costs are far above COST.forex
+  const PEGGED = ["USDCNY", "USDHKD"];
   const WINDOWS = [["12m", 365], ["6m", 182], ["3m", 91], ["1m", 30], ["1w", 7], ["1d", 1]];
   const DEFAULTS = {
     zz: 2.0,          // swing = a reversal of 2 x ATR(14)
@@ -566,7 +568,7 @@
     return { tf, last, trend: r.trend[n - 1], elliott: ell && n - 1 - ell.i < 200 ? ell : null, pivots: lastPiv, range: rg && rg.open ? rg : null, boxes: box, watch: r.watch, atr: r.A[n - 1] };
   }
 
-  const api = { TFS, TF_SEC, WEIGHT, COST, WINDOWS, DEFAULTS, MODELS, GROUP, runTF, runAsset, council, stats, tables, windowed, current, zigzag, atr, matchWave, validate, bh, pT };
+  const api = { PEGGED, TFS, TF_SEC, WEIGHT, COST, WINDOWS, DEFAULTS, MODELS, GROUP, runTF, runAsset, council, stats, tables, windowed, current, zigzag, atr, matchWave, validate, bh, pT };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.TRAD = api;
 })(typeof self !== "undefined" ? self : this);

@@ -47,7 +47,7 @@ function main() {
       const A = T.runAsset(bars, { costPct: T.COST[a.cls] ?? 0.05 });
       // validation sample: council-aligned closed trades of the last 12 months
       const vt = A.trades.filter((x) => x.agree && !x.open && x.t >= A.now - 365 * 86400);
-      for (const x of vt) {
+      for (const x of T.PEGGED.includes(a.symbol) ? [] : vt) {  // pegged currencies stay out of the validation pools
         val.asset.push({ key: `${a.symbol}|${x.kind}|${x.tf}`, t: x.t, exitT: x.exitT, R: x.R });
         val.cls.push({ key: `${a.cls}|${x.kind}|${x.tf}`, t: x.t, exitT: x.exitT, R: x.R });
       }
