@@ -112,7 +112,7 @@
     }, 20);
   }
   function renderAll(anim) {
-    renderAge(); renderCouncil(anim); renderHeat(); renderVal(); drawChart(); renderElliott(); renderBo(); renderRange(); renderKpis(); renderLog(); renderRank();
+    renderAge(); renderCouncil(anim); renderHeat(); renderVal(); drawChart(); renderElliott(); renderWyckoff(); renderBo(); renderRange(); renderKpis(); renderLog(); renderRank();
   }
   function renderAge() {
     if (!A) { $("age").textContent = ""; return; }
@@ -340,6 +340,7 @@
     for (let i = i0; i <= end; i++) { lo = Math.min(lo, B.l[i]); hi = Math.max(hi, B.h[i]); vmax = Math.max(vmax, B.v[i]); }
     const ell = atEnd && cur.elliott && cur.elliott.scenario === 0 ? cur.elliott : null;
     if (ell) { lo = Math.min(lo, ell.target, ell.invalid); hi = Math.max(hi, ell.target, ell.invalid); }
+    else if (atEnd && cur.wyckoff && cur.wyckoff.open) { lo = Math.min(lo, cur.wyckoff.target); hi = Math.max(hi, cur.wyckoff.target); }
     if (sel && sel.tf === S.tf && sel.i >= i0 && sel.i <= end) { lo = Math.min(lo, sel.sl); hi = Math.max(hi, sel.sl, ...(sel.tps || []).map((x) => x[0])); lo = Math.min(lo, ...(sel.tps || []).map((x) => x[0])); }
     const m = (hi - lo) * 0.06 || hi * 0.01; lo -= m; hi += m;
     const Y = (p) => top + (hi - p) / (hi - lo) * ph;
@@ -366,6 +367,16 @@
       ctx.strokeStyle = g.open ? "#4aa8ff" : "rgba(74,168,255,.35)"; ctx.setLineDash([]);
       for (const p of [g.top, g.bot]) { ctx.beginPath(); ctx.moveTo(X(g.start), Y(p)); ctx.lineTo(X(e), Y(p)); ctx.stroke(); }
       ctx.setLineDash([3, 4]); ctx.beginPath(); ctx.moveTo(X(g.start), Y(g.mid)); ctx.lineTo(X(e), Y(g.mid)); ctx.stroke(); ctx.setLineDash([]);
+    }
+    // Wyckoff: phase label, events and the cause-and-effect target of the running range
+    if (cur.wyckoff && cur.wyckoff.open) {
+      const y = cur.wyckoff, g = y.range;
+      ctx.fillStyle = "#4aa8ff"; ctx.fillText(`Wyckoff: ${y.wk === "ACC" ? "tích lũy" : "phân phối"} · pha ${y.phase}`, Math.max(L + 2, X(g.start)), Y(g.top) - 6);
+      for (const e of y.events) if (e.i >= i0 && e.i <= end) { ctx.fillStyle = "#4aa8ff"; const lo2 = e.k === "SC" || e.k === "SPRING" || e.k === "SOW"; ctx.fillText(e.k, X(e.i) - 10, lo2 ? Y(B.l[e.i]) + 24 : Y(B.h[e.i]) - 14); }
+      if (atEnd && !ell) {
+        ctx.strokeStyle = "rgba(74,168,255,.8)"; ctx.setLineDash([2, 4]); ctx.beginPath(); ctx.moveTo(X(end), Y(y.target)); ctx.lineTo(X(end + pad), Y(y.target)); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = "#4aa8ff"; ctx.fillText("mục tiêu Wyckoff", X(end) + 4, Y(y.target) + (y.bias === 1 ? -4 : 12));
+      }
     }
     // broken levels waiting for a retest
     if (atEnd) for (const w of cur.watch) {
@@ -511,6 +522,52 @@
     $("ell").innerHTML = h;
   }
   $("ell").addEventListener("click", (e) => { const tr = e.target.closest("tr[data-tf]"); if (tr) setTf(tr.dataset.tf); });
+
+
+  // ---------- ① Wyckoff ----------
+  const WK = { ACC: "TÍCH LŨY (Accumulation)", DIST: "PHÂN PHỐI (Distribution)" };
+  const PH = { A: "A · dừng xu hướng cũ", B: "B · xây dựng nguyên nhân", C: "C · phép thử (Spring/Upthrust)", D: "D · giá rời vùng test", E: "E · đã rời biên" };
+  function wyStats(wk, tf) {
+    let w = S.win, e = tb(w).wy[`${wk}|${tf}`];
+    if (!e || e.n < 5) { w = "12m"; e = tb(w).wy[`${wk}|${tf}`]; }
+    return { e: e || { n: 0, s1: 0, s2: 0, s3: 0 }, w };
+  }
+  function wyReasons(x) {
+    const g = x.range, up = x.bias === 1, h = fP(x.height), tg = fP(x.target), iv = fP(x.invalid);
+    const ctx = x.basis === "trend" ? (g.prior === -1 ? "Biên hình thành sau một đợt giảm" : "Biên hình thành sau một đợt tăng") : `Trước biên giá đi ngang; khối lượng nến ${x.vbAtFound >= 0 ? "tăng" : "giảm"} lớn hơn`;
+    const evs = x.events.filter((e) => e.k !== "SOS" && e.k !== "SOW").map((e) => e.k).join(", ");
+    const eff = `nến tăng chiếm ${Math.round((x.vb + 1) * 50)}% khối lượng trong biên`;
+    const dry = x.dry < 0.8 ? `khối lượng 10 nến gần nhất cạn (RVOL ${x.dry.toFixed(2)}): bên ${up ? "bán" : "mua"} đã yếu` : `khối lượng 10 nến gần nhất chưa cạn (RVOL ${x.dry.toFixed(2)})`;
+    const tilt = x.bias !== x.bias0 ? ` ${x.bias === 1 ? "Spring" : "Upthrust"} vừa xuất hiện nên kỳ vọng nghiêng sang ${up ? "TĂNG" : "GIẢM"}.` : "";
+    return [
+      `${ctx}, nên theo luật Cung–Cầu đây là vùng ${up ? "tay to gom hàng" : "tay to xả hàng"}.${tilt} ${evs ? `Đã thấy: ${evs}. ` : ""}Luật Nhân–Quả: biên cao ${h}, nên mục tiêu tối thiểu sau khi ${up ? "vượt đỉnh (SOS)" : "thủng đáy (SOW)"} là ${tg}. Xác nhận: đóng cửa ${up ? "vượt đỉnh" : "thủng đáy"} biên với khối lượng lớn, rồi test lại mép cũ mà giữ được (${up ? "LPS" : "LPSY"}).`,
+      `Nguyên nhân chưa đủ: giá tiếp tục dao động trong ${fP(g.bot)}–${fP(g.top)} (pha B kéo dài). Đáy đã bị test ${x.testsBot} lần, đỉnh ${x.testsTop} lần; ${dry}. Biên càng dài thì đợt chạy sau càng xa, nên đi ngang chưa phải tín hiệu xấu.`,
+      `Đóng cửa ${up ? "thủng đáy" : "vượt đỉnh"} biên, qua ${iv}, với khối lượng lớn (${up ? "SOW" : "SOS"}): đây không phải ${up ? "tích lũy mà là tái phân phối" : "phân phối mà là tái tích lũy"}, xu hướng ${up ? "giảm" : "tăng"} tiếp diễn, mục tiêu khoảng ${fP(up ? g.bot - x.height : g.top + x.height)}. Nỗ lực–Kết quả hiện tại: ${eff}.`,
+    ];
+  }
+  function renderWyckoff() {
+    if (!A || !A.res[S.tf]) { $("wy").innerHTML = ""; $("wy-sub").textContent = ""; return; }
+    const cur = T.current(A, S.tf), x = cur.wyckoff;
+    let h = "";
+    if (!x) { h += `<p class="dim">Khung ${TFL[S.tf]} hiện không có biên giá nào đang chạy hoặc vừa kết thúc, nên chưa có cách đọc Wyckoff. Xem bảng các khung khác bên dưới.</p>`; $("wy-sub").textContent = ""; }
+    else {
+      const { e: st, w } = wyStats(x.wk, S.tf), f = (k) => (st.n ? Math.round(st[k] / st.n * 100) + "%" : "–"), R = wyReasons(x), up = x.bias === 1;
+      $("wy-sub").textContent = `khung ${TFL[S.tf]} · biên từ ${fTs(x.range.t)} · xác suất từ ${st.n} biên ${x.wk === "ACC" ? "tích lũy" : "phân phối"} trong ${WL[w]}`;
+      const done = !x.open ? (x.exit === x.bias0 ? 1 : x.exit === -x.bias0 ? 3 : 2) : 0;
+      h += `<p><b>${WK[x.wk]}</b>, pha <b class="amber">${PH[x.phase]}</b>, kỳ vọng <b class="${up ? "up" : "down"}">${up ? "TĂNG (markup)" : "GIẢM (markdown)"}</b> · biên ${fP(x.range.bot)}–${fP(x.range.top)} · mục tiêu ${fP(x.target)} · vô hiệu ${fP(x.invalid)} · giá ${fP(x.last)}${done ? ` · <b class="amber">đã kết thúc theo kịch bản ${done}</b>` : ""}</p>`;
+      h += `<div class="chips-row">${x.events.map((e) => `<span class="ev" title="${esc(e.txt)}"><b>${e.k}</b> ${fTs(A.res[S.tf].B.t[e.i])}</span>`).join("") || '<span class="dim small">chưa có sự kiện Wyckoff rõ ràng</span>'}<span class="ev">test đáy ${x.testsBot} · test đỉnh ${x.testsTop}</span><span class="ev">RVOL 10 nến ${x.dry.toFixed(2)}</span></div>`;
+      h += `<div class="scen">${[["s1", up ? "KỊCH BẢN 1 · tăng giá (markup)" : "KỊCH BẢN 1 · giảm giá (markdown)"], ["s2", "KỊCH BẢN 2 · đi ngang, xây thêm nguyên nhân"], ["s3", up ? "KỊCH BẢN 3 · tái phân phối, giảm tiếp" : "KỊCH BẢN 3 · tái tích lũy, tăng tiếp"]].map(([k, t], j) => `<div class="sc ${k}"><h4><span>${t}</span><span>${f(k)}</span></h4>${esc(R[j])}</div>`).join("")}</div>`;
+    }
+    h += `<div class="scroll" style="margin-top:10px"><table><tr><th>Khung</th><th>Biên</th><th>Cách đọc</th><th>Pha</th><th>Sự kiện</th><th>Kỳ vọng</th><th>Mục tiêu</th><th>Vô hiệu</th><th>KB1</th><th>KB2</th><th>KB3</th></tr>`;
+    for (const tf of T.TFS) {
+      if (!A.res[tf]) continue;
+      const y = T.current(A, tf).wyckoff, st = y ? wyStats(y.wk, tf).e : null, f = (k) => (st && st.n ? Math.round(st[k] / st.n * 100) + "%" : "–");
+      h += `<tr class="${tf === S.tf ? "sel" : ""}" data-tf="${tf}" style="cursor:pointer"><td>${TFL[tf]}</td>${y ? `<td>${fP(y.range.bot)}–${fP(y.range.top)}${y.open ? "" : ' <span class="dim">(đã kết thúc)</span>'}</td><td>${y.wk === "ACC" ? "Tích lũy" : "Phân phối"}</td><td>${y.phase}</td><td class="small">${y.events.map((e) => e.k).join(", ") || "–"}</td><td class="${y.bias === 1 ? "up" : "down"}">${y.bias === 1 ? "▲ tăng" : "▼ giảm"}</td><td>${fP(y.target)}</td><td>${fP(y.invalid)}</td><td>${f("s1")}</td><td>${f("s2")}</td><td>${f("s3")}</td>` : '<td colspan="10" class="dim">không có biên</td>'}</tr>`;
+    }
+    h += `</table></div><p class="dim small">KB1 = rời biên theo hướng kỳ vọng · KB2 = hết thời gian vẫn trong biên · KB3 = rời biên ngược hướng. Đo trên các biên đã kết thúc cùng loại, cùng khung, của mã này.</p>`;
+    $("wy").innerHTML = h;
+  }
+  $("wy").addEventListener("click", (e) => { const tr = e.target.closest("tr[data-tf]"); if (tr) setTf(tr.dataset.tf); });
 
   // ---------- ② breakouts ----------
   const BK = ["B0", "T1", "T2", "T3", "T4", "FAIL"];
@@ -685,7 +742,7 @@
   $("log").addEventListener("click", (e) => {
     const tr = e.target.closest("tr[data-k]"); if (!tr) return;
     const x = $("log").rows_[+tr.dataset.k]; sel = x;
-    if (S.tf !== x.tf) { S.tf = x.tf; save(); fillControls(); renderElliott(); renderBo(); renderRange(); }
+    if (S.tf !== x.tf) { S.tf = x.tf; save(); fillControls(); renderElliott(); renderWyckoff(); renderBo(); renderRange(); }
     const n = A.res[x.tf].n, span = (x.open ? n - 1 : x.exitI) - x.i;
     view.n = Math.max(view.n, span + 40); view.end = Math.min(n - 1, (x.open ? n - 1 : x.exitI) + 15);
     drawChart(); renderLog(); cv.scrollIntoView({ behavior: "smooth", block: "center" });

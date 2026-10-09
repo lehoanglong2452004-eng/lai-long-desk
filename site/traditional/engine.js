@@ -227,7 +227,14 @@
       const j = i - L, ref = Math.max(0, j - L);
       const ch = B.c[j] - B.c[ref];
       const prior = ch > 2 * A[j] ? 1 : ch < -2 * A[j] ? -1 : 0;
-      cur = { start: i - L + 1, found: i, top, bot, mid: (top + bot) / 2, prior, t: B.t[i] };
+      // Wyckoff reading at the moment the range is recognised (bars start..i only):
+      // after a fall a range is read as accumulation (expect markup), after a rise as distribution (expect markdown);
+      // with no clear trend before it, the side with more volume (effort) decides
+      let vu = 0, vd = 0;
+      for (let k = i - L + 1; k <= i; k++) { if (B.c[k] > B.o[k]) vu += B.v[k]; else if (B.c[k] < B.o[k]) vd += B.v[k]; }
+      const vb = vu + vd ? (vu - vd) / (vu + vd) : 0;
+      const bias = prior === -1 ? 1 : prior === 1 ? -1 : vb >= 0 ? 1 : -1;
+      cur = { start: i - L + 1, found: i, top, bot, mid: (top + bot) / 2, prior, t: B.t[i], vb, bias, wk: bias === 1 ? "ACC" : "DIST", basis: prior ? "trend" : "volume" };
     }
     if (cur) { cur.end = n - 1; cur.exit = 0; cur.open = true; out.push(cur); }
     return out;
@@ -553,7 +560,18 @@
         el[`${kd}|${tf}`] = { n: e.length, s1: e.filter((x) => x.scenario === 1).length, s2: e.filter((x) => x.scenario === 2).length, s3: e.filter((x) => x.scenario === 3).length };
       }
     }
-    return { grid, bo, rg, el, all: stats(T) };
+    // Wyckoff scenarios per range: 1 = left in the expected direction, 2 = ran out of time inside (still building cause), 3 = left the other way
+    const wy = {};
+    for (const tf of TFS) {
+      const r = A.res[tf];
+      if (!r) continue;
+      const R = r.ranges.filter((g) => !g.open && g.t >= now - days * 86400);
+      for (const kd of ["ALL", "ACC", "DIST"]) {
+        const s = R.filter((g) => kd === "ALL" || g.wk === kd);
+        wy[`${kd}|${tf}`] = { n: s.length, s1: s.filter((g) => g.exit === g.bias).length, s2: s.filter((g) => g.exit === 0).length, s3: s.filter((g) => g.exit === -g.bias).length };
+      }
+    }
+    return { grid, bo, rg, el, wy, all: stats(T) };
   }
 
   // ---------- the current picture of one timeframe (for the page) ----------
@@ -565,7 +583,46 @@
     const lastPiv = r.piv.slice(-6);
     const rg = r.ranges[r.ranges.length - 1];
     const box = r.boxes.filter((b) => b.at > n - 200).slice(-2);
-    return { tf, last, trend: r.trend[n - 1], elliott: ell && n - 1 - ell.i < 200 ? ell : null, pivots: lastPiv, range: rg && rg.open ? rg : null, boxes: box, watch: r.watch, atr: r.A[n - 1] };
+    return { tf, last, trend: r.trend[n - 1], elliott: ell && n - 1 - ell.i < 200 ? ell : null, pivots: lastPiv, range: rg && rg.open ? rg : null, boxes: box, watch: r.watch, atr: r.A[n - 1],
+      wyckoff: rg && (rg.open || n - 1 - rg.end < 60) ? wyRead(r, rg) : null };
+  }
+  // the Wyckoff picture of one range: events, phase, cause-and-effect target and what would prove it wrong
+  function wyRead(r, g) {
+    const B = r.B, n = r.n, end = g.open ? n - 1 : g.end, h = g.top - g.bot, ev = [];
+    // climax: the heaviest bar near the start of the range, at its extreme (selling climax after a fall, buying climax after a rise)
+    let ci = g.start, cv = -1;
+    for (let k = Math.max(0, g.start - 10); k <= Math.min(end, g.start + 10); k++) if (B.v[k] > cv) { cv = B.v[k]; ci = k; }
+    const atLow = B.l[ci] <= g.bot + 0.25 * h, atHigh = B.h[ci] >= g.top - 0.25 * h;
+    if (g.prior === -1 && atLow) ev.push({ i: ci, k: "SC", txt: "Selling Climax: nến khối lượng lớn nhất ở đáy, bên bán xả hết" });
+    else if (g.prior === 1 && atHigh) ev.push({ i: ci, k: "BC", txt: "Buying Climax: nến khối lượng lớn nhất ở đỉnh, bên mua đuổi lần cuối" });
+    // tests of each edge after the range was recognised
+    let tb = 0, tt = 0, lb = -9, lt = -9;
+    for (let k = g.found + 1; k <= end; k++) {
+      if (B.l[k] <= g.bot + 0.15 * h && k - lb > 3) { tb++; lb = k; }
+      if (B.h[k] >= g.top - 0.15 * h && k - lt > 3) { tt++; lt = k; }
+    }
+    const springs = r.wyckoff.filter((e) => e.range === g);
+    for (const e of springs) ev.push({ i: e.i, k: e.kind === "SPRING" ? "SPRING" : "UTAD", txt: e.kind === "SPRING" ? "Spring: thủng đáy biên rồi đóng cửa quay vào, rũ bỏ bên bán cuối cùng" : "Upthrust: vượt đỉnh biên rồi đóng cửa quay vào, bẫy bên mua" });
+    // volume: effort on up bars versus down bars over the whole range, and whether it is drying up lately
+    let vu = 0, vd = 0, rv = 0, m = 0;
+    for (let k = g.start; k <= end; k++) { if (B.c[k] > B.o[k]) vu += B.v[k]; else if (B.c[k] < B.o[k]) vd += B.v[k]; }
+    for (let k = Math.max(g.start, end - 9); k <= end; k++) { rv += r.RV[k]; m++; }
+    const vb = vu + vd ? (vu - vd) / (vu + vd) : 0, dry = m ? rv / m : 1;
+    if (!g.open && g.exit) ev.push({ i: g.end, k: g.exit === 1 ? "SOS" : "SOW", txt: g.exit === 1 ? "Sign of Strength: đóng cửa vượt đỉnh biên, bắt đầu tăng giá (markup)" : "Sign of Weakness: đóng cửa thủng đáy biên, bắt đầu giảm giá (markdown)" });
+    ev.sort((a, b) => a.i - b.i);
+    // phase A-E
+    const lastC = B.c[end], c = springs.length ? springs[springs.length - 1] : null;
+    let phase;
+    if (!g.open) phase = "E";
+    else if (c && (c.dir === 1 ? lastC > g.mid : lastC < g.mid)) phase = "D";
+    else if (c) phase = "C";
+    else if (end - g.found < 10) phase = "A";
+    else phase = "B";
+    // the reading may tilt with what happened inside the range (a spring argues for markup, an upthrust for markdown)
+    let bias = g.bias;
+    if (c && g.open) bias = c.dir;  // a finished range is judged against the reading it started with
+    const target = bias === 1 ? g.top + h : g.bot - h, invalid = bias === 1 ? g.bot - 0.1 * h : g.top + 0.1 * h;
+    return { range: g, wk: g.wk, basis: g.basis, bias0: g.bias, bias, phase, events: ev, testsBot: tb, testsTop: tt, vb, vbAtFound: g.vb, dry, target, invalid, height: h, last: lastC, open: !!g.open, exit: g.exit };
   }
 
   const api = { PEGGED, TFS, TF_SEC, WEIGHT, COST, WINDOWS, DEFAULTS, MODELS, GROUP, runTF, runAsset, council, stats, tables, windowed, current, zigzag, atr, matchWave, validate, bh, pT };

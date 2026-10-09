@@ -70,6 +70,9 @@ tr.grp td { color: var(--amber); font-size: 11px; letter-spacing: .08em; font-we
 .toast { position: fixed; left: 50%; bottom: 18px; transform: translate(-50%, 20px); opacity: 0; z-index: 40; max-width: min(560px, calc(100vw - 32px)); background: #0d1117; border: 1px solid var(--green); color: var(--text); border-radius: 6px; padding: 8px 12px; font-size: 12px; white-space: normal; transition: opacity .25s, transform .25s; pointer-events: none; }
 .toast.on { opacity: 1; transform: translate(-50%, 0); }
 .toast b { color: var(--green); }
+.chips-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 2px; }
+.ev { font-size: 11px; border: 1px solid rgba(74,168,255,.5); color: var(--text); border-radius: 999px; padding: 2px 8px; }
+.ev b { color: #4aa8ff; }
 /* validation */
 .funnel { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin: 4px 0 10px; }
 .fn { border: 1px solid var(--line); border-radius: 4px; padding: 6px 8px; font-size: 11px; color: var(--dim); white-space: normal; }
@@ -172,6 +175,11 @@ table.hm td.c { position: relative; }
     <div id="ell"></div>
   </section>
 
+  <section class="panel span3">
+    <div class="ph"><h2>① WYCKOFF · 3 KỊCH BẢN</h2><span class="dim small" id="wy-sub"></span></div>
+    <div id="wy"></div>
+  </section>
+
   <section class="panel span2">
     <div class="ph"><h2>② PHÁ VỠ VÀ CÁC LẦN TEST LẠI</h2><span class="dim small">thắng = chạm 2R trước khi chạm SL</span></div>
     <canvas class="sm" id="bo"></canvas>
@@ -208,6 +216,7 @@ table.hm td.c { position: relative; }
       <h4>① Elliott</h4>
       <p>Quy tắc cứng: sóng 2 không vượt điểm đầu sóng 1, sóng 3 không phải sóng ngắn nhất, sóng 4 không đi vào vùng giá sóng 1. Hướng dẫn Fibonacci: sóng 2 hồi 50–61,8%, sóng 3 dài 1,618 lần sóng 1, sóng 4 hồi 23,6–50% sóng 3, sóng 5 thường bằng sóng 1, sóng C thường bằng sóng A. Bốn cách đọc: sau sóng 2 (chờ sóng 3), sau sóng 4 (chờ sóng 5), sau sóng 5 (chờ điều chỉnh A-B-C), sau A-B-C (xu hướng cũ quay lại). Kịch bản 1 = giá chạm mục tiêu theo lý thuyết trước; kịch bản 2 = không chạm mục tiêu cũng không phá điểm vô hiệu trong thời gian cho phép (đi ngang, tái tích lũy); kịch bản 3 = giá đóng cửa qua điểm vô hiệu (đếm sai, giá đi ngược).</p>
       <h4>① Wyckoff</h4>
+      <p>Ba quy luật: Cung–Cầu (giá đi theo bên mạnh hơn), Nhân–Quả (vùng đi ngang càng dài và rộng, "nguyên nhân" càng lớn, đợt chạy sau đó càng xa; mục tiêu tối thiểu = chiều cao biên), Nỗ lực–Kết quả (khối lượng lớn mà giá không đi xa là dấu hiệu đảo chiều). Biên sau một đợt giảm được đọc là TÍCH LŨY (kỳ vọng tăng), sau một đợt tăng là PHÂN PHỐI (kỳ vọng giảm); nếu trước đó đi ngang thì bên có khối lượng lớn hơn quyết định. Năm pha: A dừng xu hướng cũ (Climax), B xây dựng nguyên nhân (test qua lại), C phép thử (Spring/Upthrust), D giá rời vùng test về phía mép đối diện, E rời biên (SOS/SOW). Kịch bản 1 = rời biên theo hướng kỳ vọng; kịch bản 2 = vẫn trong biên sau thời gian tối đa (nguyên nhân còn đang xây); kịch bản 3 = rời biên ngược hướng (tái tích lũy/tái phân phối, xu hướng cũ tiếp diễn). Xác suất được đo trên mọi biên đã kết thúc của chính mã và khung đó.</p>
       <p>Trong một vùng tích lũy/phân phối (biên giá), Spring là cú thủng đáy biên rồi đóng cửa trở lại trong biên: dấu hiệu bên mua hấp thụ. Upthrust là cú vượt đỉnh biên rồi đóng cửa trở lại: bên bán hấp thụ. Chốt 50% ở giữa biên, phần còn lại ở biên đối diện.</p>
       <h4>① Hộp Darvas</h4>
       <p>Giá lập đỉnh mới cao nhất 50 nến; đỉnh giữ 3 nến thì thành nóc hộp, sau đó đáy giữ 3 nến thì thành đáy hộp. Mua khi giá đóng cửa vượt nóc hộp, cắt lỗ dưới đáy hộp, và dời cắt lỗ lên đáy của mỗi hộp mới để cưỡi hết xu hướng. Chiều bán làm ngược lại.</p>
