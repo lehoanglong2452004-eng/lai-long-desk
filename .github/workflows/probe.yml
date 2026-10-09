@@ -11,12 +11,8 @@ jobs:
       - uses: actions/checkout@v4
       - run: |
           mkdir -p probe/out; B=https://lehoanglong2452004-eng.github.io/lai-long-desk
-          { for u in "" orderflow/ orderflow/of.js orderflow/ofcore.js traditional/ data/trad/index.json; do curl -s -o /dev/null -w "%{http_code} %{size_download} $u\n" "$B/$u"; done
-            for p in "" traditional/ midoti/ news/ factory/ status/; do echo "$p $(curl -s $B/$p | grep -c 'orderflow/')"; done
-            curl -s -o /dev/null -w "spot aggTrades %{http_code}\n" "https://data-api.binance.vision/api/v3/aggTrades?symbol=BTCUSDT&limit=5"
-            curl -s -o /dev/null -w "fapi %{http_code}\n" "https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT"
-            curl -s -X POST -H 'Content-Type: application/json' -d '{"type":"metaAndAssetCtxs","dex":"xyz"}' https://api.hyperliquid.xyz/info | python3 -c "import json,sys;d=json.load(sys.stdin);print('HLXYZ',[u['name'] for u in d[0]['universe']][:60])"
-            curl -s -X POST -H 'Content-Type: application/json' -d '{"type":"candleSnapshot","req":{"coin":"xyz:GOLD","interval":"5m","startTime":'$(( ($(date +%s)-3600)*1000 ))'}}' https://api.hyperliquid.xyz/info | head -c 200; echo
+          { for u in fs.js orderflow/; do curl -s -o /dev/null -w "%{http_code} %{size_download} $u\n" "$B/$u"; done
+            for p in "" traditional/ midoti/ factory/ orderflow/; do echo "$p $(curl -s $B/$p | grep -c 'fs.js')"; done
           } > probe/out/live.txt 2>&1
       - run: |
           git config user.name probe; git config user.email probe@users.noreply.github.com
