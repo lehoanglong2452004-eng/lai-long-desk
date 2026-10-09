@@ -1,16 +1,20 @@
 200 7966 
-200 16665 traditional/
-200 49875 traditional/trad.js
-200 26179 traditional/engine.js
-200 105826 data/trad/index.json
+200 21144 traditional/
+200 61245 traditional/trad.js
+200 31178 traditional/engine.js
+200 114539 data/trad/index.json
 200 17086 data/bars/index.json
 200 27703 data/bars/BTC_1W.json
-200 483717 data/bars/BTC_5m.json
+200 483713 data/bars/BTC_5m.json
 200 414669 data/bars/GOLD_1H.json
-200 555722 data/bars/BTC_1m.json
-200 349136 data/bars/GOLD_1m.json
+200 555707 data/bars/BTC_1m.json
+200 349928 data/bars/GOLD_1m.json
 TRUYỀN THỐNG
-52 [] 9.765
+52 [] 8.7
 ['BTC', 'ETH', 'BNB', 'XRP', 'SOL', 'TRX', 'ZEC', 'DOGE', 'XMR', 'LINK', 'ADA', 'XLM', 'NEAR', 'BCH', 'LTC', 'UNI', 'AVAX', 'SUI', 'EURUSD', 'GBPUSD', 'AUDUSD', 'NZDUSD', 'USDJPY', 'USDCAD', 'USDCHF', 'USDCNY', 'USDHKD', 'USDSGD', 'GOLD', 'SILVER', 'PLATINUM', 'COPPER', 'WTI', 'BRENT', 'NATGAS', 'CORN', 'WHEAT', 'SOYBEAN', 'COFFEE', 'SUGAR', 'COCOA', 'SP500', 'NASDAQ100', 'DOW', 'RUSSELL2000', 'AAPL', 'MSFT', 'NVDA', 'GOOGL', 'AMZN', 'META', 'TSLA']
-504
+501
+VAL 1717 532 8 [['USDCNY|R_SHORT|5m', 319, 0.571, 0.371, 8.18, 0], ['USDCNY|R_SHORT|15m', 172, 0.733, 0.379, 7.75, 0], ['USDCNY|FAIL|15m', 98, 0.673, 0.896, 6.7, 0], ['USDCNY|B0|15m', 117, 0.718, 0.837, 5.27, 0], ['USDCNY|B0|5m', 101, 0.743, 0.804, 4.4, 0.005], ['XRP|FAIL|4H', 46, 0.717, 0.757, 4.3, 0.014], ['AAPL|T1|4H', 15, 0.867, 1.568, 5.6, 0.02], ['USDCNY|FAIL|1H', 132, 0.598, 0.424, 3.79, 0.024]]
+{'hind': {'n': 20626, 'win': 0.458, 'avgR': 0.189, 'totalR': 3890.77, 'p': 0}, 'naive': {'n': 20018, 'win': 0.367, 'avgR': -0.077, 'totalR': -1546.46, 'p': 1}, 'sel': {'n': 1319, 'win': 0.489, 'avgR': 0.155, 'totalR': 204.23, 'p': 0}, 'all': {'n': 79408, 'win': 0.354, 'avgR': -0.128, 'totalR': -10160.36, 'p': 1}}
+CLS 363 75 2 [['forex|R_SHORT|5m', 409, 0.528, 0.237, 5.44, 0], ['forex|R_SHORT|15m', 227, 0.67, 0.261, 5.23, 0]]
+{'hind': {'n': 11764, 'win': 0.435, 'avgR': 0.098, 'totalR': 1156.97, 'p': 0}, 'naive': {'n': 16403, 'win': 0.375, 'avgR': -0.085, 'totalR': -1395.79, 'p': 1}, 'sel': {'n': 2020, 'win': 0.416, 'avgR': -0.02, 'totalR': -40.96, 'p': 0.77}, 'all': {'n': 79408, 'win': 0.354, 'avgR': -0.128, 'totalR': -10160.36, 'p': 1}}
 market 52 18
