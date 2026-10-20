@@ -126,7 +126,8 @@ PSD_ATTRS = {"Production", "Exports", "Ending Stocks"} | set(USE_ATTRS)
 ASSETS = [("spx", "^GSPC", "S&P 500"), ("ndx", "^IXIC", "Nasdaq Composite"), ("gold", "GC=F", "Vàng"),
           ("silver", "SI=F", "Bạc"), ("copper", "HG=F", "Đồng"), ("oil", "CL=F", "Dầu WTI (tương lai)"),
           ("dxy", "DX-Y.NYB", "Chỉ số USD (DXY)"), ("btc", "BTC-USD", "Bitcoin"), ("em", "EEM", "Cổ phiếu mới nổi (EEM)"),
-          ("nikkei", "^N225", "Nikkei 225"), ("tlt", "TLT", "Trái phiếu Mỹ 20+ năm (TLT)")]
+          ("nikkei", "^N225", "Nikkei 225"), ("tlt", "TLT", "Trái phiếu Mỹ 20+ năm (TLT)"),
+          ("vnm", "VNM", "Cổ phiếu Việt Nam (ETF VNM)"), ("usdvnd", "VND=X", "Tỷ giá USD/VND")]
 
 CURVE = [("1M", "DGS1MO"), ("3M", "DGS3MO"), ("6M", "DGS6MO"), ("1Y", "DGS1"), ("2Y", "DGS2"), ("3Y", "DGS3"),
          ("5Y", "DGS5"), ("7Y", "DGS7"), ("10Y", "DGS10"), ("20Y", "DGS20"), ("30Y", "DGS30")]

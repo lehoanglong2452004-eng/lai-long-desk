@@ -181,3 +181,24 @@ details.other .two { margin-top: 8px; }
 @keyframes fld { from { background: rgba(255, 77, 77, .35); } to { background: transparent; } }
 @keyframes pulse { 50% { opacity: .25; } }
 .stats .fr { margin: 0 0 4px; }
+
+/* decision board */
+.dstrip { grid-column: span 12; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+.dcard { display: block; text-decoration: none; color: var(--text); border: 1px solid var(--line); background: #070707; padding: 8px 10px; }
+.dcard:hover { border-color: var(--amber); }
+.dcard .dn { color: var(--amber); font-size: 11px; letter-spacing: .06em; font-weight: 700; }
+.dscore { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; margin: 4px 0; }
+.dscore b { font-size: 26px; }
+.dscore b.mid, .dscore span.mid { color: var(--dim); }
+.dscore > span:nth-child(2) { font-weight: 700; font-size: 12px; letter-spacing: .05em; }
+.dscore .small { flex-basis: 100%; }
+.gauge { position: relative; height: 6px; background: linear-gradient(90deg, #5a1414, #222 40%, #222 60%, #0f4a26); margin: 6px 0 2px; }
+.gauge i { position: absolute; top: -4px; width: 4px; height: 14px; background: var(--yellow); }
+.pip { letter-spacing: -1px; font-size: 12px; }
+table.drv td { vertical-align: top; }
+table.drv td.wrap { color: var(--text); }
+table.cal td { vertical-align: top; }
+table.cal td:nth-child(4) { white-space: normal; text-align: left; min-width: 260px; }
+table.cal td:nth-child(5) { text-align: left; }
+.nowrap { white-space: nowrap; }
+span.click { cursor: pointer; } span.click:hover { color: var(--amber); }
