@@ -4,7 +4,6 @@ liquidity, credit, energy inventories, crop balance sheets, long-term asset char
 Free sources only, no API keys:
   FRED (St. Louis Fed)       rates, inflation, growth, liquidity, credit, valuation
   EIA (dnav history tables)  weekly US crude, gasoline, distillate, SPR, production, refinery use, gas storage
-  OPEC                       daily OPEC basket price
   USDA FAS PSD               the WASDE balance sheets (production, use, ending stocks) per crop and country
   Yahoo Finance              weekly prices for long-term asset charts
 
@@ -117,6 +116,10 @@ PSD_FILES = ["psd_grains_pulses_csv.zip", "psd_oilseeds_csv.zip", "psd_coffee_cs
 CROPS = [("corn", "Corn", "Ngô", "ZC=F"), ("wheat", "Wheat", "Lúa mì", "ZW=F"), ("soybean", "Oilseed, Soybean", "Đậu tương", "ZS=F"),
          ("rice", "Rice, Milled", "Gạo", "ZR=F"), ("coffee", "Coffee, Green", "Cà phê", "KC=F"),
          ("sugar", "Sugar, Centrifugal", "Đường", "SB=F"), ("cotton", "Cotton", "Bông", "CT=F")]
+
+# consumption is named differently per crop (sugar, cotton); the first one present is used
+USE_ATTRS = ("Domestic Consumption", "Domestic Use", "Total Dom. Cons.", "Human Dom. Consumption", "Dom. Consumption", "Total Use")
+PSD_ATTRS = {"Production", "Exports", "Ending Stocks"} | set(USE_ATTRS)
 
 ASSETS = [("spx", "^GSPC", "S&P 500"), ("ndx", "^IXIC", "Nasdaq Composite"), ("gold", "GC=F", "Vàng"),
           ("silver", "SI=F", "Bạc"), ("copper", "HG=F", "Đồng"), ("oil", "CL=F", "Dầu WTI (tương lai)"),
@@ -272,11 +275,19 @@ def parse_eia_weekly(html):
 
 def eia_series(area, code):
     def run():
-        url = f"https://www.eia.gov/dnav/{area}/hist/LeafHandler.ashx?n={area.upper()}&s={code}&f=W"
-        rows = parse_eia_weekly(_get(url, headers={"User-Agent": BROWSER_UA}, timeout=40))
-        if len(rows) < 50:
-            raise RuntimeError(f"only {len(rows)} rows parsed")
-        return rows
+        urls = [f"https://www.eia.gov/dnav/{area}/hist/LeafHandler.ashx?n={area.upper()}&s={code}&f=W",
+                f"https://www.eia.gov/dnav/{area}/hist/{code.lower()}w.htm"]
+        last = None
+        for url in urls:
+            try:
+                rows = parse_eia_weekly(_get(url, headers={"User-Agent": BROWSER_UA}, timeout=40, retries=2))
+            except RuntimeError as e:
+                last = e
+                continue
+            if len(rows) >= 50:
+                return rows
+            last = RuntimeError(f"only {len(rows)} rows parsed from {url}")
+        raise last
     rows = _safe(f"eia {code}", run, [])
     if not rows and area == "pet":  # FRED mirrors part of the EIA weekly data
         rows = fred_raw(code)
@@ -303,16 +314,6 @@ def seasonal(rows):
             "vs5y_pct": vs, "week": cur_wk, "range": f"{last_year - 5}-{last_year - 1}"}
 
 
-def opec_basket():
-    def run():
-        raw = _get("https://www.opec.org/basket/basketDayArchives.xml", headers={"User-Agent": BROWSER_UA}, timeout=40)
-        rows = [(dt.date.fromisoformat(d), float(v)) for d, v in re.findall(r'data="(\d{4}-\d{2}-\d{2})"\s+val="([\d.]+)"', raw)]
-        if not rows:
-            raise RuntimeError("no rows")
-        return sorted(rows)
-    return _safe("opec basket", run, [])
-
-
 def energy(cache):
     out = fred_group("energy", cache)
     with ThreadPoolExecutor(4) as ex:
@@ -325,8 +326,6 @@ def energy(cache):
         if p and len(rows) > 1:
             p["st"]["chg_w"] = round(rows[-1][1] - rows[-2][1], 3)
         out[key] = p
-    ob = opec_basket()
-    out["opec"] = pack("Giá rổ dầu OPEC", "$/thùng", "OPEC", ob, "d") if ob else None
     return out
 
 
@@ -335,7 +334,7 @@ def psd():
     """Production, consumption, ending stocks and stocks-to-use by market year, US and world."""
     want = {c[1]: c for c in CROPS}
     acc = {}  # (crop, scope, year) -> attr -> value
-    month = {}
+    month, seen = {}, {}
     for f in PSD_FILES:
         def run(f=f):
             req = src.urllib.request.Request(f"https://apps.fas.usda.gov/psdonline/downloads/{f}", headers={"User-Agent": BROWSER_UA})
@@ -350,7 +349,9 @@ def psd():
                     for r in csv.DictReader(io.TextIOWrapper(fh, "utf-8", errors="replace")):
                         crop = want.get(r.get("Commodity_Description", "").strip())
                         attr = r.get("Attribute_Description", "").strip()
-                        if not crop or attr not in ("Production", "Domestic Consumption", "Exports", "Ending Stocks"):
+                        if crop:
+                            seen.setdefault(crop[0], set()).add(attr)
+                        if not crop or attr not in PSD_ATTRS:
                             continue
                         try:
                             y, v = int(r["Market_Year"]), float(r["Value"])
@@ -369,14 +370,18 @@ def psd():
     out = {}
     this_year = dt.date.today().year
     for key, desc, name, fut in CROPS:
-        crop = {"name": name, "unit": (acc.get(("unit", key, 0)) or {}).get("u", ""), "updated": month.get(key)}
+        crop = {"name": name, "unit": (acc.get(("unit", key, 0)) or {}).get("u", ""), "updated": month.get(key),
+                "use_attr": next((k for k in USE_ATTRS if k in seen.get(key, ())), None)}
+        if key in ("sugar", "cotton"):
+            print("psd attributes", key, sorted(seen.get(key, ())))
         for scope in ("us", "world"):
             rows = []
             for y in range(1960, this_year + 2):
                 a = acc.get((key, scope, y))
                 if not a or not a.get("Ending Stocks"):
                     continue
-                use = a.get("Domestic Consumption", 0) + (a.get("Exports", 0) if scope == "us" else 0)
+                cons = next((a[k] for k in USE_ATTRS if a.get(k)), 0)
+                use = cons + (a.get("Exports", 0) if scope == "us" else 0)
                 rows.append({"y": y, "prod": a.get("Production"), "use": use, "end": a["Ending Stocks"],
                              "stu": round(a["Ending Stocks"] / use * 100, 1) if use else None})
             rows = rows[-35:]
