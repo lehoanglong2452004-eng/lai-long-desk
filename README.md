@@ -1,10 +1,29 @@
 # Lai Long Desk Terminal
 
-## 👉 [MỞ TERMINAL](https://lehoanglong2452004-eng.github.io/lai-long-desk/) · [TIN TỨC](https://lehoanglong2452004-eng.github.io/lai-long-desk/news/) · [MIDOTI DEPTH](https://lehoanglong2452004-eng.github.io/lai-long-desk/depth/)
+## 👉 [MACRO TERMINAL](https://lehoanglong2452004-eng.github.io/lai-long-desk/) · [QUANT](https://lehoanglong2452004-eng.github.io/lai-long-desk/quant/) · [TIN TỨC](https://lehoanglong2452004-eng.github.io/lai-long-desk/news/) · [MIDOTI DEPTH](https://lehoanglong2452004-eng.github.io/lai-long-desk/depth/)
 
 Hệ thống cá nhân quét **crypto, forex và hàng hóa phái sinh** để tìm cơ hội ít người chú ý, chấm điểm từng cơ hội và hiển thị trên một trang web dạng terminal. Hệ thống **không bao giờ tự đặt lệnh**: bạn luôn là người quyết định.
 
 Phương châm: **sống sót trước, kiếm vàng sau.** Mọi tín hiệu đều được kiểm chứng sau khi trừ phí và trượt giá. Loại tín hiệu nào lỗ sau chi phí sẽ tự bị hạ xuống hạng C.
+
+## Macro terminal (trang chủ)
+
+Hệ sinh thái thống kê, tổng hợp dữ liệu kiểu Bloomberg để đánh giá cơ hội trung và dài hạn. Gõ mã vào ô lệnh hoặc bấm F1 đến F10:
+
+| Mã | Màn hình | Dữ liệu |
+|---|---|---|
+| HOME | Tổng quan | Bản đồ cơ hội (chỉ báo ở cực trị 10 năm, đọc hai mặt), đồng hồ chu kỳ, chỉ báo chính |
+| CURV | Đường cong lợi suất | Đường cong Mỹ hôm nay so với 1 tuần, 1 tháng, 6 tháng, 1 năm, 2 năm; 10Y-2Y, 10Y-3M; đường cong Đức, khu vực euro, Anh, Nhật |
+| RATE | Lãi suất | Fed, 3M/2Y/10Y/30Y, lợi suất thực, phần bù kỳ hạn, lãi vay mua nhà, USD; lãi suất 10 ngân hàng trung ương |
+| INFL | Lạm phát | CPI, CPI lõi, PCE lõi, PPI, lương, lạm phát kỳ vọng |
+| GROW | Tăng trưởng | GDP, thất nghiệp, việc làm, trợ cấp thất nghiệp, sản xuất, bán lẻ, niềm tin, nhà ở, CFNAI, quy tắc Sahm |
+| LIQ | Thanh khoản, tín dụng, định giá | Bảng cân đối Fed, M2, RRP, TGA, thanh khoản ròng, NFCI, chênh lệch tín dụng, chỉ báo Buffett, tiền mặt trong quỹ tiền tệ |
+| ENGY | Năng lượng | Tồn kho EIA (dầu thô, xăng, dầu cất, Cushing, khí đốt) so với mùa vụ 5 năm, sản lượng, lọc dầu, SPR, giá dầu và khí |
+| AGRI | Nông sản | Bảng cân đối WASDE (USDA PSD): tồn kho/sử dụng thế giới và Mỹ cho ngô, lúa mì, đậu tương, gạo, cà phê, đường, bông |
+| ASST | Tài sản dài hạn | S&P 500 (cả sau lạm phát), Nasdaq, vàng, bạc, đồng, dầu, DXY, Bitcoin, EEM, Nikkei, TLT, các tỷ lệ |
+| CYCL | Chu kỳ | Đồng hồ đầu tư (tăng trưởng × lạm phát), bảng kiểm tra suy thoái |
+
+Mỗi chỉ báo có biểu đồ toàn bộ lịch sử (vùng xám là suy thoái Mỹ), phân vị so với 10 năm và toàn bộ lịch sử, và phần **hai mặt**: mặt rủi ro, mặt cơ hội, ai hưởng lợi. Giải thích nằm trong `site/kb.js`. Dữ liệu do `pipeline/macro_desk.py` dựng (chạy trong lịch quét mỗi giờ, nhóm nào chưa cũ thì bỏ qua), ghi vào `site/data/macro/`. Không cần API key. Sản lượng OPEC chưa có vì opec.org chặn tải tự động.
 
 ## Cách hệ thống chạy
 

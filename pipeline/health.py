@@ -9,7 +9,7 @@ import time
 
 from .run import DATA, load_json
 
-DESKS = ("scan", "global", "factory", "news")
+DESKS = ("scan", "global", "macro", "factory", "news")
 HISTORY = 48  # hourly runs kept per source (two days)
 
 

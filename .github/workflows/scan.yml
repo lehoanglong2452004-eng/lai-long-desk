@@ -35,11 +35,15 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+          SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/quant/
         run: python -m pipeline.run
       - name: Global desk data (bond curves, central banks, CFTC, macro, crypto-wide)
         continue-on-error: true
         run: python -m pipeline.global_desk
+      - name: Macro desk (rates, curve, inflation, growth, liquidity, EIA inventories, WASDE, long-term assets, cycle)
+        continue-on-error: true
+        timeout-minutes: 15
+        run: python -m pipeline.macro_desk
       - name: Factory (Wyckoff + MSS + volume/market profile, 4 timeframes, backtest log; MIDOTI bars)
         continue-on-error: true
         timeout-minutes: 30

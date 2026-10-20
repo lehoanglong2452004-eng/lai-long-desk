@@ -117,6 +117,8 @@ CROPS = [("corn", "Corn", "Ngô", "ZC=F"), ("wheat", "Wheat", "Lúa mì", "ZW=F"
          ("rice", "Rice, Milled", "Gạo", "ZR=F"), ("coffee", "Coffee, Green", "Cà phê", "KC=F"),
          ("sugar", "Sugar, Centrifugal", "Đường", "SB=F"), ("cotton", "Cotton", "Bông", "CT=F")]
 
+# world coffee consumption is incomplete before 2000 in PSD (stocks-to-use reads 100-200%)
+PSD_START = {"coffee": 2000}
 # consumption is named differently per crop (sugar, cotton); the first one present is used
 USE_ATTRS = ("Domestic Consumption", "Domestic Use", "Total Dom. Cons.", "Human Dom. Consumption", "Dom. Consumption", "Total Use")
 PSD_ATTRS = {"Production", "Exports", "Ending Stocks"} | set(USE_ATTRS)
@@ -376,7 +378,7 @@ def psd():
             print("psd attributes", key, sorted(seen.get(key, ())))
         for scope in ("us", "world"):
             rows = []
-            for y in range(1960, this_year + 2):
+            for y in range(PSD_START.get(key, 1960), this_year + 2):
                 a = acc.get((key, scope, y))
                 if not a or not a.get("Ending Stocks"):
                     continue
@@ -397,19 +399,28 @@ def psd():
 def agri():
     out = {"crops": psd(), "prices": {}}
     for key, _, name, fut in CROPS:
-        bars = yahoo_chart(fut, "1wk", "max")
-        if bars:
-            rows = [(dt.datetime.fromtimestamp(b["t"], dt.timezone.utc).date(), b["c"]) for b in bars]
+        rows = yahoo_long(fut)
+        if rows:
             out["prices"][key] = pack(f"Giá {name} (tương lai)", "", f"Yahoo {fut}", rows, "w")
     return out
 
 
 # ------------------------------------------------------------------ assets
+def yahoo_long(tk):
+    """Monthly closes for the full history + weekly closes for the last 10 years (Yahoo thins
+    'range=max' weekly requests to quarterly bars, so the two are stitched)."""
+    to_rows = lambda bars: [(dt.datetime.fromtimestamp(b["t"], dt.timezone.utc).date(), b["c"]) for b in bars]  # noqa: E731
+    wk = to_rows(yahoo_chart(tk, "1wk", "10y"))
+    mo = to_rows(yahoo_chart(tk, "1mo", "max"))
+    if not wk:
+        return mo
+    return [r for r in mo if r[0] < wk[0][0]] + wk
+
+
 def assets(cache):
     out, closes = {}, {}
     for key, tk, name in ASSETS:
-        bars = yahoo_chart(tk, "1wk", "max")
-        rows = [(dt.datetime.fromtimestamp(b["t"], dt.timezone.utc).date(), b["c"]) for b in bars]
+        rows = yahoo_long(tk)
         if rows:
             closes[key] = {d.isocalendar()[:2]: (d, v) for d, v in rows}
             out[key] = pack(name, "", f"Yahoo {tk}", rows, "w")
