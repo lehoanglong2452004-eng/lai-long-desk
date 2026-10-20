@@ -408,13 +408,16 @@ def agri():
 # ------------------------------------------------------------------ assets
 def yahoo_long(tk):
     """Monthly closes for the full history + weekly closes for the last 10 years (Yahoo thins
-    'range=max' weekly requests to quarterly bars, so the two are stitched)."""
-    to_rows = lambda bars: [(dt.datetime.fromtimestamp(b["t"], dt.timezone.utc).date(), b["c"]) for b in bars]  # noqa: E731
-    wk = to_rows(yahoo_chart(tk, "1wk", "10y"))
+    'range=max' weekly requests to quarterly bars, so the two are stitched) + the last closed day,
+    so the latest value is at most one session old instead of one week."""
+    to_rows = lambda bars, shift=0: [(dt.datetime.fromtimestamp(b["t"], dt.timezone.utc).date() + dt.timedelta(days=shift), b["c"]) for b in bars]  # noqa: E731
+    wk = to_rows(yahoo_chart(tk, "1wk", "10y"), 4)  # weekly bars are stamped Monday: date them by their Friday close
     mo = to_rows(yahoo_chart(tk, "1mo", "max"))
-    if not wk:
-        return mo
-    return [r for r in mo if r[0] < wk[0][0]] + wk
+    day = to_rows(yahoo_chart(tk, "1d", "5d"))
+    rows = ([r for r in mo if r[0] < wk[0][0]] + wk) if wk else mo
+    if day and rows and day[-1][0] > rows[-1][0]:
+        rows.append(day[-1])
+    return rows
 
 
 def assets(cache):

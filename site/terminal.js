@@ -15,7 +15,7 @@
   const FN = [
     ["HOME", "TỔNG QUAN", "F1"], ["CURV", "ĐƯỜNG CONG", "F2"], ["RATE", "LÃI SUẤT", "F3"], ["INFL", "LẠM PHÁT", "F4"],
     ["GROW", "TĂNG TRƯỞNG", "F5"], ["LIQ", "THANH KHOẢN", "F6"], ["ENGY", "NĂNG LƯỢNG", "F7"], ["AGRI", "NÔNG SẢN", "F8"],
-    ["ASST", "TÀI SẢN", "F9"], ["CYCL", "CHU KỲ", "F10"],
+    ["ASST", "TÀI SẢN", "F9"], ["CYCL", "CHU KỲ", "F10"], ["DATA", "ĐỘ TRỄ DỮ LIỆU", "F11"],
   ];
 
   // ------------------------------------------------------------------ formatting
@@ -44,6 +44,45 @@
     return p == null ? "mid" : p >= 80 ? "hi" : p <= 20 ? "lo" : "mid";
   }
   const LEVEL_TXT = { hi: "CAO", lo: "THẤP", mid: "TRUNG BÌNH" };
+
+  // ------------------------------------------------------------------ freshness
+  /* Nothing in the macro files is realtime. Market numbers are the last daily close; economic numbers
+     come out on an official schedule, weeks after the period they describe. Each value carries:
+     its kind (CUỐI NGÀY / TUẦN / THÁNG / QUÝ), the period it belongs to, its age in days, and TRỄ LỊCH
+     when the source has not published on time (age beyond what its normal schedule allows). */
+  const RELEASE = {
+    fedfunds: "NY Fed, sáng ngày làm việc kế tiếp", us3m: "Bộ Tài chính Mỹ, cuối mỗi ngày giao dịch", us2y: "Bộ Tài chính Mỹ, cuối mỗi ngày giao dịch", us10y: "Bộ Tài chính Mỹ, cuối mỗi ngày giao dịch", us30y: "Bộ Tài chính Mỹ, cuối mỗi ngày giao dịch",
+    s10y2y: "Tính từ lợi suất cuối ngày", s10y3m: "Tính từ lợi suất cuối ngày", real10y: "Bộ Tài chính Mỹ (TIPS), cuối ngày", termprem: "NY Fed (mô hình ACM), đăng chậm 1-2 tuần", mortgage: "Freddie Mac, thứ Năm hằng tuần", dollar: "Fed H.10, cuối ngày, đăng mỗi thứ Hai",
+    cpi: "BLS, khoảng ngày 10-15 tháng sau", corecpi: "BLS, khoảng ngày 10-15 tháng sau", corepce: "BEA, cuối tháng sau", ppi: "BLS, giữa tháng sau", wages: "BLS, thứ Sáu đầu tháng sau (cùng báo cáo việc làm)",
+    be5y: "Thị trường trái phiếu, cuối ngày", fwd5y5y: "Thị trường trái phiếu, cuối ngày", mich: "ĐH Michigan, sơ bộ giữa tháng, chính thức cuối tháng",
+    gdp: "BEA, bản sơ bộ khoảng 4 tuần sau quý, sửa lại 2 lần", gdpq: "BEA, bản sơ bộ khoảng 4 tuần sau quý, sửa lại 2 lần", unrate: "BLS, thứ Sáu đầu tháng sau", payrolls: "BLS, thứ Sáu đầu tháng sau (hay bị sửa lại)", claims: "Bộ Lao động Mỹ, thứ Năm hằng tuần",
+    indpro: "Fed, giữa tháng sau", retail: "Census, giữa tháng sau", sentiment: "ĐH Michigan, sơ bộ giữa tháng, chính thức cuối tháng", housing: "Census, khoảng ngày 17 tháng sau", cfnai: "Chicago Fed, cuối tháng sau", sahm: "Tính từ thất nghiệp (BLS)", usrec: "NBER, xác định trễ nhiều tháng",
+    fedbs: "Fed H.4.1, thứ Năm hằng tuần", tga: "Fed H.4.1, thứ Năm hằng tuần", netliq: "Fed H.4.1, thứ Năm hằng tuần", m2: "Fed H.6, khoảng 4 tuần sau tháng", m2lvl: "Fed H.6, khoảng 4 tuần sau tháng", rrp: "NY Fed, chiều mỗi ngày",
+    nfci: "Chicago Fed, thứ Tư hằng tuần", hyoas: "ICE BofA qua FRED, cuối ngày", igoas: "ICE BofA qua FRED, cuối ngày", lending: "Khảo sát SLOOS của Fed, mỗi quý",
+    mmf: "Fed Z.1, khoảng 10 tuần sau quý", equities: "Fed Z.1, khoảng 10 tuần sau quý", gdpnom: "BEA, khoảng 4 tuần sau quý", buffett: "Fed Z.1, khoảng 10 tuần sau quý", cash_ratio: "Fed Z.1, khoảng 10 tuần sau quý",
+    crude: "EIA, thứ Tư cho tuần kết thúc thứ Sáu trước", spr: "EIA, thứ Tư hằng tuần", gasoline: "EIA, thứ Tư hằng tuần", distillate: "EIA, thứ Tư hằng tuần", cushing: "EIA, thứ Tư hằng tuần", production: "EIA, thứ Tư hằng tuần (ước tính)", refutil: "EIA, thứ Tư hằng tuần",
+    natgas: "EIA, thứ Năm cho tuần kết thúc thứ Sáu trước", wti: "EIA qua FRED, cuối ngày, đăng chậm vài ngày", brent: "EIA qua FRED, cuối ngày, đăng chậm vài ngày", henryhub: "EIA qua FRED, cuối ngày, đăng chậm vài ngày",
+  };
+  // the most days a value can normally be old before its next release is due (dates are period start for months and quarters)
+  const MAX_AGE = { d: 6, w: 15, m: 95, q: 260 };
+  const MAX_AGE_KEY = { termprem: 25, gdp: 225, gdpq: 225, gdpnom: 225, wti: 10, brent: 10, henryhub: 10, dollar: 10, usrec: 400 };
+  const KIND = { d: "CUỐI NGÀY", w: "TUẦN", m: "THÁNG", q: "QUÝ" };
+  const todayDays = () => Math.floor(Date.now() / 1000 / DAY);
+
+  function freshness(s, key) {
+    const eod = s.freq === "d" || /^Yahoo/.test(s.src || "");
+    const f = eod ? "d" : s.freq;
+    const age = todayDays() - s.st.t;
+    const lim = MAX_AGE_KEY[key] || MAX_AGE[f] || 95;
+    const d = new Date(s.st.t * DAY * 1000);
+    const period = f === "m" ? `T${d.getUTCMonth() + 1}/${d.getUTCFullYear()}` : f === "q" ? `Q${Math.floor(d.getUTCMonth() / 3) + 1}/${d.getUTCFullYear()}` : f === "w" ? `tuần đến ${date(s.st.t).slice(0, 5)}` : date(s.st.t);
+    return { kind: KIND[f] || "?", period, age, late: age > lim, release: RELEASE[key] || (eod ? "Yahoo Finance, giá đóng cửa phiên gần nhất (nguồn không chính thức)" : "") };
+  }
+  function freshBadge(s, key) {
+    const f = freshness(s, key);
+    const tip = `Số liệu kỳ ${f.period}, cũ ${f.age} ngày. ${f.release}${f.late ? ". Nguồn chưa cập nhật đúng lịch." : ""}`;
+    return `<span class="fr${f.late ? " late" : ""}" title="${esc(tip)}">${f.kind}</span><span class="dim">${f.period}${f.late ? ` · <b class="down">TRỄ LỊCH ${f.age}N</b>` : ""}</span>`;
+  }
 
   // ------------------------------------------------------------------ data
   const bust = "?v=" + Math.floor(Date.now() / 300000);
@@ -106,7 +145,8 @@
     return `<div class="tile" data-ref="${ref}">
       <div class="tn" title="${esc(s.name)}">${esc(s.name)}</div>
       <div class="tv">${fmt(st.v, s.unit)} <small>${esc(s.unit)}</small> <span class="tag ${lv}">${LEVEL_TXT[lv]}</span></div>
-      <div class="tc">${short ? chgSpan(s, "w", "1T") + chgSpan(s, "m", "1Th") : chgSpan(s, "prev", "kỳ trước")}${chgSpan(s, "y", "1N")}<span class="dim">${date(st.t)}</span></div>
+      <div class="tc">${short ? chgSpan(s, "w", "1T") + chgSpan(s, "m", "1Th") : chgSpan(s, "prev", "kỳ trước")}${chgSpan(s, "y", "1N")}</div>
+      <div class="tc">${freshBadge(s, key)}</div>
       ${spark(s, opt && opt.years)}
       ${pbar(st)}
       <div class="tr">${esc(reading(key, st))}</div>
@@ -249,7 +289,7 @@
     return `<h1 class="title">TỔNG QUAN <small>bức tranh vĩ mô trung và dài hạn, cập nhật tự động</small></h1>
       <section class="panel s8"><div class="ph"><span class="code">OPPS</span><h2>Bản đồ cơ hội: chỉ báo đang ở cực trị 10 năm</h2></div>
         <p class="intro pb" style="padding-bottom:0">Những con số đang ở top 15% cao nhất hoặc thấp nhất của 10 năm qua. Cực trị là nơi cơ hội trung và dài hạn hình thành, và mỗi cực trị đều có hai mặt.</p>
-        ${opps.length ? `<ul class="opps">${opps.slice(0, 14).map((o) => `<li data-ref="${o.ref}"><span class="tag ${o.lv}">${LEVEL_TXT[o.lv]}</span><span class="nm">${esc(o.s.name)}: ${fmt(o.s.st.v, o.s.unit)} ${esc(o.s.unit)} <span class="dim small">(phân vị 10 năm ${o.p}%)</span></span><div class="sides">${o.risk ? `<span class="r">${esc(o.risk)}</span>` : "<i></i>"}${o.opp ? `<span class="o">${esc(o.opp)}</span>` : ""}</div></li>`).join("")}</ul>` : '<p class="dim pb">Không có chỉ báo nào ở cực trị lúc này.</p>'}
+        ${opps.length ? `<ul class="opps">${opps.slice(0, 14).map((o) => `<li data-ref="${o.ref}"><span class="tag ${o.lv}">${LEVEL_TXT[o.lv]}</span><span class="nm">${esc(o.s.name)}: ${fmt(o.s.st.v, o.s.unit)} ${esc(o.s.unit)} <span class="dim small">(phân vị 10 năm ${o.p}%)</span> <span class="small">${freshBadge(o.s, o.ref.split(".")[1])}</span></span><div class="sides">${o.risk ? `<span class="r">${esc(o.risk)}</span>` : "<i></i>"}${o.opp ? `<span class="o">${esc(o.opp)}</span>` : ""}</div></li>`).join("")}</ul>` : '<p class="dim pb">Không có chỉ báo nào ở cực trị lúc này.</p>'}
       </section>
       <section class="panel s4"><div class="ph"><span class="code">CYCL</span><h2>Chu kỳ kinh tế</h2></div><div class="pb">
         ${ph ? `<div class="phase">${ph.name}</div><div class="dim small">${ph.sub} · tài sản thường dẫn đầu: <b class="amber">${ph.best}</b></div><div class="clock" id="mini-clock"></div><p class="small">${esc(ph.txt)}</p>` : '<p class="dim">Chưa có dữ liệu chu kỳ.</p>'}
@@ -459,6 +499,28 @@
     return `<h1 class="title">TÀI SẢN DÀI HẠN <small>giá tuần, toàn bộ lịch sử Yahoo Finance</small></h1>${tiles(["assets.spx", "assets.spx_real", "assets.ndx", "assets.gold", "assets.silver", "assets.copper", "assets.oil", "assets.dxy", "assets.btc", "assets.em", "assets.nikkei", "assets.tlt", "assets.gold_spx", "assets.copper_gold"].map((r) => r))}${cp.html}${gp.html}`;
   };
 
+  SCREENS.DATA = () => {
+    const rows = allSeries().filter((x) => x.key !== "usrec").map((x) => ({ ...x, f: freshness(x.s, x.key) }));
+    const late = rows.filter((r) => r.f.late);
+    const GN = { rates: "Lãi suất", infl: "Lạm phát", grow: "Tăng trưởng", liq: "Thanh khoản", energy: "Năng lượng", agri: "Nông sản", assets: "Tài sản" };
+    const built = GROUPS.filter((g) => G[g]).map((g) => `${GN[g] || g}: ${ago(G[g].generated)}`).join(" · ");
+    const crops = G.agri && G.agri.crops ? Object.values(G.agri.crops).map((c) => c.updated).filter(Boolean) : [];
+    return `<h1 class="title">ĐỘ TRỄ VÀ ĐỘ TIN CẬY CỦA DỮ LIỆU <small>${rows.length} chuỗi · ${late.length ? `<b class="down">${late.length} trễ lịch</b>` : '<b class="up">tất cả đúng lịch</b>'}</small></h1>
+      <section class="panel"><div class="ph"><span class="code">KEY</span><h2>Cách đọc nhãn</h2></div><div class="pb"><div class="stats">
+        <div><span><span class="fr live">LIVE</span></span>Cập nhật vài giây một lần ngay trên trình duyệt (dải LIVE trên cùng). Giá hợp đồng perp trên Hyperliquid, bám sát giá thật nhưng có thể lệch nhẹ khi thị trường gốc đóng cửa.</div>
+        <div><span><span class="fr">CUỐI NGÀY</span></span>Giá hoặc lợi suất đóng cửa phiên gần nhất. Trễ 1 đến vài ngày (nguồn đăng chậm, cuối tuần, ngày lễ).</div>
+        <div><span><span class="fr">TUẦN</span></span>Công bố một lần mỗi tuần theo lịch (tồn kho EIA, trợ cấp thất nghiệp, bảng cân đối Fed).</div>
+        <div><span><span class="fr">THÁNG</span></span>Công bố 2 đến 4 tuần sau khi tháng kết thúc (CPI, việc làm, PCE). Số hiển thị luôn là tháng trước hoặc tháng trước nữa.</div>
+        <div><span><span class="fr">QUÝ</span></span>Công bố 4 đến 10 tuần sau khi quý kết thúc (GDP, chỉ báo Buffett). Có thể cũ tới 6-8 tháng.</div>
+        <div><span><span class="fr late">TRỄ LỊCH</span></span>Đã quá hạn công bố bình thường mà chưa có số mới: nguồn lỗi, hoặc cơ quan chưa công bố (ví dụ chính phủ Mỹ đóng cửa).</div>
+      </div><p class="dim small">Hệ thống quét mỗi giờ, nhưng mỗi nhóm chỉ tải lại khi đã cũ vài giờ, vì nguồn gốc không đổi nhanh hơn. Lần dựng gần nhất: ${built}.${crops.length ? ` WASDE mới nhất: ${esc(crops.sort().pop())}.` : ""}</p>
+      <p class="dim small">Độ tin cậy: FRED, Bộ Tài chính Mỹ, BLS, BEA, EIA, USDA, BIS, ECB là số liệu chính thức. GDP, việc làm, doanh số bán lẻ thường bị sửa lại ở các tháng sau. Yahoo Finance là nguồn không chính thức: giá đúng nhưng có thể ngưng hoạt động bất cứ lúc nào.</p></div></section>
+      <section class="panel"><div class="ph"><span class="code">AUDIT</span><h2>Từng chuỗi dữ liệu</h2></div><div class="pb scroll"><table>
+        <tr><th>Chỉ báo</th><th>Nhóm</th><th>Loại</th><th>Kỳ số liệu</th><th>Cũ (ngày)</th><th>Trạng thái</th><th>Lịch công bố</th><th>Nguồn</th></tr>
+        ${rows.sort((a, b) => (b.f.late - a.f.late) || (a.f.age - b.f.age)).map((r) => `<tr class="click" data-ref="${r.ref}"><td>${esc(r.s.name)}</td><td class="dim">${GN[r.ref.split(".")[0]] || ""}</td><td><span class="fr">${r.f.kind}</span></td><td>${r.f.period}</td><td>${r.f.age}</td><td>${r.f.late ? '<b class="down">TRỄ LỊCH</b>' : '<span class="up">đúng lịch</span>'}</td><td class="wrap">${esc(r.f.release)}</td><td class="dim small">${esc(r.s.src)}</td></tr>`).join("")}
+      </table></div></section>`;
+  };
+
   SCREENS.CYCL = () => {
     const cyc = G.cycle;
     if (!cyc || !cyc.trail || !cyc.trail.length) return '<h1 class="title">CHU KỲ</h1><p class="dim">Chưa có dữ liệu.</p>';
@@ -515,7 +577,8 @@
     const kb = KB[k];
     return `<h1 class="title"><button class="back" id="back">‹ QUAY LẠI</button> ${esc(s.name)} <small>${esc(s.src)} · ${{ d: "ngày", w: "tuần", m: "tháng", q: "quý" }[s.freq] || ""}</small></h1>
       <section class="panel s8"><div class="ph"><span class="code">GP</span><h2>Lịch sử ${log ? "(thang log)" : ""}</h2><div class="right">${rangeButtons(s.freq === "q" ? "MAX" : 10)}</div></div><div class="pb">
-        <div class="dhead"><span class="big">${fmt(st.v, s.unit)}</span><span class="dim">${esc(s.unit)}</span><span class="tag ${level(st)}">${LEVEL_TXT[level(st)]}</span><span class="dim small">ngày ${date(st.t)} · có dữ liệu từ ${date(st.since)}</span></div>
+        <div class="dhead"><span class="big">${fmt(st.v, s.unit)}</span><span class="dim">${esc(s.unit)}</span><span class="tag ${level(st)}">${LEVEL_TXT[level(st)]}</span><span class="small">${freshBadge(s, k)}</span><span class="dim small">có dữ liệu từ ${date(st.since)}</span></div>
+        <p class="dim small">Lịch công bố: ${esc(freshness(s, k).release || "–")}. Cũ ${freshness(s, k).age} ngày tính từ ${s.freq === "m" || s.freq === "q" ? "đầu kỳ" : "ngày của số liệu"}.</p>
         <div class="chart" id="dchart"></div><p class="dim small">Vùng xám: suy thoái Mỹ (NBER). Kéo chuột trên biểu đồ để phóng to, bấm đúp để về lại.</p></div></section>
       <section class="panel s4"><div class="ph"><span class="code">DES</span><h2>Thống kê</h2></div><div class="pb">${pbar(st)}<div class="stats">
         ${cell("prev", "Kỳ trước")}${s.freq === "d" || s.freq === "w" ? cell("m", "1 tháng") : ""}${cell("y", "1 năm")}
@@ -589,6 +652,33 @@
     });
   }
 
+  // ------------------------------------------------------------------ LIVE quotes (browser, every 10 s)
+  /* The only realtime layer: perpetual-futures mid prices from Hyperliquid's public API, fetched by the
+     visitor's browser. Index and commodity perps (dex "xyz") trade around the clock and track their
+     underlying closely, but are not the official index or spot price. */
+  const LIVE = [["BTC", "BTC", ""], ["ETH", "ETH", ""], ["GOLD", "VÀNG", "xyz"], ["SILVER", "BẠC", "xyz"], ["CL", "DẦU WTI", "xyz"], ["BRENTOIL", "BRENT", "xyz"], ["SP500", "S&P 500", "xyz"], ["XYZ100", "NASDAQ 100", "xyz"]];
+  const liveLast = {};
+  async function liveTick() {
+    const el = $("#live");
+    if (!el) return;
+    const post = (dex) => fetch("https://api.hyperliquid.xyz/info", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(dex ? { type: "metaAndAssetCtxs", dex } : { type: "metaAndAssetCtxs" }) }).then((r) => r.json());
+    try {
+      const [main, xyz] = await Promise.all([post(""), post("xyz")]);
+      const px = {};
+      for (const [meta, ctxs] of [main, xyz]) meta.universe.forEach((a, i) => { const c = ctxs[i]; if (c) px[a.name.replace(/^xyz:/, "")] = { p: +(c.midPx || c.markPx), prev: +c.prevDayPx }; });
+      const t = new Date().toLocaleTimeString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      el.innerHTML = `<span class="fr live" title="Giá hợp đồng perp trên Hyperliquid, trình duyệt tự lấy mỗi 10 giây">LIVE</span>` + LIVE.map(([k, n]) => {
+        const q = px[k];
+        if (!q || !q.p) return "";
+        const ch = q.prev ? (q.p / q.prev - 1) * 100 : null, flash = liveLast[k] && q.p !== liveLast[k] ? (q.p > liveLast[k] ? " fl-up" : " fl-down") : "";
+        liveLast[k] = q.p;
+        return `<span class="lv${flash}"><span class="n">${n}</span>${nf(q.p, q.p >= 1000 ? 0 : 2)} ${ch == null ? "" : `<span class="${ch >= 0 ? "up" : "down"}">${ch >= 0 ? "+" : ""}${nf(ch, 2)}%</span>`}</span>`;
+      }).join("") + `<span class="dim small">${t} · perp Hyperliquid, % so với 24 giờ trước</span>`;
+    } catch (e) {
+      el.innerHTML = `<span class="fr late">LIVE</span><span class="dim small">mất kết nối giá trực tiếp, thử lại sau 10 giây</span>`;
+    }
+  }
+
   // ------------------------------------------------------------------ ticker, clock, status
   function ticker() {
     const refs = [["rates.fedfunds", "FED"], ["rates.us2y", "US2Y"], ["rates.us10y", "US10Y"], ["rates.s10y2y", "10Y-2Y"], ["rates.real10y", "THỰC 10Y"], ["assets.dxy", "DXY"],
@@ -597,7 +687,8 @@
       const s = ser(r);
       if (!s) return "";
       const c = change(s, s.freq === "d" || s.freq === "w" ? "w" : "prev");
-      return `<span class="tk" data-to="S/${r.replace(".", "/")}"><span class="n">${n}</span>${fmt(s.st.v, s.unit)}${s.unit === "%" ? "%" : ""} ${c ? `<span class="${c.v > 0 ? "up" : c.v < 0 ? "down" : "dim"}">${c.v > 0 ? "▲" : c.v < 0 ? "▼" : "■"} ${c.txt}</span>` : ""}</span>`;
+      const fr = freshness(s, r.split(".")[1]);
+      return `<span class="tk" data-to="S/${r.replace(".", "/")}" title="${fr.kind}, kỳ ${fr.period}, cũ ${fr.age} ngày"><span class="n">${n}</span><span class="frs${fr.late ? " late" : ""}">${fr.kind === "CUỐI NGÀY" ? "EOD" : fr.kind}</span> ${fmt(s.st.v, s.unit)}${s.unit === "%" ? "%" : ""} ${c ? `<span class="${c.v > 0 ? "up" : c.v < 0 ? "down" : "dim"}">${c.v > 0 ? "▲" : c.v < 0 ? "▼" : "■"} ${c.txt}</span>` : ""}</span>`;
     }).join("");
     const t = $("#tk-track");
     t.innerHTML = html + html;
@@ -632,6 +723,8 @@
     $("#errors").textContent = (times.length ? "Dữ liệu dựng " + ago(Math.min(...times)) + "." : "") + (missing.length ? " Chưa có nhóm: " + missing.join(", ") + " (sẽ có sau lần quét kế tiếp)." : "");
     ticker();
     render();
+    liveTick();
+    setInterval(() => { if (!document.hidden) liveTick(); }, 10000);
   }
   boot();
 })();
