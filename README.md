@@ -4,11 +4,13 @@
 
 Hệ sinh thái thống kê, tổng hợp dữ liệu vĩ mô kiểu Bloomberg Terminal để đánh giá cơ hội trung và dài hạn. Mỗi con số được đọc theo **hai mặt**: lãi suất cao không chỉ là kiềm chế lạm phát, mà còn là lúc người cầm nhiều tiền mặt, không dùng margin (như Buffett) được trả lãi để chờ và gom tài sản giá rẻ.
 
-Gõ mã vào ô lệnh (phím `/` để nhảy tới ô lệnh) hoặc bấm F1 đến F10:
+Gõ mã vào ô lệnh (phím `/` để nhảy tới ô lệnh) hoặc bấm F1 đến F12:
 
 | Mã | Màn hình | Dữ liệu |
 |---|---|---|
 | HOME | Tổng quan | Bản đồ cơ hội (chỉ báo ở cực trị 10 năm, đọc hai mặt), đồng hồ chu kỳ, chỉ báo chính |
+| DECI | Bảng quyết định | Cổ phiếu Mỹ, cổ phiếu Việt Nam, vàng, crypto, hàng hóa: mỗi tài sản 8-9 yếu tố vĩ mô chấm gió xuôi/gió ngược theo hướng đi 6 tháng, điểm tổng -100 đến +100, kèm mặt kia và giới hạn dữ liệu (khung 6-18 tháng) |
+| CAL | Lịch công bố | FOMC (lịch chính thức), việc làm, CPI, PCE, GDP, WASDE... 45 ngày tới theo giờ Việt Nam (ngày ước tính theo lịch thường lệ), số liệu hằng tuần |
 | CURV | Đường cong lợi suất | Đường cong Mỹ hôm nay so với 1 tuần, 1 tháng, 6 tháng, 1 năm, 2 năm; 10Y-2Y, 10Y-3M; đường cong Đức, khu vực euro, Anh, Nhật |
 | RATE | Lãi suất | Fed, 3M/2Y/10Y/30Y, lợi suất thực, phần bù kỳ hạn, lãi vay mua nhà, USD; lãi suất 10 ngân hàng trung ương |
 | INFL | Lạm phát | CPI, CPI lõi, PCE lõi, PPI, lương, lạm phát kỳ vọng |
@@ -16,7 +18,7 @@ Gõ mã vào ô lệnh (phím `/` để nhảy tới ô lệnh) hoặc bấm F1 
 | LIQ | Thanh khoản, tín dụng, định giá | Bảng cân đối Fed, M2, RRP, TGA, thanh khoản ròng, NFCI, chênh lệch tín dụng, chỉ báo Buffett, tiền mặt trong quỹ tiền tệ |
 | ENGY | Năng lượng | Tồn kho EIA (dầu thô, xăng, dầu cất, Cushing, khí đốt) so với mùa vụ 5 năm, sản lượng, lọc dầu, SPR, giá dầu và khí |
 | AGRI | Nông sản | Bảng cân đối WASDE (USDA PSD): tồn kho/sử dụng thế giới và Mỹ cho ngô, lúa mì, đậu tương, gạo, cà phê, đường, bông |
-| ASST | Tài sản dài hạn | S&P 500 (cả sau lạm phát), Nasdaq, vàng, bạc, đồng, dầu, DXY, Bitcoin, EEM, Nikkei, TLT, các tỷ lệ |
+| ASST | Tài sản dài hạn | S&P 500 (cả sau lạm phát), Nasdaq, vàng, bạc, đồng, dầu, DXY, Bitcoin, EEM, Nikkei, TLT, ETF Việt Nam (VNM), tỷ giá USD/VND, các tỷ lệ |
 | CYCL | Chu kỳ | Đồng hồ đầu tư (tăng trưởng × lạm phát), bảng kiểm tra suy thoái |
 
 Mỗi chỉ báo có biểu đồ toàn bộ lịch sử (vùng xám là suy thoái Mỹ), phân vị so với 10 năm và toàn bộ lịch sử, và phần **hai mặt**: mặt rủi ro, mặt cơ hội, ai hưởng lợi. Giải thích nằm trong `site/kb.js`, sửa trực tiếp được.

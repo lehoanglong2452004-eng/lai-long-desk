@@ -13,9 +13,9 @@
   const PALETTE = [C.amber, C.blue, C.green, C.violet, C.cyan, C.red, "#e6e6e6"];
 
   const FN = [
-    ["HOME", "TỔNG QUAN", "F1"], ["CURV", "ĐƯỜNG CONG", "F2"], ["RATE", "LÃI SUẤT", "F3"], ["INFL", "LẠM PHÁT", "F4"],
-    ["GROW", "TĂNG TRƯỞNG", "F5"], ["LIQ", "THANH KHOẢN", "F6"], ["ENGY", "NĂNG LƯỢNG", "F7"], ["AGRI", "NÔNG SẢN", "F8"],
-    ["ASST", "TÀI SẢN", "F9"], ["CYCL", "CHU KỲ", "F10"], ["DATA", "ĐỘ TRỄ DỮ LIỆU", "F11"],
+    ["HOME", "TỔNG QUAN", "F1"], ["DECI", "QUYẾT ĐỊNH", "F2"], ["CAL", "LỊCH CÔNG BỐ", "F3"], ["CURV", "ĐƯỜNG CONG", "F4"],
+    ["RATE", "LÃI SUẤT", "F5"], ["INFL", "LẠM PHÁT", "F6"], ["GROW", "TĂNG TRƯỞNG", "F7"], ["LIQ", "THANH KHOẢN", "F8"],
+    ["ENGY", "NĂNG LƯỢNG", "F9"], ["AGRI", "NÔNG SẢN", "F10"], ["ASST", "TÀI SẢN", "F11"], ["CYCL", "CHU KỲ", "F12"], ["DATA", "ĐỘ TRỄ DỮ LIỆU", ""],
   ];
 
   // ------------------------------------------------------------------ formatting
@@ -286,7 +286,9 @@
     const ph = cyc && cyc.phase && KB_PHASE[cyc.phase];
     const opps = opportunityMap();
     const keyRefs = ["rates.fedfunds", "rates.us10y", "rates.s10y2y", "rates.real10y", "infl.corepce", "grow.unrate", "liq.hyoas", "liq.netliq", "liq.buffett", "energy.crude", "assets.gold", "assets.spx"];
+    const soon = upcoming(10).filter((e) => e.r.imp >= 2);
     return `<h1 class="title">TỔNG QUAN <small>bức tranh vĩ mô trung và dài hạn, cập nhật tự động</small></h1>
+      <section class="panel"><div class="ph"><span class="code">DECI</span><h2>Gió xuôi, gió ngược theo tài sản (6-18 tháng)</h2><a href="#DECI" class="amber small" style="margin-left:auto">Chi tiết từng yếu tố ›</a></div><div class="pb">${board()}</div></section>
       <section class="panel s8"><div class="ph"><span class="code">OPPS</span><h2>Bản đồ cơ hội: chỉ báo đang ở cực trị 10 năm</h2></div>
         <p class="intro pb" style="padding-bottom:0">Những con số đang ở top 15% cao nhất hoặc thấp nhất của 10 năm qua. Cực trị là nơi cơ hội trung và dài hạn hình thành, và mỗi cực trị đều có hai mặt.</p>
         ${opps.length ? `<ul class="opps">${opps.slice(0, 14).map((o) => `<li data-ref="${o.ref}"><span class="tag ${o.lv}">${LEVEL_TXT[o.lv]}</span><span class="nm">${esc(o.s.name)}: ${fmt(o.s.st.v, o.s.unit)} ${esc(o.s.unit)} <span class="dim small">(phân vị 10 năm ${o.p}%)</span> <span class="small">${freshBadge(o.s, o.ref.split(".")[1])}</span></span><div class="sides">${o.risk ? `<span class="r">${esc(o.risk)}</span>` : "<i></i>"}${o.opp ? `<span class="o">${esc(o.opp)}</span>` : ""}</div></li>`).join("")}</ul>` : '<p class="dim pb">Không có chỉ báo nào ở cực trị lúc này.</p>'}
@@ -295,6 +297,9 @@
         ${ph ? `<div class="phase">${ph.name}</div><div class="dim small">${ph.sub} · tài sản thường dẫn đầu: <b class="amber">${ph.best}</b></div><div class="clock" id="mini-clock"></div><p class="small">${esc(ph.txt)}</p>` : '<p class="dim">Chưa có dữ liệu chu kỳ.</p>'}
         ${cyc && cyc.checks ? `<h4 class="amber small" style="margin:10px 0 4px">TÍN HIỆU SUY THOÁI: ${cyc.checks.filter((c) => c.on).length}/${cyc.checks.length} đang bật</h4>` : ""}
         <p><a href="#CYCL" class="amber small">Xem chi tiết ›</a></p></div></section>
+      <section class="panel"><div class="ph"><span class="code">CAL</span><h2>Sắp công bố (10 ngày)</h2></div><div class="pb scroll">
+        ${soon.length ? `<table class="cal">${soon.map((e) => calRow(e, false)).join("")}</table>` : '<p class="dim small">Không có số liệu lớn nào trong 10 ngày tới.</p>'}
+        <p><a href="#CAL" class="amber small">Lịch đầy đủ ›</a></p></div></section>
       ${tiles(keyRefs)}`;
   };
   SCREENS.HOME.after = () => { const el = $("#mini-clock"); if (el) drawClock(el, true); };
@@ -538,6 +543,243 @@
   };
   SCREENS.CYCL.after = () => { const el = $("#clock-big"); if (el) drawClock(el, false); };
 
+  // ------------------------------------------------------------------ decision board (6-18 months)
+  /* Each asset class gets a list of drivers. Every driver scores -2..+2 from what it is doing now, mostly
+     its change over the last 6 months (the horizon cares about direction more than level), and says why
+     in one line. The total is the sum over the drivers that have data, scaled to -100..+100. Nothing here
+     is a forecast: it is a checklist of the macro winds behind or against each asset, with both sides. */
+  const H6 = 182;
+  function valAt(s, back) { const t = s.st.t - back; let v = null; for (const p of s.d) { if (p[0] <= t) v = p[1]; else break; } return v; }
+  const d6 = (s) => { const b = valAt(s, H6); return b == null ? null : s.st.v - b; };
+  const p6 = (s) => { const b = valAt(s, H6); return b ? (s.st.v / b - 1) * 100 : null; };
+  function vsAvg40w(s) {
+    const pts = s.d.filter((p) => p[0] > s.st.t - 280);
+    if (pts.length < 8) return null;
+    return (s.st.v / (pts.reduce((a, p) => a + p[1], 0) / pts.length) - 1) * 100;
+  }
+  const sg = (v, d) => (v >= 0 ? "+" : "") + nf(v, d);
+  const bp = (v) => sg(v * 100, 0) + " bp";
+  const step = (x, a, b) => x == null ? 0 : x >= b ? 2 : x >= a ? 1 : x <= -b ? -2 : x <= -a ? -1 : 0;
+
+  const DRV = {
+    real: (dir) => ({ ref: "rates.real10y", name: "Lợi suất thực 10 năm", f: (s) => { const d = d6(s); const sc = -dir * step(d == null ? null : d * 100, 25, 60);
+      return [sc, `${nf(s.st.v, 2)}%, 6 tháng ${d == null ? "–" : bp(d)}. ${d > 0 ? "Tiền mặt và trái phiếu ngày càng hấp dẫn hơn, tài sản rủi ro bị so sánh gắt hơn." : "Chi phí cơ hội của việc cầm tài sản không trả lãi đang giảm."}`]; } }),
+    us10y: () => ({ ref: "rates.us10y", name: "Lợi suất Mỹ 10 năm", f: (s) => { const d = d6(s); const sc = -step(d == null ? null : d * 100, 25, 60);
+      return [sc, `${nf(s.st.v, 2)}%, 6 tháng ${d == null ? "–" : bp(d)}. Lãi Mỹ tăng hút vốn khỏi thị trường mới nổi, giảm thì ngược lại.`]; } }),
+    dollar: (dir) => ({ ref: "rates.dollar", name: "Đồng USD (chỉ số rộng)", f: (s) => { const p = p6(s); const sc = -dir * step(p, 2, 5);
+      return [sc, `6 tháng ${p == null ? "–" : sg(p, 1) + "%"}. ${p > 0 ? "USD mạnh làm tài sản tính bằng USD đắt hơn với phần còn lại của thế giới và rút vốn khỏi nước mới nổi." : "USD yếu đi thường đẩy giá hàng hóa, vàng, nước mới nổi lên."}`]; } }),
+    fed: () => ({ ref: "rates.fedfunds", name: "Hướng lãi suất Fed", f: (s) => { const d = d6(s); const sc = d == null ? 0 : d <= -0.75 ? 2 : d <= -0.2 ? 1 : d >= 0.75 ? -2 : d >= 0.2 ? -1 : 0;
+      return [sc, `${nf(s.st.v, 2)}%, 6 tháng ${d == null ? "–" : bp(d)}. ${sc > 0 ? "Fed đang cắt: tiền rẻ dần, có độ trễ 6-12 tháng mới thấm." : sc < 0 ? "Fed đang tăng: tiền đắt dần." : "Fed đứng yên."}`]; } }),
+    netliq: () => ({ ref: "liq.netliq", name: "Thanh khoản ròng của Fed", f: (s) => { const p = p6(s); const sc = step(p, 2, 5);
+      return [sc, `${nf(s.st.v / 1000, 2)} nghìn tỷ $, 6 tháng ${p == null ? "–" : sg(p, 1) + "%"}. ${p > 0 ? "Tiền trong hệ thống đang tăng, nâng đỡ tài sản rủi ro." : "Tiền đang bị rút khỏi hệ thống."}`]; } }),
+    m2: () => ({ ref: "liq.m2", name: "Cung tiền M2 (cùng kỳ)", f: (s) => { const d = d6(s); let sc = s.st.v > 6 ? 1 : s.st.v < 2 ? -1 : 0; if (d != null) sc += d > 1 ? 1 : d < -1 ? -1 : 0; sc = Math.max(-2, Math.min(2, sc));
+      return [sc, `${nf(s.st.v, 1)}%/năm, 6 tháng ${d == null ? "–" : sg(d, 1) + " điểm %"}. Tiền in thêm cần chỗ để đi.`]; } }),
+    hy: () => ({ ref: "liq.hyoas", name: "Chênh lệch trái phiếu rác", f: (s) => { const d = d6(s);
+      if (s.st.v >= 6.5) return [2, `${nf(s.st.v, 2)}%: thị trường tín dụng đang sợ hãi. Lịch sử: mua khi chênh lệch trên 6-7% cho lợi nhuận 12-18 tháng rất tốt, với người chịu được biến động.`];
+      let sc = d == null ? 0 : d >= 1 ? -2 : d >= 0.4 ? -1 : d <= -0.3 ? 1 : 0;
+      if (s.st.v < 3 && sc > 0) sc = 0;
+      return [sc, `${nf(s.st.v, 2)}%, 6 tháng ${d == null ? "–" : bp(d)}. ${d > 0.4 ? "Đang nới rộng: rủi ro tín dụng tăng, thường đi trước cổ phiếu." : s.st.v < 3.2 ? "Rất hẹp: thị trường chủ quan, ít đệm an toàn nếu có cú sốc." : "Tín dụng bình ổn."}`]; } }),
+    nfci: () => ({ ref: "liq.nfci", name: "Điều kiện tài chính (NFCI)", f: (s) => { const d = d6(s); let sc = d == null ? 0 : d > 0.15 ? -1 : d < -0.15 ? 1 : 0; if (s.st.v > 0) sc -= 1; sc = Math.max(-2, Math.min(2, sc));
+      return [sc, `${nf(s.st.v, 2)} (dưới 0 là dễ hơn trung bình), 6 tháng ${d == null ? "–" : sg(d, 2)}.`]; } }),
+    curve: () => ({ ref: "rates.s10y3m", name: "Đường cong 10 năm - 3 tháng", f: (s) => { const min18 = Math.min(...s.d.filter((p) => p[0] > s.st.t - 548).map((p) => p[1]));
+      if (s.st.v < 0) return [-1, `${nf(s.st.v, 2)}%: đang đảo ngược, tín hiệu suy thoái cổ điển (độ trễ 6-18 tháng).`];
+      if (min18 < 0) return [-1, `${nf(s.st.v, 2)}%: vừa thoát đảo ngược trong 18 tháng qua. Lịch sử: suy thoái hay bắt đầu đúng giai đoạn này, không phải lúc còn đảo ngược.`];
+      return [s.st.v > 1 ? 1 : 0, `${nf(s.st.v, 2)}%: dốc dương bình thường, không có tín hiệu suy thoái từ đường cong.`]; } }),
+    recess: (dir) => ({ ref: "cycle", name: "Bảng kiểm tra suy thoái", f: () => { const c = G.cycle && G.cycle.checks; if (!c) return null; const n = c.filter((x) => x.on).length;
+      const sc = dir > 0 ? (n >= 3 ? -2 : n === 2 ? -1 : n === 0 ? 1 : 0) : (n >= 2 ? 1 : 0);
+      return [sc, `${n}/${c.length} đèn đang bật. ${dir > 0 ? (n >= 2 ? "Rủi ro suy thoái tăng: lợi nhuận doanh nghiệp dễ bị hạ." : "Chưa thấy nhiều dấu hiệu suy thoái.") : (n >= 2 ? "Rủi ro suy thoái là lực đỡ cho tài sản trú ẩn." : "Ít nhu cầu trú ẩn từ suy thoái.")}`]; } }),
+    phase: (tbl) => ({ ref: "cycle", name: "Pha chu kỳ kinh tế", f: () => { const p = G.cycle && G.cycle.phase; if (!p) return null; const k = KB_PHASE[p] || {};
+      return [tbl[p] || 0, `Đang ở pha ${k.name || p} (${k.sub || ""}). Tài sản thường dẫn đầu pha này: ${k.best || "–"}.`]; } }),
+    buffett: () => ({ ref: "liq.buffett", name: "Định giá (chỉ báo Buffett)", f: (s) => { const p = s.st.pct10 != null ? s.st.pct10 : s.st.pct; const sc = p >= 85 ? -1 : p <= 25 ? 1 : 0;
+      return [sc, `${nf(s.st.v, 0)}% GDP, phân vị 10 năm ${p}%. Định giá tác động chủ yếu ở khung 3-5 năm nên chỉ tính nhẹ; đắt không có nghĩa sắp giảm.`]; } }),
+    trend: (ref, name) => ({ ref, name: name || "Xu hướng giá (so với TB 40 tuần)", f: (s) => { const x = vsAvg40w(s); if (x == null) return null; const sc = x > 3 ? 1 : x < -3 ? -1 : 0;
+      return [sc, `Giá ${sg(x, 1)}% so với trung bình 40 tuần (~200 phiên). ${sc > 0 ? "Xu hướng tăng: đi ngược xu hướng 6-18 tháng thường tốn kém." : sc < 0 ? "Xu hướng giảm: chưa có xác nhận đảo chiều." : "Đi ngang."}`]; } }),
+    be: () => ({ ref: "infl.be5y", name: "Lạm phát kỳ vọng 5 năm", f: (s) => { const d = d6(s); const sc = step(d == null ? null : d * 100, 20, 50);
+      return [sc, `${nf(s.st.v, 2)}%, 6 tháng ${d == null ? "–" : bp(d)}. Kỳ vọng lạm phát tăng là lực đẩy cho tài sản thực.`]; } }),
+    goldspx: () => ({ ref: "assets.gold_spx", name: "Vàng so với cổ phiếu", f: (s) => { const p = s.st.pct10 != null ? s.st.pct10 : s.st.pct; const sc = p <= 20 ? 1 : p >= 85 ? -1 : 0;
+      return [sc, `Tỷ lệ ${nf(s.st.v, 2)}, phân vị 10 năm ${p}%. ${p >= 85 ? "Vàng đã đắt so với cổ phiếu." : p <= 20 ? "Vàng rẻ so với cổ phiếu." : "Không cực trị."}`]; } }),
+    crude5y: () => ({ ref: "energy.crude", name: "Tồn kho dầu thô so với 5 năm", f: (s) => { const v = s.season && s.season.vs5y_pct; if (v == null) return null; const sc = v < -4 ? 1 : v > 4 ? -1 : 0;
+      return [sc, `${sg(v, 1)}% so với trung bình 5 năm cùng tuần. ${v < 0 ? "Thị trường đang thiếu hàng tương đối." : "Thị trường dư hàng tương đối."}`]; } }),
+    cugold: () => ({ ref: "assets.copper_gold", name: "Đồng / vàng (tín hiệu tăng trưởng)", f: (s) => { const p = p6(s); const sc = step(p, 5, 15);
+      return [sc, `6 tháng ${p == null ? "–" : sg(p, 1) + "%"}. ${p > 0 ? "Thị trường đặt cược kinh tế mạnh lên." : "Thị trường thiên về phòng thủ hơn là tăng trưởng."}`]; } }),
+    indpro: () => ({ ref: "grow.indpro", name: "Sản xuất công nghiệp", f: (s) => { const d = d6(s); const sc = d == null ? 0 : d > 1 ? 1 : d < -1 ? -1 : 0;
+      return [sc, `${sg(s.st.v, 1)}%/năm, 6 tháng ${d == null ? "–" : sg(d, 1) + " điểm %"}. Nhu cầu nguyên liệu đi theo nhà máy.`]; } }),
+    stu: () => ({ ref: "agri", name: "Tồn kho nông sản thế giới (WASDE)", f: () => { const cr = G.agri && G.agri.crops; if (!cr) return null; let tight = [], loose = [];
+      for (const k in cr) { const rows = cr[k].world && cr[k].world.rows; if (!rows || rows.length < 10) continue; const last = rows[rows.length - 1].stu, hist = rows.slice(-21, -1).map((r) => r.stu); const p = hist.filter((x) => x < last).length / hist.length * 100; if (p <= 25) tight.push(cr[k].name); else if (p >= 75) loose.push(cr[k].name); }
+      const sc = tight.length >= loose.length + 2 ? 1 : loose.length >= tight.length + 2 ? -1 : 0;
+      return [sc, `Tồn kho/tiêu thụ thấp so với 20 vụ: ${tight.join(", ") || "không có"}. Dư thừa: ${loose.join(", ") || "không có"}.`]; } }),
+    oilVN: () => ({ ref: "energy.wti", name: "Giá dầu (Việt Nam nhập khẩu ròng xăng dầu)", f: (s) => { const p = s.st.pct10 != null ? s.st.pct10 : s.st.pct; const sc = p >= 85 ? -1 : p <= 25 ? 1 : 0;
+      return [sc, `${nf(s.st.v, 1)} $/thùng, phân vị 10 năm ${p}%. ${p >= 85 ? "Dầu đắt đẩy lạm phát và tỷ giá, NHNN khó nới." : p <= 25 ? "Dầu rẻ giúp lạm phát thấp, có dư địa nới tiền tệ." : "Không gây áp lực lớn."}`]; } }),
+    vnd: () => ({ ref: "assets.usdvnd", name: "Tỷ giá USD/VND", f: (s) => { const p = p6(s); const sc = p == null ? 0 : p > 3 ? -2 : p > 1.5 ? -1 : p < 0 ? 1 : 0;
+      return [sc, `${nf(s.st.v, 0)}, 6 tháng ${p == null ? "–" : sg(p, 1) + "%"}. ${p > 1.5 ? "VND mất giá nhanh: áp lực rút vốn ngoại, NHNN phải giữ lãi cao." : "Tỷ giá ổn định, NHNN có dư địa điều hành."}`]; } }),
+  };
+
+  const ASSET_BOARD = [
+    { k: "us", name: "CỔ PHIẾU MỸ", ref: "assets.spx", drivers: [DRV.trend("assets.spx"), DRV.real(1), DRV.fed(), DRV.netliq(), DRV.hy(), DRV.curve(), DRV.recess(1), DRV.phase({ recovery: 2, overheat: 1, stagflation: -2, reflation: 0 }), DRV.buffett()],
+      bull: "Điểm cao không có nghĩa là rẻ: định giá Mỹ có thể đang ở vùng đắt, nên lợi nhuận 5 năm vẫn có thể thấp dù 12 tháng tới thuận lợi.",
+      bear: "Gió ngược không phải lệnh bán: những năm khó khăn là lúc người có tiền mặt và không vay nợ lập danh sách cổ phiếu muốn mua khi giảm sâu." },
+    { k: "vn", name: "CỔ PHIẾU VIỆT NAM", ref: "assets.vnm", drivers: [DRV.trend("assets.vnm", "Xu hướng ETF VNM (so với TB 40 tuần)"), DRV.vnd(), DRV.dollar(1), DRV.fed(), DRV.us10y(), DRV.trend("assets.em", "Xu hướng cổ phiếu mới nổi (EEM)"), DRV.oilVN(), DRV.phase({ recovery: 2, overheat: 1, stagflation: -1, reflation: 0 })],
+      note: "Chưa có nguồn miễn phí ổn định cho P/E VN-Index, room ngoại, tín dụng hay lãi suất trong nước. Bảng này dùng ETF VNM (tính bằng USD), tỷ giá và các yếu tố toàn cầu tác động lên dòng vốn vào Việt Nam.",
+      bull: "Thị trường cận biên đi nhanh cả hai chiều: gió xuôi toàn cầu không chặn được rủi ro trong nước (tín dụng, bất động sản, chính sách).",
+      bear: "Việt Nam thường rẻ nhất khi USD mạnh và ngoại bán ròng kéo dài: đó là lúc người kiên nhẫn gom cổ phiếu tốt với định giá thấp." },
+    { k: "gold", name: "VÀNG", ref: "assets.gold", drivers: [DRV.trend("assets.gold"), DRV.real(1), DRV.dollar(1), DRV.fed(), DRV.be(), DRV.recess(-1), DRV.goldspx(), DRV.phase({ recovery: -1, overheat: 1, stagflation: 2, reflation: 1 })],
+      note: "Từ 2022, ngân hàng trung ương mua vàng mạnh nên vàng tăng cả khi lợi suất thực cao: quan hệ cũ yếu đi, bảng này không bắt được lực mua đó.",
+      bull: "Vàng không trả lãi: khi lợi suất thực cao, cầm vàng là chấp nhận bỏ lỡ phần lãi chắc chắn của tiền mặt.",
+      bear: "Vàng không có dòng tiền nên rất khó định giá; khi mọi yếu tố ngược chiều mà giá vẫn giữ, đó là dấu hiệu lực mua dài hạn còn mạnh." },
+    { k: "crypto", name: "CRYPTO (BTC)", ref: "assets.btc", drivers: [DRV.trend("assets.btc"), DRV.netliq(), DRV.m2(), DRV.dollar(1), DRV.real(1), DRV.nfci(), DRV.hy(), DRV.phase({ recovery: 1, overheat: 1, stagflation: -1, reflation: 0 })],
+      note: "BTC nhạy nhất với thanh khoản toàn cầu, nhưng còn chịu chu kỳ halving, dòng tiền ETF và sự kiện riêng của ngành mà bảng vĩ mô không đo được.",
+      bull: "Biến động 50-80% từ đỉnh là bình thường với BTC: chỉ dùng phần tiền chịu được mất lớn.",
+      bear: "Các đáy lớn của BTC đều xuất hiện khi thanh khoản thắt chặt và tâm lý tệ nhất: gió ngược kéo dài là lúc gom dần với khối lượng nhỏ." },
+    { k: "cmdty", name: "HÀNG HÓA", ref: "assets.oil", drivers: [DRV.trend("assets.oil", "Xu hướng dầu WTI"), DRV.trend("assets.copper", "Xu hướng giá đồng"), DRV.dollar(1), DRV.crude5y(), DRV.stu(), DRV.cugold(), DRV.indpro(), DRV.phase({ recovery: 0, overheat: 2, stagflation: 1, reflation: -2 })],
+      note: "OPEC chặn truy cập tự động nên không có dữ liệu cung OPEC; địa chính trị có thể đảo chiều giá dầu trong vài ngày.",
+      bull: "Giá cao tự chữa giá cao: cầu giảm và cung mới xuất hiện sau 6-18 tháng.",
+      bear: "Giá thấp tự chữa giá thấp: đầu tư khai thác bị cắt, nguồn cung thiếu hụt về sau. Người mua nhà sản xuất chi phí thấp lúc giá xấu thường thắng lớn." },
+  ];
+
+  function scoreAsset(a) {
+    const rows = a.drivers.map((d) => {
+      const s = d.ref === "cycle" || d.ref === "agri" ? null : ser(d.ref);
+      if (!s && d.ref !== "cycle" && d.ref !== "agri") return { d, miss: true };
+      let r = null;
+      try { r = d.f(s); } catch (e) { r = null; }
+      return r ? { d, s, sc: r[0], why: r[1] } : { d, miss: true };
+    });
+    const ok = rows.filter((r) => !r.miss);
+    const total = ok.length ? Math.round(ok.reduce((x, r) => x + r.sc, 0) / (ok.length * 2) * 100) : null;
+    return { rows, total, n: ok.length };
+  }
+  const verdict = (t) => t == null ? ["–", "mid"] : t >= 35 ? ["GIÓ XUÔI MẠNH", "up"] : t >= 10 ? ["NGHIÊNG TÍCH CỰC", "up"] : t > -10 ? ["TRUNG LẬP", "mid"] : t > -35 ? ["NGHIÊNG TIÊU CỰC", "down"] : ["GIÓ NGƯỢC MẠNH", "down"];
+  const pip = (sc) => `<span class="pip ${sc > 0 ? "up" : sc < 0 ? "down" : "dim"}">${sc > 0 ? "▲".repeat(sc) : sc < 0 ? "▼".repeat(-sc) : "■"}</span>`;
+  function gauge(t) {
+    const x = t == null ? 50 : (t + 100) / 2;
+    return `<div class="gauge"><i style="left:calc(${x}% - 2px)"></i></div><div class="plab"><span>gió ngược</span><span>trung lập</span><span>gió xuôi</span></div>`;
+  }
+
+  function hurdle() {
+    const b = ser("rates.us3m"), c = ser("infl.cpi");
+    if (!b || !c) return "";
+    const real = b.st.v - c.st.v;
+    return `<p class="small">Mốc so sánh: tín phiếu Mỹ 3 tháng trả <b class="amber">${nf(b.st.v, 2)}%</b>, lạm phát CPI ${nf(c.st.v, 2)}% (${freshness(c, "cpi").period}), tức lãi thực <b class="${real >= 0 ? "up" : "down"}">${sg(real, 2)}%</b>. Mọi tài sản rủi ro phải thắng được mức này mới đáng cầm. ${real >= 1 ? "Tiền mặt đang được trả công tốt: chờ đợi không tốn kém." : real < 0 ? "Tiền mặt đang mất giá thực: cầm tiền chờ cũng có chi phí." : ""}</p>`;
+  }
+
+  function boardCard(a, full) {
+    const r = scoreAsset(a), [vt, vc] = verdict(r.total), px = ser(a.ref);
+    const pos = r.rows.filter((x) => !x.miss && x.sc > 0).length, neg = r.rows.filter((x) => !x.miss && x.sc < 0).length;
+    const head = `<div class="ph"><span class="code">${a.k.toUpperCase()}</span><h2>${a.name}</h2>${px ? `<span class="dim small" style="margin-left:auto">${fmt(px.st.v, px.unit)} · ${freshBadge(px, a.ref.split(".")[1])}</span>` : ""}</div>`;
+    const score = `<div class="dscore"><b class="${vc}">${r.total == null ? "–" : sg(r.total, 0)}</b><span class="${vc}">${vt}</span><span class="dim small">${pos} gió xuôi · ${neg} gió ngược · ${r.n}/${r.rows.length} yếu tố có dữ liệu</span></div>${gauge(r.total)}`;
+    if (!full) return `<a class="dcard" href="#DECI/${a.k}"><div class="dn">${a.name}</div>${score}</a>`;
+    const table = `<table class="drv">${r.rows.map((x) => x.miss ? `<tr class="dim"><td>${esc(x.d.name)}</td><td>–</td><td class="wrap small">chưa có dữ liệu</td><td></td></tr>` :
+      `<tr${x.s ? ` class="click" data-ref="${x.d.ref}"` : ""}><td>${esc(x.d.name)}</td><td>${pip(x.sc)}</td><td class="wrap small">${esc(x.why)}</td><td class="small nowrap">${x.s ? freshBadge(x.s, x.d.ref.split(".")[1]) : ""}</td></tr>`).join("")}</table>`;
+    const other = r.total != null && r.total >= 10 ? a.bull : r.total != null && r.total <= -10 ? a.bear : a.bull + " " + a.bear;
+    return `<section class="panel" id="d-${a.k}">${head}<div class="pb">${score}<div class="scroll">${table}</div>
+      <div class="side ${r.total != null && r.total >= 10 ? "risk" : "opp"}" style="margin-top:8px"><h4>⇄ MẶT KIA</h4><p class="small">${esc(other)}</p></div>
+      ${a.note ? `<p class="dim small">Giới hạn: ${esc(a.note)}</p>` : ""}</div></section>`;
+  }
+
+  const board = () => `<div class="dstrip">${ASSET_BOARD.map((a) => boardCard(a, false)).join("")}</div>`;
+  SCREENS.DECI = () => {
+    const ph = G.cycle && KB_PHASE[G.cycle.phase];
+    return `<h1 class="title">BẢNG QUYẾT ĐỊNH <small>gió xuôi, gió ngược theo từng tài sản · khung 6-18 tháng</small></h1>
+      <section class="panel"><div class="pb">
+        <p class="small">Mỗi tài sản có 8-9 yếu tố vĩ mô. Mỗi yếu tố chấm từ ▼▼ (-2) đến ▲▲ (+2), chủ yếu theo hướng đi trong 6 tháng qua, vì ở khung 6-18 tháng hướng đi quan trọng hơn mức tuyệt đối. Điểm tổng từ -100 đến +100. Bấm vào một yếu tố để xem biểu đồ và hai mặt của nó.</p>
+        ${hurdle()}
+        ${ph ? `<p class="small">Pha chu kỳ hiện tại: <b class="amber">${ph.name}</b> (${ph.sub}), tài sản thường dẫn đầu: <b>${ph.best}</b>.</p>` : ""}
+        <p class="dim small">Đây là bảng kiểm tra bối cảnh, không phải dự báo hay lời khuyên. Nó không biết giá bạn mua, tỷ trọng danh mục, hay tin tức riêng của từng doanh nghiệp. Số liệu tháng và quý luôn trễ (xem nhãn từng dòng).</p>
+      </div></section>
+      ${board()}
+      ${ASSET_BOARD.map((a) => boardCard(a, true)).join("")}`;
+  };
+
+  // ------------------------------------------------------------------ release calendar
+  /* Built in the browser from each release's usual rule. Only FOMC meeting dates are the official
+     published schedule; the rest are estimates of the usual day (agencies shift dates around holidays),
+     shown as a date range when the rule is loose. Times are converted from New York to Vietnam time. */
+  const FOMC = ["2026-01-28", "2026-03-18", "2026-04-29", "2026-06-17", "2026-07-29", "2026-09-16", "2026-10-28", "2026-12-09"];
+  const usDST = (y, m, d) => { // second Sunday of March to first Sunday of November
+    const nth = (mo, n) => { const f = new Date(Date.UTC(y, mo, 1)).getUTCDay(); return 1 + ((7 - f) % 7) + 7 * (n - 1); };
+    const t = m * 100 + d;
+    return t >= 200 + nth(2, 2) && t < 1000 + nth(10, 1);
+  };
+  const ictTime = (y, m, d, hh, mm) => { const h = hh + (usDST(y, m, d) ? 11 : 12); return { next: h >= 24, txt: String(h % 24).padStart(2, "0") + ":" + String(mm).padStart(2, "0") + " ICT" }; };
+  const nthWeekday = (y, m, wd, n) => { const f = new Date(Date.UTC(y, m, 1)).getUTCDay(); return 1 + ((wd - f + 7) % 7) + 7 * (n - 1); };
+  const lastWeekday = (y, m, wd) => { const last = new Date(Date.UTC(y, m + 1, 0)); return last.getUTCDate() - ((last.getUTCDay() - wd + 7) % 7); };
+  const MON = (m) => "T" + (m + 1);
+
+  // rule: (y, m) -> {d, d2?, label} for month m (0-based)
+  const CAL_RULES = [
+    { k: "fomc", name: "FOMC: Fed quyết định lãi suất", imp: 3, refs: ["rates.fedfunds"], t: [14, 0], official: true, rule: (y, m) => { const f = FOMC.find((x) => +x.slice(0, 4) === y && +x.slice(5, 7) === m + 1); return f ? { d: +f.slice(8) } : null; },
+      why: "Lãi suất và lời phát biểu định hướng 6-12 tháng tới. Thị trường phản ứng với chênh lệch so với kỳ vọng, không phải với quyết định." },
+    { k: "nfp", name: "Báo cáo việc làm (NFP, thất nghiệp, lương)", imp: 3, refs: ["grow.payrolls", "grow.unrate", "infl.wages"], t: [8, 30], rule: (y, m) => ({ d: nthWeekday(y, m, 5, 1), label: `số ${MON((m + 11) % 12)}` }),
+      why: "Thất nghiệp tăng nhanh là tín hiệu suy thoái đáng tin nhất (quy tắc Sahm). Số việc làm hay bị sửa lại mạnh." },
+    { k: "cpi", name: "Lạm phát CPI", imp: 3, refs: ["infl.cpi", "infl.corecpi"], t: [8, 30], rule: (y, m) => ({ d: 10, d2: 15, label: `số ${MON((m + 11) % 12)}` }),
+      why: "Quyết định Fed còn phải giữ lãi cao bao lâu. CPI lõi quan trọng hơn CPI tổng." },
+    { k: "ppi", name: "Giá sản xuất PPI", imp: 1, refs: ["infl.ppi"], t: [8, 30], rule: (y, m) => ({ d: 11, d2: 16, label: `số ${MON((m + 11) % 12)}` }), why: "Áp lực chi phí đầu vào, thường đi trước CPI vài tháng." },
+    { k: "wasde", name: "WASDE: cung cầu nông sản thế giới (USDA)", imp: 2, refs: ["agri.corn", "agri.soybean", "agri.wheat"], t: [12, 0], rule: (y, m) => ({ d: 8, d2: 12 }),
+      why: "Dự báo tồn kho cuối vụ. Tồn kho/tiêu thụ thấp là điều kiện cho giá nông sản tăng dài." },
+    { k: "retail", name: "Doanh số bán lẻ", imp: 2, refs: ["grow.retail"], t: [8, 30], rule: (y, m) => ({ d: 14, d2: 17, label: `số ${MON((m + 11) % 12)}` }), why: "Tiêu dùng là khoảng 70% GDP Mỹ." },
+    { k: "indpro", name: "Sản xuất công nghiệp", imp: 1, refs: ["grow.indpro"], t: [9, 15], rule: (y, m) => ({ d: 15, d2: 18, label: `số ${MON((m + 11) % 12)}` }), why: "Nhu cầu nguyên liệu, năng lượng." },
+    { k: "umich", name: "Niềm tin người tiêu dùng UMich (sơ bộ)", imp: 1, refs: ["grow.sentiment", "infl.mich"], t: [10, 0], rule: (y, m) => ({ d: nthWeekday(y, m, 5, 2) }), why: "Tâm lý cực xấu thường trùng vùng đáy của thị trường." },
+    { k: "housing", name: "Nhà khởi công", imp: 1, refs: ["grow.housing"], t: [8, 30], rule: (y, m) => ({ d: 16, d2: 19, label: `số ${MON((m + 11) % 12)}` }), why: "Ngành nhạy với lãi suất nhất, hay đi trước chu kỳ." },
+    { k: "cfnai", name: "Chỉ số hoạt động Chicago (CFNAI)", imp: 1, refs: ["grow.cfnai"], t: [8, 30], rule: (y, m) => ({ d: 20, d2: 26 }), why: "Trục tăng trưởng của đồng hồ chu kỳ." },
+    { k: "m2", name: "Cung tiền M2 (Fed H.6)", imp: 1, refs: ["liq.m2"], t: [13, 0], rule: (y, m) => ({ d: nthWeekday(y, m, 2, 4) }), why: "Thanh khoản trong nền kinh tế." },
+    { k: "gdp", name: "GDP Mỹ", imp: 3, refs: ["grow.gdp", "grow.gdpq"], t: [8, 30], rule: (y, m) => ({ d: 24, d2: 30, label: ["bản sơ bộ", "bản lần 2", "bản lần 3"][m % 3] + " Q" + [4, 4, 4, 1, 1, 1, 2, 2, 2, 3, 3, 3][m] }),
+      why: "Tăng trưởng thực tế, nhưng đã cũ khi công bố; thị trường nhìn các chỉ báo tuần và tháng nhiều hơn." },
+    { k: "pce", name: "PCE lõi (thước đo Fed nhắm 2%)", imp: 3, refs: ["infl.corepce"], t: [8, 30], rule: (y, m) => ({ d: 26, d2: 31, label: `số ${MON((m + 11) % 12)}` }), why: "Thước đo lạm phát chính thức của Fed." },
+    { k: "z1", name: "Fed Z.1: vốn hóa, tiền quỹ tiền tệ (chỉ báo Buffett)", imp: 1, refs: ["liq.buffett", "liq.cash_ratio"], t: [12, 0], rule: (y, m) => m % 3 === 2 ? { d: 8, d2: 14 } : null, why: "Định giá toàn thị trường Mỹ, cập nhật mỗi quý." },
+    { k: "sloos", name: "Khảo sát cho vay ngân hàng (SLOOS)", imp: 1, refs: ["liq.lending"], t: [14, 0], rule: (y, m) => m % 3 === 1 ? { d: 1, d2: 10 } : null, why: "Ngân hàng siết cho vay thường đi trước suy thoái 2-4 quý." },
+  ];
+  const WEEKLY = [
+    { name: "Tồn kho dầu, xăng EIA", day: "Thứ Tư", t: [10, 30], refs: ["energy.crude", "energy.gasoline"] },
+    { name: "Đơn xin trợ cấp thất nghiệp", day: "Thứ Năm", t: [8, 30], refs: ["grow.claims"] },
+    { name: "Tồn kho khí đốt EIA", day: "Thứ Năm", t: [10, 30], refs: ["energy.natgas"] },
+    { name: "Bảng cân đối Fed (H.4.1)", day: "Thứ Năm", t: [16, 30], refs: ["liq.fedbs", "liq.netliq"] },
+    { name: "Lãi vay mua nhà Freddie Mac", day: "Thứ Năm", t: [12, 0], refs: ["rates.mortgage"] },
+    { name: "Điều kiện tài chính Chicago", day: "Thứ Tư", t: [8, 30], refs: ["liq.nfci"] },
+  ];
+
+  function upcoming(daysAhead) {
+    const now = new Date(), t0 = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+    const out = [];
+    for (let i = -1; i <= 2; i++) {
+      const y = now.getUTCFullYear() + Math.floor((now.getUTCMonth() + i) / 12), m = ((now.getUTCMonth() + i) % 12 + 12) % 12;
+      for (const r of CAL_RULES) {
+        const e = r.rule(y, m);
+        if (!e) continue;
+        const last = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+        const d = Math.min(e.d, last), d2 = e.d2 ? Math.min(e.d2, last) : d;
+        const from = Date.UTC(y, m, d), to = Date.UTC(y, m, d2);
+        if (to < t0 || from > t0 + daysAhead * DAY * 1000) continue;
+        out.push({ r, y, m, d, d2, from, to, label: e.label || "", tm: ictTime(y, m, d, r.t[0], r.t[1]) });
+      }
+    }
+    return out.sort((a, b) => a.from - b.from || b.r.imp - a.r.imp);
+  }
+  const dmy = (d, m) => String(d).padStart(2, "0") + "/" + String(m + 1).padStart(2, "0");
+  const WD = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+  function lastVal(refs) {
+    return refs.map((ref) => { const s = ser(ref); if (!s) return ""; const f = freshness(s, ref.split(".")[1]); return `<span class="click nowrap" data-ref="${ref}">${esc(s.name)}: <b>${fmt(s.st.v, s.unit)}</b>${s.unit === "%" ? "%" : ""} <span class="dim">(${f.period})</span></span>`; }).filter(Boolean).join("<br>");
+  }
+  function calRow(e, withWhy) {
+    const day = e.d === e.d2 ? `${WD[new Date(e.from).getUTCDay()]} ${dmy(e.d, e.m)}` : `${dmy(e.d, e.m)} - ${dmy(e.d2, e.m)}`;
+    const now = Date.now(), live = e.from <= now && now < e.to + DAY * 1000;
+    return `<tr><td class="nowrap">${day}${live ? ' <span class="fr live">TRONG KỲ</span>' : ""}</td><td class="nowrap">${e.d === e.d2 ? e.tm.txt + (e.tm.next ? " (+1 ngày)" : "") : "–"}</td><td><span class="amber">${"★".repeat(e.r.imp)}</span><span class="dim">${"★".repeat(3 - e.r.imp)}</span></td>
+      <td>${esc(e.r.name)}${e.label ? ` <span class="dim small">(${esc(e.label)})</span>` : ""} ${e.r.official ? '<span class="fr">LỊCH CHÍNH THỨC</span>' : `<span class="dim small">${e.d === e.d2 ? "ngày ước tính" : "khoảng ngày"}</span>`}${withWhy ? `<div class="dim small wrap">${esc(e.r.why)}</div>` : ""}</td>
+      ${withWhy ? `<td class="small">${lastVal(e.r.refs)}</td>` : ""}</tr>`;
+  }
+
+  SCREENS.CAL = () => {
+    const ev = upcoming(45);
+    const fomcNext = FOMC.find((x) => Date.parse(x) >= Date.now() - DAY * 1000);
+    return `<h1 class="title">LỊCH CÔNG BỐ DỮ LIỆU <small>45 ngày tới · giờ Việt Nam</small></h1>
+      <section class="panel"><div class="ph"><span class="code">CAL</span><h2>Sắp công bố</h2></div><div class="pb scroll">
+        <p class="dim small">Chỉ ngày họp FOMC là lịch chính thức của Fed. Các ngày còn lại tính theo lịch thường lệ của từng cơ quan, có thể lệch 1-3 ngày vì ngày lễ; kiểm tra lại trên trang cơ quan trước khi giao dịch quanh ngày công bố. ★★★ là số liệu hay làm thị trường biến động mạnh nhất.${fomcNext ? "" : ' <b class="down">Lịch FOMC sau 2026 chưa được nhập.</b>'}</p>
+        <table class="cal"><tr><th>Ngày</th><th>Giờ</th><th>Mức</th><th>Số liệu và vì sao quan trọng</th><th>Kỳ gần nhất đang hiển thị</th></tr>${ev.map((e) => calRow(e, true)).join("") || '<tr><td colspan="5" class="dim">Không có sự kiện.</td></tr>'}</table></div></section>
+      <section class="panel"><div class="ph"><span class="code">WEEK</span><h2>Hằng tuần</h2></div><div class="pb scroll"><table>
+        <tr><th>Số liệu</th><th>Ngày</th><th>Giờ</th><th>Kỳ gần nhất</th></tr>
+        ${WEEKLY.map((w) => { const n = new Date(); const tm = ictTime(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate(), w.t[0], w.t[1]); return `<tr><td>${esc(w.name)}</td><td>${w.day}</td><td class="nowrap">${tm.txt}${tm.next ? " (+1 ngày)" : ""}</td><td class="small">${lastVal(w.refs)}</td></tr>`; }).join("")}
+      </table><p class="dim small">Giờ Mỹ đổi giữa mùa hè và mùa đông nên giờ Việt Nam lệch 1 tiếng theo mùa; bảng đã tính sẵn.</p></div></section>`;
+  };
+
   function drawClock(el, mini) {
     const tr = (G.cycle && G.cycle.trail) || [];
     if (!tr.length) return;
@@ -599,7 +841,7 @@
     const scr = $("#screen");
     let html, post = null;
     if (h.startsWith("S/")) { const [, g, k] = h.split("/"); html = detail(g, k); }
-    else { const f = SCREENS[h] || SCREENS.HOME; html = f(); post = f.after; }
+    else { const f = SCREENS[h.split("/")[0]] || SCREENS.HOME; html = f(); post = f.after; }
     scr.innerHTML = html;
     document.querySelectorAll(".fkeys a").forEach((a) => a.classList.toggle("on", a.dataset.code === h.split("/")[0]));
     after.forEach((fn) => { try { fn(); } catch (e) { console.error(e); } });
@@ -607,7 +849,9 @@
     scr.querySelectorAll("[data-ref]").forEach((el) => el.addEventListener("click", () => { const [g, k] = el.dataset.ref.split("."); go("S/" + g + "/" + k); }));
     const b = $("#back");
     if (b) b.addEventListener("click", () => history.length > 1 ? history.back() : go("HOME"));
-    if (!h.startsWith("S/") || !location.hash) window.scrollTo(0, 0);
+    const sub = !h.startsWith("S/") && h.split("/")[1], target = sub && document.getElementById("d-" + sub);
+    if (target) target.scrollIntoView();
+    else if (!h.startsWith("S/") || !location.hash) window.scrollTo(0, 0);
   }
 
   let resizeT;
