@@ -18,7 +18,7 @@ def load_json(path, default):
     except (OSError, ValueError):
         return default
 
-DESKS = ("global", "macro")
+DESKS = ("global", "macro", "calendar")
 HISTORY = 48  # hourly runs kept per source (two days)
 
 

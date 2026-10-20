@@ -10,7 +10,7 @@ Gõ mã vào ô lệnh (phím `/` để nhảy tới ô lệnh) hoặc bấm F1 
 |---|---|---|
 | HOME | Tổng quan | Bản đồ cơ hội (chỉ báo ở cực trị 10 năm, đọc hai mặt), đồng hồ chu kỳ, chỉ báo chính |
 | DECI | Bảng quyết định | Cổ phiếu Mỹ, cổ phiếu Việt Nam, vàng, crypto, hàng hóa: mỗi tài sản 8-9 yếu tố vĩ mô chấm gió xuôi/gió ngược theo hướng đi 6 tháng, điểm tổng -100 đến +100, kèm mặt kia và giới hạn dữ liệu (khung 6-18 tháng) |
-| CAL | Lịch công bố | FOMC (lịch chính thức), việc làm, CPI, PCE, GDP, WASDE... 45 ngày tới theo giờ Việt Nam (ngày ước tính theo lịch thường lệ), số liệu hằng tuần |
+| CAL | Lịch công bố | 45 ngày tới theo giờ Việt Nam. FOMC, WASDE, GDP, PCE, bán lẻ, nhà khởi công lấy từ lịch chính thức của Fed, USDA, BEA, Census (tự đọc lại mỗi ngày); CPI, việc làm, PPI ước tính theo lịch thường lệ vì BLS chặn truy cập tự động; số liệu hằng tuần |
 | CURV | Đường cong lợi suất | Đường cong Mỹ hôm nay so với 1 tuần, 1 tháng, 6 tháng, 1 năm, 2 năm; 10Y-2Y, 10Y-3M; đường cong Đức, khu vực euro, Anh, Nhật |
 | RATE | Lãi suất | Fed, 3M/2Y/10Y/30Y, lợi suất thực, phần bù kỳ hạn, lãi vay mua nhà, USD; lãi suất 10 ngân hàng trung ương |
 | INFL | Lạm phát | CPI, CPI lõi, PCE lõi, PPI, lương, lạm phát kỳ vọng |
@@ -29,8 +29,9 @@ Mỗi chỉ báo có biểu đồ toàn bộ lịch sử (vùng xám là suy tho
 GitHub Actions (mỗi giờ, miễn phí)
   1. pipeline.global_desk  ->  đường cong lợi suất Mỹ, Đức, khu vực euro, Anh, Nhật; lãi suất 10 NHTW (BIS)
   2. pipeline.macro_desk   ->  FRED, EIA, USDA FAS (WASDE), Yahoo -> site/data/macro/*.json
-  3. pipeline.health       ->  nguồn nào chạy được lần này -> trang Tình trạng
-  4. Xuất bản trang web (GitHub Pages)
+  3. pipeline.calendar_desk -> lịch công bố chính thức (Fed, USDA, BEA, Census), đọc lại mỗi ngày
+  4. pipeline.health       ->  nguồn nào chạy được lần này -> trang Tình trạng
+  5. Xuất bản trang web (GitHub Pages)
 ```
 
 Không có gì chạy trên máy của bạn và không cần API key. Mỗi nhóm dữ liệu chỉ tải lại khi đã cũ (3 đến 24 giờ tùy nhóm), nguồn nào lỗi thì giữ số liệu lần trước và ghi rõ ngày. Sản lượng OPEC chưa có vì opec.org chặn tải tự động.

@@ -691,10 +691,18 @@
   };
 
   // ------------------------------------------------------------------ release calendar
-  /* Built in the browser from each release's usual rule. Only FOMC meeting dates are the official
-     published schedule; the rest are estimates of the usual day (agencies shift dates around holidays),
-     shown as a date range when the rule is loose. Times are converted from New York to Vietnam time. */
+  /* Official dates come from data/calendar.json, re-read daily from the Fed, USDA, BEA and Census
+     schedule pages (pipeline/calendar_desk.py). Releases without an official date there (BLS blocks
+     automated reads: CPI, jobs, PPI) are estimated from their usual rule, shown as a range when the rule
+     is loose. Times are converted from New York to Vietnam time. */
+  let CALDATA = null;    // data/calendar.json
+  // fallback only, if calendar.json is missing: the Fed's 2026 schedule
   const FOMC = ["2026-01-28", "2026-03-18", "2026-04-29", "2026-06-17", "2026-07-29", "2026-09-16", "2026-10-28", "2026-12-09"];
+  function officialByMonth() {
+    const out = {};
+    for (const e of (CALDATA && CALDATA.events) || []) { const key = e.k + ":" + e.date.slice(0, 7); (out[key] = out[key] || []).push(e); }
+    return out;
+  }
   const usDST = (y, m, d) => { // second Sunday of March to first Sunday of November
     const nth = (mo, n) => { const f = new Date(Date.UTC(y, mo, 1)).getUTCDay(); return 1 + ((7 - f) % 7) + 7 * (n - 1); };
     const t = m * 100 + d;
@@ -707,7 +715,7 @@
 
   // rule: (y, m) -> {d, d2?, label} for month m (0-based)
   const CAL_RULES = [
-    { k: "fomc", name: "FOMC: Fed quyết định lãi suất", imp: 3, refs: ["rates.fedfunds"], t: [14, 0], official: true, rule: (y, m) => { const f = FOMC.find((x) => +x.slice(0, 4) === y && +x.slice(5, 7) === m + 1); return f ? { d: +f.slice(8) } : null; },
+    { k: "fomc", name: "FOMC: Fed quyết định lãi suất", imp: 3, refs: ["rates.fedfunds"], t: [14, 0], rule: (y, m) => { if (CALDATA && (CALDATA.events || []).some((e) => e.k === "fomc")) return null; const f = FOMC.find((x) => +x.slice(0, 4) === y && +x.slice(5, 7) === m + 1); return f ? { d: +f.slice(8) } : null; },
       why: "Lãi suất và lời phát biểu định hướng 6-12 tháng tới. Thị trường phản ứng với chênh lệch so với kỳ vọng, không phải với quyết định." },
     { k: "nfp", name: "Báo cáo việc làm (NFP, thất nghiệp, lương)", imp: 3, refs: ["grow.payrolls", "grow.unrate", "infl.wages"], t: [8, 30], rule: (y, m) => ({ d: nthWeekday(y, m, 5, 1), label: `số ${MON((m + 11) % 12)}` }),
       why: "Thất nghiệp tăng nhanh là tín hiệu suy thoái đáng tin nhất (quy tắc Sahm). Số việc làm hay bị sửa lại mạnh." },
@@ -739,10 +747,18 @@
 
   function upcoming(daysAhead) {
     const now = new Date(), t0 = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-    const out = [];
+    const out = [], off = officialByMonth(), end = t0 + daysAhead * DAY * 1000;
     for (let i = -1; i <= 2; i++) {
       const y = now.getUTCFullYear() + Math.floor((now.getUTCMonth() + i) / 12), m = ((now.getUTCMonth() + i) % 12 + 12) % 12;
       for (const r of CAL_RULES) {
+        const offs = off[r.k + ":" + y + "-" + String(m + 1).padStart(2, "0")];
+        if (offs) {
+          for (const o of offs) {
+            const d = +o.date.slice(8), from = Date.UTC(y, m, d), [hh, mm] = (o.time || "08:30").split(":").map(Number);
+            if (from >= t0 && from <= end) out.push({ r, y, m, d, d2: d, from, to: from, label: o.label || "", official: true, tm: ictTime(y, m, d, hh, mm) });
+          }
+          continue;
+        }
         const e = r.rule(y, m);
         if (!e) continue;
         const last = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
@@ -763,16 +779,17 @@
     const day = e.d === e.d2 ? `${WD[new Date(e.from).getUTCDay()]} ${dmy(e.d, e.m)}` : `${dmy(e.d, e.m)} - ${dmy(e.d2, e.m)}`;
     const now = Date.now(), live = e.from <= now && now < e.to + DAY * 1000;
     return `<tr><td class="nowrap">${day}${live ? ' <span class="fr live">TRONG KỲ</span>' : ""}</td><td class="nowrap">${e.d === e.d2 ? e.tm.txt + (e.tm.next ? " (+1 ngày)" : "") : "–"}</td><td><span class="amber">${"★".repeat(e.r.imp)}</span><span class="dim">${"★".repeat(3 - e.r.imp)}</span></td>
-      <td>${esc(e.r.name)}${e.label ? ` <span class="dim small">(${esc(e.label)})</span>` : ""} ${e.r.official ? '<span class="fr">LỊCH CHÍNH THỨC</span>' : `<span class="dim small">${e.d === e.d2 ? "ngày ước tính" : "khoảng ngày"}</span>`}${withWhy ? `<div class="dim small wrap">${esc(e.r.why)}</div>` : ""}</td>
+      <td>${esc(e.r.name)}${e.label ? ` <span class="dim small">(${esc(e.label)})</span>` : ""} ${e.official || e.r.k === "fomc" ? '<span class="fr">LỊCH CHÍNH THỨC</span>' : `<span class="dim small">${e.d === e.d2 ? "ngày ước tính" : "khoảng ngày"}</span>`}${withWhy ? `<div class="dim small wrap">${esc(e.r.why)}</div>` : ""}</td>
       ${withWhy ? `<td class="small">${lastVal(e.r.refs)}</td>` : ""}</tr>`;
   }
 
   SCREENS.CAL = () => {
     const ev = upcoming(45);
-    const fomcNext = FOMC.find((x) => Date.parse(x) >= Date.now() - DAY * 1000);
+    const fomcKnown = CALDATA && (CALDATA.events || []).some((e) => e.k === "fomc" && Date.parse(e.date) >= Date.now() + 40 * DAY * 1000);
+    const calAge = CALDATA ? Math.floor((Date.now() - CALDATA.generated) / 864e5) : null;
     return `<h1 class="title">LỊCH CÔNG BỐ DỮ LIỆU <small>45 ngày tới · giờ Việt Nam</small></h1>
       <section class="panel"><div class="ph"><span class="code">CAL</span><h2>Sắp công bố</h2></div><div class="pb scroll">
-        <p class="dim small">Chỉ ngày họp FOMC là lịch chính thức của Fed. Các ngày còn lại tính theo lịch thường lệ của từng cơ quan, có thể lệch 1-3 ngày vì ngày lễ; kiểm tra lại trên trang cơ quan trước khi giao dịch quanh ngày công bố. ★★★ là số liệu hay làm thị trường biến động mạnh nhất.${fomcNext ? "" : ' <b class="down">Lịch FOMC sau 2026 chưa được nhập.</b>'}</p>
+        <p class="dim small">Dòng có nhãn <span class="fr">LỊCH CHÍNH THỨC</span> lấy thẳng từ trang lịch của Fed (FOMC), USDA (WASDE), BEA (GDP, PCE) và Census (bán lẻ, nhà khởi công), hệ thống tự đọc lại mỗi ngày${calAge != null ? ` (lần gần nhất ${calAge ? calAge + " ngày trước" : "hôm nay"})` : ""}. Các dòng còn lại (CPI, việc làm, PPI...) là ngày ước tính theo lịch thường lệ, vì BLS chặn truy cập tự động; có thể lệch 1-3 ngày. ★★★ là số liệu hay làm thị trường biến động mạnh nhất.${fomcKnown || !CALDATA ? "" : ' <b class="down">Chưa đọc được lịch FOMC sắp tới từ trang Fed.</b>'}</p>
         <table class="cal"><tr><th>Ngày</th><th>Giờ</th><th>Mức</th><th>Số liệu và vì sao quan trọng</th><th>Kỳ gần nhất đang hiển thị</th></tr>${ev.map((e) => calRow(e, true)).join("") || '<tr><td colspan="5" class="dim">Không có sự kiện.</td></tr>'}</table></div></section>
       <section class="panel"><div class="ph"><span class="code">WEEK</span><h2>Hằng tuần</h2></div><div class="pb scroll"><table>
         <tr><th>Số liệu</th><th>Ngày</th><th>Giờ</th><th>Kỳ gần nhất</th></tr>
@@ -959,9 +976,10 @@
   async function boot() {
     $("#fkeys").innerHTML = FN.map(([c, n, f]) => `<a href="#${c}" data-code="${c}" title="${f}"><b>${c}</b>${n}</a>`).join("");
     wireCommand(); clock(); status();
-    const res = await Promise.all(GROUPS.map((g) => getJSON("data/macro/" + g + ".json")).concat([getJSON("data/global.json")]));
+    const res = await Promise.all(GROUPS.map((g) => getJSON("data/macro/" + g + ".json")).concat([getJSON("data/global.json"), getJSON("data/calendar.json")]));
     GROUPS.forEach((g, i) => { if (res[i]) G[g] = res[i]; });
     GLOBAL = res[GROUPS.length];
+    CALDATA = res[GROUPS.length + 1];
     const missing = GROUPS.filter((g) => !G[g]);
     const times = GROUPS.filter((g) => G[g]).map((g) => G[g].generated);
     $("#errors").textContent = (times.length ? "Dữ liệu dựng " + ago(Math.min(...times)) + "." : "") + (missing.length ? " Chưa có nhóm: " + missing.join(", ") + " (sẽ có sau lần quét kế tiếp)." : "");

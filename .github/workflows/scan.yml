@@ -38,6 +38,10 @@ jobs:
         continue-on-error: true
         timeout-minutes: 15
         run: python -m pipeline.macro_desk
+      - name: Release calendar (official dates from Fed, USDA, BEA, Census; re-read once a day)
+        continue-on-error: true
+        timeout-minutes: 5
+        run: python -m pipeline.calendar_desk
       - name: System status (which sources worked this run)
         if: always()
         continue-on-error: true
