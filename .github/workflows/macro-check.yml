@@ -1,0 +1,39 @@
+name: Macro desk check (branch)
+
+on:
+  push:
+    branches: ["claude/**"]
+  workflow_dispatch: {}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m unittest discover -s tests -t .
+      - run: python -m pipeline.macro_desk --force
+      - name: Summary
+        run: |
+          python - <<'PY'
+          import json, glob
+          for f in sorted(glob.glob("site/data/macro/*.json")):
+              d = json.load(open(f))
+              s = d.get("series") or {}
+              miss = [k for k, v in s.items() if not v]
+              print(f, len(json.dumps(d)), "series", len(s), "missing", miss)
+          a = json.load(open("site/data/macro/agri.json"))
+          for k, c in a["crops"].items():
+              print(k, c.get("unit"), c.get("updated"), (c.get("world") or {}).get("rows", [])[-1:], (c.get("us") or {}).get("rows", [])[-1:])
+          e = json.load(open("site/data/macro/energy.json"))["series"]
+          for k, v in e.items():
+              if v: print(k, v["st"]["v"], v["st"]["t"], len(v["d"]), (v.get("season") or {}).get("vs5y_pct"))
+          print(json.dumps(json.load(open("site/data/macro/cycle.json")))[:1500])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macro-data
+          path: site/data/macro
