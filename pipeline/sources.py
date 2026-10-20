@@ -1,4 +1,4 @@
-"""Free, public market-data sources.
+"""Shared fetch helpers for the free, public data sources.
 
 Every function returns plain Python lists/dicts and never raises on network
 errors: a failed source is logged and returns an empty result, so one broken
@@ -73,89 +73,7 @@ def save_health(desk, extra=None):
     (root / "health" / f"{desk}.json").write_text(json.dumps(health_report(desk, extra), separators=(",", ":")))
 
 
-# ---------------------------------------------------------------- crypto
-BINANCE = "https://data-api.binance.vision/api/v3"
-
-
-def binance_top_symbols(quote, top_n, exclude):
-    def run():
-        rows = json.loads(_get(f"{BINANCE}/ticker/24hr"))
-        out = []
-        for r in rows:
-            s = r["symbol"]
-            if not s.endswith(quote):
-                continue
-            base = s[: -len(quote)]
-            if base in exclude or base.endswith(("UP", "DOWN", "BULL", "BEAR")):
-                continue
-            out.append((float(r["quoteVolume"]), s, base))
-        out.sort(reverse=True)
-        return [{"symbol": s, "base": b} for _, s, b in out[:top_n]]
-
-    return _safe("binance tickers", run, [])
-
-
-def top_by_market_cap(quote, top_n, exclude):
-    """CoinGecko's largest coins by market cap that trade against `quote` on Binance spot."""
-    def run():
-        listed = {r["symbol"] for r in json.loads(_get(f"{BINANCE}/ticker/price"))}
-        coins = []
-        for page in (1, 2):
-            coins += json.loads(_get("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd"
-                                     f"&order=market_cap_desc&per_page=100&page={page}&sparkline=false"))
-        out, seen = [], set()
-        for c in coins:
-            base = c["symbol"].upper()
-            if base in exclude or base in seen or f"{base}{quote}" not in listed:
-                continue
-            if abs((c.get("current_price") or 0) - 1) < 0.03:  # stablecoins
-                continue
-            seen.add(base)
-            out.append({"symbol": f"{base}{quote}", "base": base, "market_cap": c.get("market_cap")})
-            if len(out) >= top_n:
-                break
-        return out
-
-    return _safe("coingecko top by market cap", run, [])
-
-
-def binance_klines(symbol, interval, limit):
-    def run():
-        q = urllib.parse.urlencode({"symbol": symbol, "interval": interval, "limit": limit})
-        rows = json.loads(_get(f"{BINANCE}/klines?{q}"))
-        now_ms = time.time() * 1000
-        # keep only closed candles: accuracy over speed
-        return [
-            {"t": int(r[0]) // 1000, "o": float(r[1]), "h": float(r[2]), "l": float(r[3]),
-             "c": float(r[4]), "v": float(r[7])}  # quote volume (USDT)
-            for r in rows if int(r[6]) < now_ms
-        ]
-
-    return _safe(f"binance {symbol} {interval}", run, [])
-
-
-def hyperliquid_perps():
-    """Funding, open interest and volume for every Hyperliquid perpetual."""
-    def run():
-        meta, ctxs = json.loads(_get("https://api.hyperliquid.xyz/info", data={"type": "metaAndAssetCtxs"}))
-        out = {}
-        for asset, ctx in zip(meta["universe"], ctxs):
-            try:
-                px = float(ctx["markPx"])
-                out[asset["name"]] = {
-                    "funding_apr": float(ctx["funding"]) * 24 * 365 * 100,  # hourly rate -> % per year
-                    "open_interest_usd": float(ctx["openInterest"]) * px,
-                    "volume_24h_usd": float(ctx["dayNtlVlm"]),
-                    "premium_pct": float(ctx.get("premium") or 0) * 100,
-                }
-            except (TypeError, ValueError, KeyError):
-                continue
-        return out
-
-    return _safe("hyperliquid", run, {})
-
-
-# ------------------------------------------------- forex / futures / indices
+# ---------------------------------------------------------------- markets
 def yahoo_chart(ticker, interval="1d", rng="5y"):
     def run():
         q = urllib.parse.urlencode({"interval": interval, "range": rng, "includePrePost": "false"})
@@ -194,27 +112,3 @@ def fred_series(series_id):
         return out
 
     return _safe(f"fred {series_id}", run, [])
-
-
-def cftc_cot(code, weeks=160):
-    """CFTC Commitments of Traders, legacy futures-only (US government, public domain).
-
-    Returns [(date, noncommercial_net, open_interest)] oldest first.
-    """
-    def run():
-        q = urllib.parse.urlencode({
-            "cftc_contract_market_code": code,
-            "$order": "report_date_as_yyyy_mm_dd DESC",
-            "$limit": weeks,
-        })
-        rows = json.loads(_get(f"https://publicreporting.cftc.gov/resource/6dca-aqww.json?{q}"))
-        out = []
-        for r in rows:
-            try:
-                net = float(r["noncomm_positions_long_all"]) - float(r["noncomm_positions_short_all"])
-                out.append((r["report_date_as_yyyy_mm_dd"][:10], net, float(r["open_interest_all"])))
-            except (KeyError, ValueError):
-                continue
-        return list(reversed(out))
-
-    return _safe(f"cftc {code}", run, [])

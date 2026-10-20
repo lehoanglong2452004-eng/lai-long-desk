@@ -597,7 +597,7 @@ def main(force=False):
         if f.exists():
             d = json.loads(f.read_text())
             idx["groups"][g] = {"generated": d.get("generated"), "bytes": f.stat().st_size,
-                                "series": sum(1 for v in (d.get("series") or {}).values() if v)}
+                                "series": sum(1 for v in (d.get("series") or d.get("crops") or {}).values() if v)}
     (OUT / "index.json").write_text(json.dumps(idx, separators=(",", ":")))
     print(f"macro desk: {json.dumps(idx['groups'])} errors={len(ERRORS)} in {time.time() - t0:.0f}s")
     for e in ERRORS[:40]:
