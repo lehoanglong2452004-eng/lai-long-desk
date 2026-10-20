@@ -166,3 +166,18 @@ details.other .two { margin-top: 8px; }
   .two, .opps .sides { grid-template-columns: 1fr; }
   .apps { margin-left: 0; }
 }
+
+/* freshness labels */
+.fr { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .04em; padding: 0 5px; margin-right: 6px; border: 1px solid #444; color: #bbb; white-space: nowrap; }
+.fr.late { border-color: var(--red); color: var(--red); }
+.fr.live { border-color: var(--green); color: #000; background: var(--green); }
+.fr.live::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #000; margin-right: 4px; vertical-align: 1px; animation: pulse 1.6s ease-in-out infinite; }
+.frs { font-size: 9px; color: var(--dim); border: 1px solid #333; padding: 0 3px; margin-right: 4px; }
+.frs.late { color: var(--red); border-color: var(--red); }
+.livebar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; padding: 4px 16px; border-bottom: 1px solid var(--line); background: #03140a; font-size: 12px; }
+.lv .n { color: var(--green); margin-right: 6px; }
+.fl-up { animation: flu 1.2s ease-out; } .fl-down { animation: fld 1.2s ease-out; }
+@keyframes flu { from { background: rgba(47, 211, 107, .35); } to { background: transparent; } }
+@keyframes fld { from { background: rgba(255, 77, 77, .35); } to { background: transparent; } }
+@keyframes pulse { 50% { opacity: .25; } }
+.stats .fr { margin: 0 0 4px; }
