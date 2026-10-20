@@ -117,8 +117,8 @@ CROPS = [("corn", "Corn", "Ngô", "ZC=F"), ("wheat", "Wheat", "Lúa mì", "ZW=F"
          ("rice", "Rice, Milled", "Gạo", "ZR=F"), ("coffee", "Coffee, Green", "Cà phê", "KC=F"),
          ("sugar", "Sugar, Centrifugal", "Đường", "SB=F"), ("cotton", "Cotton", "Bông", "CT=F")]
 
-# world coffee consumption is incomplete before 2000 in PSD (stocks-to-use reads 100-200%)
-PSD_START = {"coffee": 2000}
+# world coffee consumption is incomplete before 2002 in PSD (stocks-to-use reads 100-200%)
+PSD_START = {"coffee": 2002}
 # consumption is named differently per crop (sugar, cotton); the first one present is used
 USE_ATTRS = ("Domestic Consumption", "Domestic Use", "Total Dom. Cons.", "Human Dom. Consumption", "Dom. Consumption", "Total Use")
 PSD_ATTRS = {"Production", "Exports", "Ending Stocks"} | set(USE_ATTRS)
