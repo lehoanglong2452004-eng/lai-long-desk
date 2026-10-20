@@ -1,0 +1,16 @@
+name: probe
+on:
+  push:
+    branches: [claude/project-thread-n29uzm]
+    paths: ["probe/probe.py"]
+permissions:
+  contents: write
+jobs:
+  p:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python probe/probe.py
+      - run: |
+          git config user.name bot; git config user.email bot@users.noreply.github.com
+          git add probe/out; git commit -m "probe out [skip ci]"; git push
