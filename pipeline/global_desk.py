@@ -1,6 +1,5 @@
-"""Global raw materials for the quant terminal: government bond curves (US, Germany, euro area, UK,
-Japan), policy rates of the 10 most traded currencies, what bond-futures traders are doing (CFTC TFF),
-extra macro gauges from FRED and crypto-wide figures. Daily or weekly sources, refreshed hourly.
+"""Global rates for the MACRO terminal: government bond curves (US, Germany, euro area, UK, Japan) and
+policy rates of the 10 most traded currencies. Daily sources, refreshed hourly.
 
 Every block carries `source` and `asOf` (ms) so the page can say how old each number is.
 
@@ -14,7 +13,7 @@ import os
 import time
 from pathlib import Path
 
-from .sources import ERRORS, _get, _safe, fred_series, yahoo_chart
+from .sources import ERRORS, _get, _safe
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = Path(os.environ.get("LLD_GLOBAL_OUT") or ROOT / "site" / "data" / "global.json")
@@ -203,89 +202,14 @@ def policy_rates(today=None):
     return out
 
 
-# ------------------------------------------------------------------ bond positioning (CFTC TFF)
-TFF = [("2Y", "042601"), ("5Y", "044601"), ("10Y", "043602"), ("Ultra 10Y", "043607"), ("Bond", "020601"),
-       ("Ultra Bond", "020604")]
-
-
-def tff(code):
-    raw = _get(f"https://publicreporting.cftc.gov/resource/gpe5-46if.json?$limit=160"
-               f"&$order=report_date_as_yyyy_mm_dd%20DESC&cftc_contract_market_code={code}")
-    rows = json.loads(raw)
-    if len(rows) < 3:
-        return None
-    num = lambda r, k: float(r.get(k) or 0)  # noqa: E731
-    am = [num(r, "asset_mgr_positions_long") - num(r, "asset_mgr_positions_short") for r in rows]
-    lev = [num(r, "lev_money_positions_long") - num(r, "lev_money_positions_short") for r in rows]
-    pctl = lambda xs: round(sum(1 for x in xs if x <= xs[0]) / len(xs) * 100)  # noqa: E731
-    return {"date": rows[0]["report_date_as_yyyy_mm_dd"][:10], "oi": num(rows[0], "open_interest_all"),
-            "asset_mgr_net": am[0], "asset_mgr_chg": am[0] - am[1], "asset_mgr_pct": pctl(am),
-            "lev_net": lev[0], "lev_chg": lev[0] - lev[1], "lev_pct": pctl(lev)}
-
-
-def bond_positioning():
-    return [{"contract": name} | r for name, code in TFF if (r := _safe(f"cftc tff {name}", lambda c=code: tff(c), None))]
-
-
-# ------------------------------------------------------------------ extra macro gauges (FRED)
-FRED_EXTRA = [("real10y", "DFII10"), ("breakeven5y", "T5YIE"), ("breakeven10y", "T10YIE"),
-              ("termprem10y", "THREEFYTP10"), ("hy_oas", "BAMLH0A0HYM2"), ("nfci", "NFCI"),
-              ("fed_assets", "WALCL"), ("tga", "WTREGEN"), ("rrp", "RRPONTSYD")]
-
-
-def fred_block(sid):
-    rows = fred_series(sid)
-    return _series_block([(dt.date.fromisoformat(d), v) for d, v in rows[-60:]])
-
-
-def macro_extra():
-    out = {k: fred_block(sid) for k, sid in FRED_EXTRA}
-    fa, tga, rrp = out.get("fed_assets"), out.get("tga"), out.get("rrp")
-    if fa and tga and rrp:
-        # WALCL and WTREGEN are in $ millions, RRPONTSYD in $ billions
-        net = fa["value"] / 1000 - tga["value"] / 1000 - rrp["value"]
-        net_m = fa["month"] / 1000 - tga["month"] / 1000 - rrp["month"]
-        out["net_liquidity"] = {"value": round(net, 1), "month": round(net_m, 1), "asOf": min(fa["asOf"], tga["asOf"], rrp["asOf"])}
-    hg, gc = yahoo_chart("HG=F", "1d", "6mo"), yahoo_chart("GC=F", "1d", "6mo")
-    if len(hg) > 22 and len(gc) > 22:
-        g = {b["t"] // 86400: b["c"] for b in gc}
-        ratio = [(b["t"], b["c"] / g[b["t"] // 86400] * 1000) for b in hg if b["t"] // 86400 in g]
-        if len(ratio) > 22:
-            out["copper_gold"] = {"value": round(ratio[-1][1], 3), "prev": round(ratio[-2][1], 3),
-                                  "month": round(ratio[-22][1], 3), "asOf": ratio[-1][0] * 1000}
-    return out
-
-
-# ------------------------------------------------------------------ crypto-wide
-def crypto_global():
-    out = {}
-    g = _safe("coingecko global", lambda: json.loads(_get("https://api.coingecko.com/api/v3/global"))["data"], None)
-    if g:
-        out["market_cap_usd"] = g["total_market_cap"]["usd"]
-        out["market_cap_chg24h_pct"] = round(g.get("market_cap_change_percentage_24h_usd") or 0, 2)
-        out["btc_dominance"] = round(g["market_cap_percentage"]["btc"], 2)
-        out["eth_dominance"] = round(g["market_cap_percentage"]["eth"], 2)
-        out["asOf"] = (g.get("updated_at") or 0) * 1000
-    st = _safe("defillama stablecoins", lambda: json.loads(_get("https://stablecoins.llama.fi/stablecoincharts/all")), [])
-    if len(st) > 31:
-        val = lambda r: (r.get("totalCirculatingUSD") or {}).get("peggedUSD", 0)  # noqa: E731
-        out["stablecoins"] = {"value": val(st[-1]), "week": val(st[-8]), "month": val(st[-31]), "asOf": int(st[-1]["date"]) * 1000}
-    hr = _safe("blockchain hashrate", lambda: json.loads(_get("https://api.blockchain.info/charts/hash-rate?timespan=60days&format=json"))["values"], [])
-    if len(hr) > 31:
-        out["hashrate_ehs"] = {"value": round(hr[-1]["y"] / 1e6, 1), "month": round(hr[-31]["y"] / 1e6, 1), "asOf": hr[-1]["x"] * 1000}
-    return out
-
-
 def main():
     t0 = time.time()
-    data = {"generated": int(time.time() * 1000), "bonds": bond_curves(), "policy_rates": _safe("bis policy rates", policy_rates, []),
-            "bond_positioning": bond_positioning(), "macro_extra": macro_extra(), "crypto_global": crypto_global()}
+    data = {"generated": int(time.time() * 1000), "bonds": bond_curves(), "policy_rates": _safe("bis policy rates", policy_rates, [])}
     data["errors"] = ERRORS[:30]
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")))
     print(f"global desk: curves={sum(1 for c in data['bonds']['curves'].values() for v in c['curve'].values() if v)} "
-          f"rates={sum(1 for r in data['policy_rates'] if r.get('rate') is not None)} tff={len(data['bond_positioning'])} "
-          f"macro={sum(1 for v in data['macro_extra'].values() if v)} errors={len(ERRORS)} in {time.time() - t0:.0f}s")
+          f"rates={sum(1 for r in data['policy_rates'] if r.get('rate') is not None)} errors={len(ERRORS)} in {time.time() - t0:.0f}s")
     for e in ERRORS:
         print("  ", e)
 

@@ -1,7 +1,3 @@
 __pycache__/
 *.pyc
 .DS_Store
-site/news/data.json
-live/
-site/data/factory/
-site/data/bars/

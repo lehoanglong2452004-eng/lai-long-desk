@@ -15,8 +15,8 @@ class HealthTests(unittest.TestCase):
         now = int(time.time())
 
         def report(ok, fail):
-            (d / "health" / "scan.json").write_text(json.dumps(
-                {"desk": "scan", "t": now, "errors": fail, "sources": {"yahoo": {"ok": ok, "fail": fail, "error": "x" if fail else None, "what": "yahoo GC=F"}}}))
+            (d / "health" / "macro.json").write_text(json.dumps(
+                {"desk": "macro", "t": now, "errors": fail, "sources": {"yahoo": {"ok": ok, "fail": fail, "error": "x" if fail else None, "what": "yahoo GC=F"}}}))
 
         for ok, fail in ((5, 0), (0, 3), (0, 2), (1, 1), (0, 4)):
             report(ok, fail)

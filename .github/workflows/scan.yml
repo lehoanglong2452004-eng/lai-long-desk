@@ -31,31 +31,18 @@ jobs:
           python-version: "3.12"
       - name: Self-test (offline, synthetic data)
         run: python -m unittest discover -s tests -t . -v
-      - name: Scan markets
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
-        run: python -m pipeline.run
-      - name: Global desk data (bond curves, central banks, CFTC, macro, crypto-wide)
+      - name: Global rates (bond curves of 5 countries, 10 central banks)
         continue-on-error: true
         run: python -m pipeline.global_desk
-      - name: Factory (Wyckoff + MSS + volume/market profile, 4 timeframes, backtest log; MIDOTI bars)
+      - name: Macro desk (rates, curve, inflation, growth, liquidity, EIA inventories, WASDE, long-term assets, cycle)
         continue-on-error: true
-        timeout-minutes: 30
-        run: python -m pipeline.factory
-      - name: Traditional desk (council, Elliott/Wyckoff/Darvas, breakouts, ranges on 7 timeframes)
-        continue-on-error: true
-        timeout-minutes: 10
-        run: node pipeline/traditional.cjs
-      - name: News desk data (prices, headlines, calendar)
-        continue-on-error: true
-        run: python -m pipeline.news_desk
+        timeout-minutes: 15
+        run: python -m pipeline.macro_desk
       - name: System status (which sources worked this run)
         if: always()
         continue-on-error: true
         run: python -m pipeline.health
-      - name: Save signal journal
+      - name: Save data
         if: always()
         run: |
           git config user.name "lai-long-desk-bot"

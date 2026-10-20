@@ -5,11 +5,20 @@ Run last in the hourly scan, even when an earlier step failed:
     python -m pipeline.health
 """
 import json
+import os
 import time
+from pathlib import Path
 
-from .run import DATA, load_json
+DATA = Path(os.environ.get("LLD_DATA_DIR") or Path(__file__).resolve().parent.parent / "site" / "data")
 
-DESKS = ("scan", "global", "factory", "news")
+
+def load_json(path, default):
+    try:
+        return json.loads(path.read_text())
+    except (OSError, ValueError):
+        return default
+
+DESKS = ("global", "macro")
 HISTORY = 48  # hourly runs kept per source (two days)
 
 
