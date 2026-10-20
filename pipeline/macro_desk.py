@@ -413,7 +413,7 @@ def yahoo_long(tk):
     to_rows = lambda bars, shift=0: [(dt.datetime.fromtimestamp(b["t"], dt.timezone.utc).date() + dt.timedelta(days=shift), b["c"]) for b in bars]  # noqa: E731
     wk = to_rows(yahoo_chart(tk, "1wk", "10y"), 4)  # weekly bars are stamped Monday: date them by their Friday close
     mo = to_rows(yahoo_chart(tk, "1mo", "max"))
-    day = to_rows(yahoo_chart(tk, "1d", "5d"))
+    day = to_rows(yahoo_chart(tk, "1d", "5d", keep_closed_today=True))
     rows = ([r for r in mo if r[0] < wk[0][0]] + wk) if wk else mo
     if day and rows and day[-1][0] > rows[-1][0]:
         rows.append(day[-1])

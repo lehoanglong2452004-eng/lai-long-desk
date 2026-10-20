@@ -74,7 +74,7 @@ def save_health(desk, extra=None):
 
 
 # ---------------------------------------------------------------- markets
-def yahoo_chart(ticker, interval="1d", rng="5y"):
+def yahoo_chart(ticker, interval="1d", rng="5y", keep_closed_today=False):
     def run():
         q = urllib.parse.urlencode({"interval": interval, "range": rng, "includePrePost": "false"})
         t = urllib.parse.quote(ticker)
@@ -91,7 +91,11 @@ def yahoo_chart(ticker, interval="1d", rng="5y"):
             if None in (o, h, l, c):
                 continue
             bars.append({"t": int(t0), "o": o, "h": h, "l": l, "c": c, "v": float(qd["volume"][i] or 0)})
-        # the last bar is the session still trading: drop it, signals use closed bars only
+        if keep_closed_today:
+            # daily bars: keep every bar dated before today (UTC); only today's may still be trading
+            today = time.strftime("%Y-%m-%d", time.gmtime())
+            return [b for b in bars if time.strftime("%Y-%m-%d", time.gmtime(b["t"])) < today]
+        # the last bar is the session still trading: drop it, only closed bars are used
         return bars[:-1] if len(bars) > 1 else bars
 
     return _safe(f"yahoo {ticker} {interval}", run, [])
