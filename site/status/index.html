@@ -31,8 +31,8 @@
   const $ = (s) => document.querySelector(s);
   const esc = (t) => String(t == null ? "" : t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const ago = (sec) => { if (!sec) return "–"; const m = (Date.now() / 1000 - sec) / 60; return m < 60 ? Math.round(m) + " phút trước" : m < 2880 ? Math.round(m / 60) + " giờ trước" : Math.round(m / 1440) + " ngày trước"; };
-  const NAME = { global: "Lãi suất toàn cầu (đường cong 5 nước, 10 NHTW)", macro: "Macro (FRED, EIA, USDA, Yahoo)" };
-  const SRC = { fred: "FRED, Fed St. Louis", treasury: "Bộ Tài chính Mỹ", bundesbank: "Bundesbank", ecb: "ECB", boe: "Bank of England", mof: "Bộ Tài chính Nhật", bis: "BIS (lãi suất NHTW)", yahoo: "Yahoo Finance", eia: "EIA (năng lượng)", usda: "USDA FAS (WASDE)" };
+  const NAME = { global: "Lãi suất toàn cầu (đường cong 5 nước, 10 NHTW)", macro: "Macro (FRED, EIA, USDA, Yahoo)", calendar: "Lịch công bố chính thức (đọc lại mỗi ngày)" };
+  const SRC = { fred: "FRED, Fed St. Louis", treasury: "Bộ Tài chính Mỹ", bundesbank: "Bundesbank", ecb: "ECB", boe: "Bank of England", mof: "Bộ Tài chính Nhật", bis: "BIS (lãi suất NHTW)", yahoo: "Yahoo Finance", eia: "EIA (năng lượng)", usda: "USDA (WASDE)", fed: "Fed (lịch FOMC)", bea: "BEA (lịch GDP, PCE)", census: "Census (lịch bán lẻ, nhà ở)" };
   const ST = { ok: '<b class="up">ỔN</b>', partial: '<b class="amber">MỘT PHẦN</b>', down: '<b class="down">LỖI</b>', crashed: '<b class="down">SẬP</b>', stale: '<b class="amber">CŨ</b>', missing: '<span class="dim">CHƯA CHẠY</span>' };
   const get = (u) => fetch(u + "?v=" + Date.now(), { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
   Promise.all([get("../data/health.json"), get("../data/macro/index.json")]).then(([h, idx]) => {
