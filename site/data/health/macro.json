@@ -1,1 +1,1 @@
-{"desk":"macro","t":1792582973,"sources":{"fred":{"ok":49,"fail":0,"error":null,"what":null},"yahoo":{"ok":39,"fail":0,"error":null,"what":null}},"errors":0}
+{"desk":"macro","t":1792602500,"sources":{"fred":{"ok":0,"fail":52,"error":"empty series","what":"fred USREC"},"eia":{"ok":8,"fail":0,"error":null,"what":null},"yahoo":{"ok":39,"fail":0,"error":null,"what":null}},"errors":52}
