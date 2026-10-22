@@ -1,6 +1,6 @@
 # Lailong Macro Terminal
 
-## 👉 [MỞ TERMINAL](https://lehoanglong2452004-eng.github.io/lai-long-desk/) · [TÌNH TRẠNG HỆ THỐNG](https://lehoanglong2452004-eng.github.io/lai-long-desk/status/)
+## 👉 [MỞ TERMINAL](https://lehoanglong2452004-eng.github.io/lailong-macro/) · [TÌNH TRẠNG HỆ THỐNG](https://lehoanglong2452004-eng.github.io/lailong-macro/status/)
 
 Hệ sinh thái thống kê, tổng hợp dữ liệu vĩ mô kiểu Bloomberg Terminal để đánh giá cơ hội trung và dài hạn. Mỗi con số được đọc theo **hai mặt**: lãi suất cao không chỉ là kiềm chế lạm phát, mà còn là lúc người cầm nhiều tiền mặt, không dùng margin (như Buffett) được trả lãi để chờ và gom tài sản giá rẻ.
 
