@@ -1,3 +1,4 @@
+# © 2026 Lailong Macro. Bảo lưu mọi quyền.
 """Official release dates for the terminal's calendar (CAL screen), read from each agency's own schedule page.
 
     Fed     FOMC meetings, every year the Fed has published (decision on the second day)

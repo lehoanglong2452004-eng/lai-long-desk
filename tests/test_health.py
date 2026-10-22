@@ -1,3 +1,4 @@
+# © 2026 Lailong Macro. Bảo lưu mọi quyền.
 import json
 import tempfile
 import time

@@ -1,3 +1,4 @@
+# © 2026 Lailong Macro. Bảo lưu mọi quyền.
 """Shared fetch helpers for the free, public data sources.
 
 Every function returns plain Python lists/dicts and never raises on network

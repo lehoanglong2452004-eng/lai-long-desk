@@ -1,3 +1,4 @@
+# © 2026 Lailong Macro. Bảo lưu mọi quyền.
 """Macro statistics desk: long history for the MACRO terminal (rates, yield curve, inflation, growth,
 liquidity, credit, energy inventories, crop balance sheets, long-term asset charts, business cycle).
 

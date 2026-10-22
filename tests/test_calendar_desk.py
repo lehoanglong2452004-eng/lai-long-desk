@@ -1,3 +1,4 @@
+# © 2026 Lailong Macro. Bảo lưu mọi quyền.
 import datetime as dt
 import unittest
 

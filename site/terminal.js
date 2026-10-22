@@ -1,3 +1,4 @@
+// © 2026 Lailong Macro. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 /* Lailong Macro terminal: reads site/data/macro/*.json (built hourly by pipeline/macro_desk.py)
    and data/global.json (bond curves of 5 countries, central-bank rates), draws Bloomberg-style screens.
    Every indicator: long chart, where it sits in its own history, and a two-sided reading (kb.js). */
