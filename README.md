@@ -1,4 +1,4 @@
-# Lai Long Desk Macro Terminal
+# Lailong Macro Terminal
 
 ## 👉 [MỞ TERMINAL](https://lehoanglong2452004-eng.github.io/lai-long-desk/) · [TÌNH TRẠNG HỆ THỐNG](https://lehoanglong2452004-eng.github.io/lai-long-desk/status/)
 
@@ -49,7 +49,7 @@ Không có gì chạy trên máy của bạn và không cần API key. Mỗi nh�
 
 ## Cài đặt lần đầu (chỉ làm một lần)
 1. Vào **Settings → Pages**, mục *Build and deployment → Source*, chọn **GitHub Actions**.
-2. Vào **Actions → Lai Long Desk scan → Run workflow** để chạy lần đầu.
+2. Vào **Actions → Lailong Macro scan → Run workflow** để chạy lần đầu.
 
 ## Chạy thử trên máy (không bắt buộc)
 ```

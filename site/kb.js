@@ -1,4 +1,4 @@
-/* Lai Long Desk MACRO: what each number means, read from both sides.
+/* Lailong Macro: what each number means, read from both sides.
    For every indicator: what it is, then when it is HIGH and when it is LOW, the risk side and the
    opportunity side. No number is purely good or bad: it moves money from one group to another.
    hi / lo = [risk, opportunity]. who = who usually wins / loses. */
