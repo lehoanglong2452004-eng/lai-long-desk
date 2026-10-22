@@ -1,3 +1,4 @@
+// © 2026 Lailong Macro. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 /* Lailong Macro: what each number means, read from both sides.
    For every indicator: what it is, then when it is HIGH and when it is LOW, the risk side and the
    opportunity side. No number is purely good or bad: it moves money from one group to another.

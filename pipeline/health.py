@@ -1,3 +1,4 @@
+# © 2026 Lailong Macro. Bảo lưu mọi quyền.
 """System status: merge what each desk fetched this hour into site/data/health.json.
 
 Keeps a short history per source so the status page can say "failing for 3 runs in a row".

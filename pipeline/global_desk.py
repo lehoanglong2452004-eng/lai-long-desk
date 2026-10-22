@@ -1,3 +1,4 @@
+# © 2026 Lailong Macro. Bảo lưu mọi quyền.
 """Global rates for the MACRO terminal: government bond curves (US, Germany, euro area, UK, Japan) and
 policy rates of the 10 most traded currencies. Daily sources, refreshed hourly.
 
